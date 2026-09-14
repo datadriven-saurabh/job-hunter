@@ -19,5 +19,5 @@ resume,cover=tailor(job,PROFILE)
 assert Path(resume).read_bytes().startswith(b'%PDF')
 source=Path(resume).with_name('resume.json').read_text()
 assert 'Reduced page load time by 35%' in source
-print('PASS: AI-ranked, fact-grounded resume PDF generated',flush=True)
+print('PASS: Fact-grounded one-page resume PDF generated',flush=True)
 (Path('data/runtime')/'ai-verification.json').write_text(json.dumps({'questions':qs,'feedback':result,'resume':resume},indent=2))

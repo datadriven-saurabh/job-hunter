@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import time
@@ -13,7 +14,8 @@ ROOT=Path(__file__).resolve().parents[1]
 RUN=ROOT/'data'/'runtime'
 RUN.mkdir(parents=True,exist_ok=True)
 PYTHON=ROOT/'.venv/bin/python'
-OLLAMA=ROOT/'.runtime/ollama/ollama'
+LOCAL_OLLAMA=ROOT/'.runtime/ollama/ollama'
+OLLAMA=str(LOCAL_OLLAMA) if LOCAL_OLLAMA.exists() else shutil.which('ollama')
 
 def responds(url):
     try:
@@ -21,9 +23,17 @@ def responds(url):
     except Exception:return False
 
 def start():
+    if os.name=='nt':raise SystemExit('On Windows, use Docker Compose or the PowerShell steps in README.md.')
+    node=shutil.which('node')
+    if not PYTHON.exists():raise SystemExit('Python environment missing. Complete the native installation steps in README.md first.')
+    if not node:raise SystemExit('Node.js is missing from PATH. Install Node.js 22 LTS and reopen Terminal.')
+    if not (ROOT/'frontend/.next/BUILD_ID').exists():raise SystemExit('Frontend build missing. Run: npm --prefix frontend ci then npm --prefix frontend run build')
     env=dict(os.environ)
-    env.update(OLLAMA_HOST='127.0.0.1:11434',OLLAMA_MODELS=str(ROOT/'data/ollama-models'),OLLAMA_NO_CLOUD='1',OLLAMA_MAX_LOADED_MODELS='1',PYTHONPYCACHEPREFIX=str(ROOT/'data/pycache'))
-    services=[('ollama',[str(OLLAMA),'serve'],ROOT,'http://127.0.0.1:11434/api/tags'),('api',[str(PYTHON),'-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--no-access-log'],ROOT,'http://127.0.0.1:8000/health'),('web',['/opt/homebrew/bin/node',str(ROOT/'frontend/node_modules/next/dist/bin/next'),'start','--hostname','127.0.0.1'],ROOT/'frontend','http://127.0.0.1:3000')]
+    env.update(OLLAMA_HOST='127.0.0.1:11434',OLLAMA_NO_CLOUD='1',OLLAMA_MAX_LOADED_MODELS='1',PYTHONPYCACHEPREFIX=str(ROOT/'data/pycache'))
+    if LOCAL_OLLAMA.exists():env['OLLAMA_MODELS']=str(ROOT/'data/ollama-models')
+    services=[('api',[str(PYTHON),'-m','uvicorn','backend.main:app','--host','127.0.0.1','--port','8000','--no-access-log'],ROOT,'http://127.0.0.1:8000/health'),('web',[node,str(ROOT/'frontend/node_modules/next/dist/bin/next'),'start','--hostname','127.0.0.1'],ROOT/'frontend','http://127.0.0.1:3000')]
+    if OLLAMA:services.insert(0,('ollama',[OLLAMA,'serve'],ROOT,'http://127.0.0.1:11434/api/tags'))
+    elif not responds('http://127.0.0.1:11434/api/tags'):print('Ollama is optional and not installed. Resume, drafting and discovery features still work.')
     for name,command,cwd,url in services:
         if responds(url):
             print(f'{name}: already running');continue
@@ -39,7 +49,9 @@ def start():
     print('Open http://localhost:3000')
 
 def stop():
+    if os.name=='nt':raise SystemExit('Use Ctrl+C in your service terminals, or docker compose down on Windows.')
     def owned(pid):
+        if not shutil.which('lsof'):return False
         result=subprocess.run(['lsof','-a','-p',str(pid),'-d','cwd','-Fn'],capture_output=True,text=True)
         return any(line in {'n'+str(ROOT),'n'+str(ROOT/'frontend')} for line in result.stdout.splitlines())
     for name in ['web','api','ollama']:
