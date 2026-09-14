@@ -17,6 +17,7 @@ Open Terminal in the project folder. Run each line separately:
 ```sh
 python3 --version
 python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install -r requirements.txt
 npm --prefix frontend ci
 npm --prefix frontend run build
@@ -48,6 +49,7 @@ Open PowerShell in the project folder. Run each line separately:
 
 ```powershell
 py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 npm.cmd --prefix frontend ci
 npm.cmd --prefix frontend run build
@@ -95,3 +97,5 @@ Linux may need Playwright's documented system dependencies. The Docker image alr
 Stop services and back up `data` first. Pull/download the new code, rerun the pip install and npm ci/build commands above, then start again. **Do not copy `.env.example` over an existing `.env` when updating**; that would reset your local settings.
 
 Logs from the background launcher are under `data/runtime/`. Foreground processes print logs in their terminals. Never share logs without removing personal details.
+
+The September 2026 security update requires a fresh Python 3.11/3.12 environment if your previous installation used Python 3.9. Stop the app, rename the old `.venv` as a private backup, and repeat environment creation and installation. Keep `data` and `.env`. Do not reuse the old environment for testing.

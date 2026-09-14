@@ -6,6 +6,7 @@ services:
     environment:
       ENABLE_LIVE_SUBMISSION: "false"
       ENABLE_LOCAL_LLM: "false"
+      TRUSTED_EXTENSION_IDS: "${TRUSTED_EXTENSION_IDS:-}"
   frontend:
     build: ./frontend
     ports: ["127.0.0.1:3000:3000"]

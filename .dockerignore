@@ -12,3 +12,14 @@ tmp
 docs/linkedin-review-saurabh.md
 ATS Resume format.pdf
 ATS Resume format.txt
+
+# Private keys, local databases and personal document artifacts
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.pdf
+*.docx

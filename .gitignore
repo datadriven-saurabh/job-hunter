@@ -17,3 +17,14 @@ ATS Resume format.pdf
 ATS Resume format.txt
 *.log
 *.zip
+
+# Private keys, local databases and personal document artifacts
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.pdf
+*.docx

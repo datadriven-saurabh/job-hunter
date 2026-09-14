@@ -121,6 +121,10 @@ Public sources include LinkedIn guest listings, Remotive, Remote OK, We Work Rem
 
 Contact suggestions are names found in job text or search leads, not a verified LinkedIn connection graph. Resume generation uses supplied facts and checks the PDF is one page; it does not guarantee acceptance by every ATS. Local matching has a finite skills vocabulary and requires human review of eligibility and qualifications.
 
+## Tester distribution
+
+Use a fresh GitHub download or the source-only release ZIP. **Do not zip and share your working project folder**: it contains local files that Git ignores. Start with fictitious data, keep live submission disabled, and use one installation per tester. See the [security review](docs/SECURITY_REVIEW.md) and [security policy](SECURITY.md).
+
 ## Get help
 
 Check [Troubleshooting](docs/TROUBLESHOOTING.md). If you open a GitHub issue, include your OS, whether you used Docker or native setup, and the relevant error message. Remove emails, phone numbers, resumes, tokens and other personal details from logs and screenshots before sharing them.

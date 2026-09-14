@@ -13,6 +13,7 @@ These files are not encrypted by this app. Use your operating system's account p
 - Public discovery contacts the selected job board or employer API with search/board parameters.
 - Importing a job URL contacts that site. It does not use your browser login cookies.
 - LinkedIn search links open in your browser, where your browser session applies.
+- The interface uses system fonts; it does not request Google Fonts. Cloud tracing is disabled by the application and local model requests ignore environment proxy settings.
 - Local AI sends prompts to local Ollama. Downloading dependencies and models contacts their respective registries.
 - Document preparation and outreach drafting do not send applications or messages.
 - Optional live submission sends reviewed application details to the employer when explicitly enabled and confirmed. Keep it disabled unless you intend to use it.
@@ -26,3 +27,5 @@ Source, dependency manifests, synthetic demos and setup instructions belong in G
 Keep the default localhost bindings. This app is not ready for public hosting or multiple users sharing a server. That requires authentication, authorization, per-user storage isolation and a separate security review.
 
 To erase local information, stop the app and delete the `data` folder and your `.env`; this is permanent unless you have a backup. Delete Ollama models separately if desired. Copies you exported or sent elsewhere are not removed.
+
+Requests that identify an untrusted Chrome extension origin are denied by default. To enable the optional helper, explicitly trust its ID as described in the user guide. Browser-origin checks are not authentication against other programs running on your computer or privileged extensions with access to localhost. Use a trusted browser profile and OS account.

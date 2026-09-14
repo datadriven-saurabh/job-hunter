@@ -78,9 +78,10 @@ Interview coach provides template-based practice without a model. With local AI 
 1. Open Chrome and visit `chrome://extensions`.
 2. Turn on Developer mode and click Load unpacked.
 3. Select this project's **extension** folder, not the project root.
-4. Open a saved job's exact application URL.
-5. Open the extension, select that job and choose Fill this application.
-6. Review all fields, attach your resume and complete the employer's remaining steps yourself.
+4. Copy the extension’s 32-letter ID from `chrome://extensions`. Add `TRUSTED_EXTENSION_IDS=that_id` to your local `.env` (create it from `.env.example` if needed), then restart the API. Docker users run `docker compose up -d` to apply the setting. Only explicitly trusted extensions can access the API.
+5. Open a saved job's exact application URL.
+6. Open the extension, select that job and choose Fill this application.
+7. Review all fields, attach your resume and complete the employer's remaining steps yourself.
 
 The extension fills supported visible empty contact fields. It does not overwrite existing answers or submit. It cannot solve every form or login flow. It connects to the API on localhost:8000.
 

@@ -20,7 +20,7 @@ def tags():
     config=db.config()
     if not config:raise HTTPException(400,'Save your profile first.')
     try:
-        result=httpx.get(config['llm_provider_config']['local_ollama_base_url'].rstrip('/')+'/api/tags',timeout=5);result.raise_for_status()
+        result=httpx.get(config['llm_provider_config']['local_ollama_base_url'].rstrip('/')+'/api/tags',timeout=5,trust_env=False);result.raise_for_status()
         return result.json().get('models',[])
     except Exception:raise HTTPException(503,'Local Ollama is unavailable.')
 

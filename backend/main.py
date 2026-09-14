@@ -1,7 +1,13 @@
 import os
+# Newly written profiles, documents and caches should be private to the OS user.
+if os.name == "posix": os.umask(0o077)
 from dotenv import load_dotenv
 from pathlib import Path
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+# This local edition must not inherit opt-in cloud tracing from another project.
+os.environ['LANGCHAIN_TRACING_V2'] = 'false'
+os.environ['LANGCHAIN_TRACING'] = 'false'
+os.environ['LANGSMITH_TRACING'] = 'false'
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -39,14 +45,10 @@ app.include_router(studio_router)
 from backend.model_api import router as model_router
 app.include_router(model_router)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost','127.0.0.1','testserver'])
-app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_origin_regex=r'chrome-extension://[a-p]{32}',allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Content-Type'])
+app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Content-Type'])
 
-@app.middleware('http')
-async def local_origin(request: Request, call_next):
-    origin=request.headers.get('origin','')
-    if origin and origin not in ['http://localhost:3000','http://127.0.0.1:3000','http://localhost:8000','http://127.0.0.1:8000'] and not origin.startswith('chrome-extension://'):
-        return JSONResponse({'detail':'Untrusted origin'},status_code=403)
-    return await call_next(request)
+from backend.security import LocalSecurityMiddleware
+app.add_middleware(LocalSecurityMiddleware)
 
 def require_job(id):
     job=db.get_job(id)
@@ -80,7 +82,7 @@ def runtime():
     if conf:
         try:
             import httpx
-            tags=httpx.get(conf['llm_provider_config']['local_ollama_base_url'].rstrip('/')+'/api/tags',timeout=2).json()
+            tags=httpx.get(conf['llm_provider_config']['local_ollama_base_url'].rstrip('/')+'/api/tags',timeout=2,trust_env=False).json()
             model_ready=any(m['name']==model for m in tags.get('models',[]))
         except Exception: pass
     return {'model_ready':model_ready,'local_ai_enabled':os.getenv('ENABLE_LOCAL_LLM')=='true','model':model,'headless_enabled':os.getenv('ENABLE_LIVE_SUBMISSION')=='true','browser_installed':browser_ready,'profile_ready':profile_ready(db.profile())}

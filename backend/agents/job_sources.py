@@ -25,25 +25,32 @@ SOURCE_INFO=[
  {'id':'lever','name':'Lever','kind':'company-board','note':'Public company board API.'},
  {'id':'ashby','name':'Ashby','kind':'company-board','note':'Public company board API.'},
 ]
-ALLOWED={'www.linkedin.com','in.linkedin.com','uk.linkedin.com','de.linkedin.com','linkedin.com','hiringcafe.com','www.hiringcafe.com','hiring.cafe','remotive.com','api.ashbyhq.com'}
+ALLOWED={'www.linkedin.com','in.linkedin.com','uk.linkedin.com','de.linkedin.com','linkedin.com','hiringcafe.com','www.hiringcafe.com','hiring.cafe','remotive.com','api.ashbyhq.com','boards-api.greenhouse.io','api.lever.co'}
 ALLOWED.update({'de.linkedin.com','fr.linkedin.com','nl.linkedin.com','ie.linkedin.com','ca.linkedin.com','au.linkedin.com','sg.linkedin.com','www.arbeitnow.com','www.arbeitnow.co.uk','api.smartrecruiters.com','remoteok.com','weworkremotely.com','www.weworkremotely.com'})
 
 class SourceUnavailable(ValueError):pass
 
 def public_get(url,params=None):
-    # Only fixed, known public sources; never follow a redirect to a private host.
-    with httpx.Client(timeout=25,headers={'User-Agent':'JobHunter-Local/1.0 (personal job discovery)'}) as client:
+    # Fixed public destinations only, with validation at every redirect.
+    with httpx.Client(timeout=25,trust_env=False,headers={'User-Agent':'JobHunter-Local/1.0 (personal job discovery)'}) as client:
         for _ in range(4):
-            parsed=urlparse(url)
-            if parsed.scheme!='https' or parsed.hostname not in ALLOWED: raise SourceUnavailable('Unsupported source URL.')
-            response=client.get(url,params=params);params=None
-            if response.status_code in {301,302,303,307,308}:
-                url=urljoin(url,response.headers.get('location',''));continue
-            if response.status_code in {401,403,429,999}:
-                raise SourceUnavailable(f'Public access unavailable (HTTP {response.status_code}). Open the board in your browser and import a posting manually. No login or CAPTCHA bypass was attempted.')
-            response.raise_for_status()
-            if len(response.content)>12*1024*1024:raise SourceUnavailable('Source response exceeded 12 MB.')
-            return response
+            try:
+                parsed=urlparse(url)
+                valid=parsed.scheme=='https' and parsed.hostname in ALLOWED and not parsed.username and not parsed.password and parsed.port in {None,443}
+            except ValueError: valid=False
+            if not valid: raise SourceUnavailable('Unsupported source URL.')
+            with client.stream('GET',url,params=params) as response:
+                params=None
+                if response.status_code in {301,302,303,307,308}:
+                    url=urljoin(url,response.headers.get('location',''));continue
+                if response.status_code in {401,403,429,999}:
+                    raise SourceUnavailable(f'Public access unavailable (HTTP {response.status_code}). Open the board in your browser and import a posting manually.')
+                response.raise_for_status()
+                content=bytearray()
+                for chunk in response.iter_bytes(chunk_size=65536):
+                    content.extend(chunk)
+                    if len(content)>12*1024*1024:raise SourceUnavailable('Source response exceeded 12 MB.')
+                return httpx.Response(response.status_code,content=bytes(content),headers={'content-type':response.headers.get('content-type','')},request=response.request)
     raise SourceUnavailable('Too many source redirects.')
 
 def clean(value):return BeautifulSoup(html.unescape(str(value or '')),'html.parser').get_text(' ',strip=True)

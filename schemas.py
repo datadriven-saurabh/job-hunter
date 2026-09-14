@@ -121,7 +121,7 @@ class JobSearchCriteria(BaseModel):
 class ExecutionPreferences(BaseModel):
     auto_apply_threshold_score: float = Field(default=0.85, ge=0.0, le=1.0)
     max_daily_applications: int = Field(default=20, ge=1, le=200)
-    enable_headless_auto_apply: bool = True
+    enable_headless_auto_apply: bool = False
     human_in_the_loop_fallback: bool = True
 
 class LLMProviderConfig(BaseModel):
@@ -130,7 +130,7 @@ class LLMProviderConfig(BaseModel):
     def loopback_only(cls, value):
         from urllib.parse import urlparse
         parsed=urlparse(value)
-        if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+        if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"localhost", "127.0.0.1", "::1"} or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ValueError("The local model URL must use a loopback address.")
         return value
 

@@ -5,7 +5,8 @@ from sqlalchemy import create_engine, text, event
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = Path(os.environ.get('DATA_DIR', str(ROOT / 'data')))
-DATA.mkdir(parents=True, exist_ok=True)
+DATA.mkdir(parents=True, exist_ok=True, mode=0o700)
+if os.name == "posix": DATA.chmod(0o700)
 engine = create_engine(f'sqlite:///{DATA / "career.db"}', connect_args={'check_same_thread': False})
 
 @event.listens_for(engine, "connect")

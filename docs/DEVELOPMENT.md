@@ -34,3 +34,7 @@ Use an official public API/feed where available. Implement and register adapters
 Never commit `data`, `.env`, personal resumes, screenshots with private details, downloaded models or browser sessions. Run `git status --short` and review `git diff --cached` before committing. Follow [privacy guidance](PRIVACY.md). Use your own Git identity and GitHub authentication; neither is bundled with this project.
 
 The current app is intended for separate local installations. Converting it into hosted multi-user software requires architectural changes; changing host/port settings alone does not provide user isolation.
+
+## Security checks
+
+Python dependencies are bounded by `requirements.txt` and pinned in `constraints.txt`; JavaScript uses `frontend/package-lock.json`. After a planned upgrade, run the tests, regenerate constraints in a clean Python environment, and audit both sets with `pip-audit -r requirements.txt` and `npm --prefix frontend audit`. Install the PyPA `pip-audit` tool in a separate audit environment. Never copy a developer virtual environment into a tester release. See [review scope and limitations](SECURITY_REVIEW.md).

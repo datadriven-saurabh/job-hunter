@@ -11,12 +11,13 @@ def score(job, profile, criteria):
 
 def fetch_feed(provider, board):
     if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}', board): raise ValueError('Use a board slug, not a URL.')
+    from backend.agents.job_sources import public_get
     if provider == 'greenhouse':
-        response = httpx.get(f'https://boards-api.greenhouse.io/v1/boards/{board}/jobs?content=true', timeout=25)
+        response = public_get(f'https://boards-api.greenhouse.io/v1/boards/{board}/jobs?content=true')
         response.raise_for_status()
         return [{'company_name':board, 'job_title':j['title'], 'job_url':j['absolute_url'], 'description':re.sub('<[^>]+>', ' ',j.get('content','')), 'location':j.get('location',{}).get('name',''), 'employment_type':'Full-time'} for j in response.json()['jobs']]
     if provider == 'lever':
-        response = httpx.get(f'https://api.lever.co/v0/postings/{board}?mode=json', timeout=25)
+        response = public_get(f'https://api.lever.co/v0/postings/{board}?mode=json')
         response.raise_for_status()
         return [{'company_name':board, 'job_title':j['text'], 'job_url':j['hostedUrl'], 'description':j.get('descriptionPlain',''), 'location':j.get('categories',{}).get('location',''), 'employment_type':j.get('categories',{}).get('commitment','Full-time')} for j in response.json()]
     raise ValueError('Supported feeds: greenhouse and lever.')

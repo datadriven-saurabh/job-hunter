@@ -41,10 +41,11 @@ async def run_batch(ids, submit=False):
                 async with async_playwright() as p:
                     browser=await p.chromium.launch(headless=True)
                     try:
-                        page=await browser.new_page()
-                        allowed={'jobs.lever.co','boards.greenhouse.io','job-boards.greenhouse.io'}
+                        page=await browser.new_page(service_workers="block")
+                        allowed={'jobs.lever.co','api.lever.co','boards.greenhouse.io','job-boards.greenhouse.io','boards-api.greenhouse.io'}
                         async def guard(route):
-                            if route.request.is_navigation_request() and (urlparse(route.request.url).hostname not in allowed): await route.abort()
+                            parsed=urlparse(route.request.url)
+                            if parsed.scheme!='https' or parsed.hostname not in allowed or parsed.username or parsed.port not in {None,443}: await route.abort()
                             else: await route.continue_()
                         await page.route('**/*',guard)
                         await page.goto(job['job_url'],wait_until='domcontentloaded',timeout=30000)
