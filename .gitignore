@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+.pytest_cache/
+frontend/node_modules/
+frontend/.next/
+data/*
+!data/.gitkeep
+.env
+.runtime/
+.env.*
+!.env.example
+.DS_Store
+output/
+tmp/
+docs/linkedin-review-saurabh.md
+ATS Resume format.pdf
+ATS Resume format.txt
+*.log
+*.zip

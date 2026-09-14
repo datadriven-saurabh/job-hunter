@@ -1,0 +1,8 @@
+export const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export async function api<T = any>(path: string, method = 'GET', body?: unknown): Promise<T> {
+  const response = await fetch(`${BASE}/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json' }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+  if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(typeof data.detail === 'string' ? data.detail : 'Please check the form values and try again.'); }
+  return response.json();
+}
+export type FitAnalysis = {score:number;priority:string;confidence:string;components:{name:string;score:number;weight:number}[];matched_skills:string[];missing_skills:string[];requirements:{skill:string;importance:string;matched:boolean;job_evidence:string;profile_source:string|null;profile_evidence:string|null}[];warnings:string[];preference_conflicts:string[];method:string};
+export type Job = {fit_analysis?:FitAnalysis;job_id:string;selected_resume_id?:string;selected_resume_label?:string;source?:string;source_url?:string;description_incomplete?:boolean;company_name:string;job_title:string;job_url:string;match_score:number;classification:string;status:string;location?:string;salary_min?:number;salary_max?:number;skills?:string[];description?:string;team?:string;logo?:string;color?:string;demo?:boolean;tailored_resume_path?:string;tailored_cover_letter_path?:string;submission_logs:{action:string;result:string;timestamp:string;error_message?:string}[]};

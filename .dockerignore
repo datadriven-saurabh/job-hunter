@@ -1,0 +1,14 @@
+.venv
+frontend/node_modules
+frontend/.next
+.git
+data
+__pycache__
+.env
+.env.*
+.runtime
+output
+tmp
+docs/linkedin-review-saurabh.md
+ATS Resume format.pdf
+ATS Resume format.txt
