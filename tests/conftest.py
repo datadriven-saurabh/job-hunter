@@ -1,7 +1,7 @@
 """Set isolation before pytest imports any application modules."""
 import os
 import tempfile
-os.environ['DATA_DIR']=tempfile.mkdtemp(prefix='autocareer-test-')
+os.environ['DATA_DIR']=tempfile.mkdtemp(prefix='job-hunter-test-')
 os.environ['ENABLE_LOCAL_LLM']='false'
 os.environ['ENABLE_LIVE_SUBMISSION']='false'
 

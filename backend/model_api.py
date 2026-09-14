@@ -53,7 +53,7 @@ def compare(body:Compare,tasks:BackgroundTasks):
     save({'status':'running','results':[]});tasks.add_task(run_comparison,list(dict.fromkeys(body.models)),db.config());return {'status':'running'}
 
 def run_comparison(names,config):
-    state={'status':'running','results':[],'method':'Three synthetic evidence-extraction cases; exact matched/missing skill accuracy and latency. This is a small smoke benchmark, not a general model-quality evaluation. Actual resume facts are never sent outside this Mac.'}
+    state={'status':'running','results':[],'method':'Three synthetic evidence-extraction cases; exact matched/missing skill accuracy and latency. This is a small smoke benchmark, not a general model-quality evaluation. Actual resume facts are never sent outside your computer.'}
     try:
         for name in names:
             settings=copy.deepcopy(config);settings['llm_provider_config']['reasoning_model']=name

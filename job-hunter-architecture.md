@@ -1,17 +1,17 @@
 Here is the complete, unified **`ARCHITECTURE.md`** file formatted as a single, contiguous Markdown document. You can save this directly into your project root as `ARCHITECTURE.md` to provide full, un-truncated context for your coding agent (Cursor, Claude Code, Windsurf, etc.).
 
 ```markdown
-# AutoCareer-AI: Complete System Architecture & Code Specification
+# Job Hunter: Complete System Architecture & Code Specification
 
 > **Instructions for Autonomous Coding Agent:**  
-> This file is the single source of truth for `AutoCareer-AI`.  
+> This file is the single source of truth for `Job Hunter`.
 > Build the platform modularly according to the directory structure in Section 7. Implement all Pydantic schemas, database tables, FastAPI API endpoints, Chrome extension scripts, and agent orchestrators exactly as specified below.
 
 ---
 
 ## 1. System Overview & Architecture
 
-`AutoCareer-AI` is a localized, privacy-first career automation platform. It uses an **Orchestrator-Worker Pattern** implemented via **LangGraph** in Python. Tasks are isolated across specialized agents to manage state, evaluate job descriptions, tailor resumes, handle applications, and run interactive interview prep.
+`Job Hunter` is a localized, privacy-first career automation platform. It uses an **Orchestrator-Worker Pattern** implemented via **LangGraph** in Python. Tasks are isolated across specialized agents to manage state, evaluate job descriptions, tailor resumes, handle applications, and run interactive interview prep.
 
 
 ```
@@ -301,7 +301,7 @@ from schemas import (
 )
 
 app = FastAPI(
-    title="AutoCareer-AI Orchestrator API",
+    title="Job Hunter Orchestrator API",
     version="1.0.0",
     description="Backend API powering the multi-agent career platform."
 )
@@ -369,7 +369,7 @@ async def generate_mock_interview(job_id: str) -> List[InterviewQuestion]:
 ```json
 {
   "manifest_version": 3,
-  "name": "AutoCareer-AI Extension Bridge",
+  "name": "Job Hunter Extension Bridge",
   "version": "1.0.0",
   "description": "Fills complex job application forms locally in HITL mode.",
   "permissions": ["activeTab", "scripting", "storage"],
@@ -429,7 +429,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 ## 7. Project File Directory Structure
 
 ```
-autocareer-ai/
+job-hunter/
 ├── README.md
 ├── ARCHITECTURE.md            # This single master context file
 ├── docker-compose.yml

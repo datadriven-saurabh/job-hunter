@@ -32,7 +32,7 @@ async def lifespan(app):
     db.execute("UPDATE application_records SET status='MATCHED' WHERE status='QUEUED'")
     yield
 
-app=FastAPI(title='AutoCareer-AI Orchestrator API',version='1.0.0',lifespan=lifespan)
+app=FastAPI(title='Job Hunter Orchestrator API',version='1.0.0',lifespan=lifespan)
 app.include_router(resume_router)
 from backend.studio_api import router as studio_router
 app.include_router(studio_router)

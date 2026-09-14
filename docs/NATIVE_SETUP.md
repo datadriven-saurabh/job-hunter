@@ -38,7 +38,7 @@ Open [localhost:3000](http://localhost:3000). The launcher finds Node.js from PA
 .venv/bin/python scripts/local.py stop
 ```
 
-On macOS, after completing setup, you can also double-click `Start AutoCareer.command`. If macOS does not allow it, use the terminal start command above. The `.command` file is not a Windows/Linux launcher.
+On macOS, after completing setup, you can also double-click `Start Job Hunter.command`. If macOS does not allow it, use the terminal start command above. The `.command` file is not a Windows/Linux launcher.
 
 If a Linux process does not stop through the launcher, inspect its terminal/process and stop that specific service; do not kill all Python or Node processes. You can also use the separate foreground terminals below on macOS/Linux, replacing the Windows Python path with `.venv/bin/python`.
 

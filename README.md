@@ -1,6 +1,8 @@
-# Job Hunter / AutoCareer
+# Job Hunter
 
-A career workspace that runs on **your own computer**. Find job openings, prioritize them against your profile, prepare a one-page resume, and draft a cover letter or referral message.
+**Focus your search. Make your move.**
+
+Job Hunter brings job discovery, profile matching, tailored resumes and outreach into one focused workspace. Spend less time organizing your search and more time preparing for the right opportunities—all on **your own computer**.
 
 **Each person installs their own copy.** Profiles and resumes are saved locally and are not shared with other users or included in this repository. This is a single-person local app, not a hosted website with multiple user accounts.
 

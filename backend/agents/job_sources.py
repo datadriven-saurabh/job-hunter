@@ -32,7 +32,7 @@ class SourceUnavailable(ValueError):pass
 
 def public_get(url,params=None):
     # Only fixed, known public sources; never follow a redirect to a private host.
-    with httpx.Client(timeout=25,headers={'User-Agent':'AutoCareer-Local/1.0 (personal job discovery)'}) as client:
+    with httpx.Client(timeout=25,headers={'User-Agent':'JobHunter-Local/1.0 (personal job discovery)'}) as client:
         for _ in range(4):
             parsed=urlparse(url)
             if parsed.scheme!='https' or parsed.hostname not in ALLOWED: raise SourceUnavailable('Unsupported source URL.')
