@@ -4,7 +4,7 @@ from email.utils import parsedate_to_datetime
 import re
 from urllib.parse import urlparse
 
-SOURCE_HOSTS={'linkedin.com':'LinkedIn','remoteok.com':'Remote OK','weworkremotely.com':'We Work Remotely','remotive.com':'Remotive','arbeitnow.com':'Arbeitnow','arbeitnow.co.uk':'Arbeitnow UK','greenhouse.io':'Greenhouse','lever.co':'Lever','ashbyhq.com':'Ashby','smartrecruiters.com':'SmartRecruiters','workable.com':'Workable','hiringcafe.com':'HiringCafe','hiring.cafe':'HiringCafe'}
+SOURCE_HOSTS={'stepstone.de':'StepStone','linkedin.com':'LinkedIn','remoteok.com':'Remote OK','weworkremotely.com':'We Work Remotely','remotive.com':'Remotive','arbeitnow.com':'Arbeitnow','arbeitnow.co.uk':'Arbeitnow UK','greenhouse.io':'Greenhouse','lever.co':'Lever','ashbyhq.com':'Ashby','smartrecruiters.com':'SmartRecruiters','workable.com':'Workable','hiringcafe.com':'HiringCafe','hiring.cafe':'HiringCafe'}
 
 
 def source_name(url):

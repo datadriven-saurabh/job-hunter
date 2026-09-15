@@ -47,7 +47,7 @@ app.include_router(model_router)
 from backend.career_api import router as career_router
 app.include_router(career_router)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost','127.0.0.1','testserver'])
-app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Content-Type'])
+app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT'],allow_headers=['Content-Type'])
 
 from backend.security import LocalSecurityMiddleware
 app.add_middleware(LocalSecurityMiddleware)
@@ -135,7 +135,7 @@ class SearchRequest(BaseModel):
     keywords: str=Field(default='',max_length=200)
     location: str=Field(default='',max_length=200)
     limit: int=Field(default=20,ge=1,le=100)
-    sources: List[str]=Field(default_factory=list,max_length=6)
+    sources: List[str]=Field(default_factory=list,max_length=8)
     page_url: str=Field(default='',max_length=2000)
 
 @app.get('/api/v1/jobs/sources')

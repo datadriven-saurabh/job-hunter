@@ -6,13 +6,14 @@ import re
 import time
 from xml.etree import ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import urlencode, urljoin, urlparse
+from urllib.parse import urlencode, urljoin, urlparse, quote
 import httpx
 from bs4 import BeautifulSoup
 from backend import database as db
 from backend.agents.scout_agent import fetch_feed
 
 SOURCE_INFO=[
+ {'id':'stepstone','name':'StepStone Germany','kind':'public-search','note':'Public German search pages and up to 10 structured postings. Access may return HTTP 403; browser/manual import remains available.'},
  {'id':'arbeitnow','name':'Arbeitnow Europe','kind':'public-search','note':'Free public European jobs API; attribution retained.'},
  {'id':'arbeitnow_uk','name':'Arbeitnow UK','kind':'public-search','note':'Free public UK jobs API; attribution retained.'},
  {'id':'smartrecruiters','name':'SmartRecruiters','kind':'company-board','note':'Public company postings; up to 200 cards and 25 descriptions per search.'},
@@ -26,7 +27,7 @@ SOURCE_INFO=[
  {'id':'ashby','name':'Ashby','kind':'company-board','note':'Public company board API.'},
 ]
 ALLOWED={'www.linkedin.com','in.linkedin.com','uk.linkedin.com','de.linkedin.com','linkedin.com','hiringcafe.com','www.hiringcafe.com','hiring.cafe','remotive.com','api.ashbyhq.com','boards-api.greenhouse.io','api.lever.co'}
-ALLOWED.update({'de.linkedin.com','fr.linkedin.com','nl.linkedin.com','ie.linkedin.com','ca.linkedin.com','au.linkedin.com','sg.linkedin.com','www.arbeitnow.com','www.arbeitnow.co.uk','api.smartrecruiters.com','remoteok.com','weworkremotely.com','www.weworkremotely.com'})
+ALLOWED.update({'www.stepstone.de','stepstone.de','de.linkedin.com','fr.linkedin.com','nl.linkedin.com','ie.linkedin.com','ca.linkedin.com','au.linkedin.com','sg.linkedin.com','www.arbeitnow.com','www.arbeitnow.co.uk','api.smartrecruiters.com','remoteok.com','weworkremotely.com','www.weworkremotely.com'})
 
 class SourceUnavailable(ValueError):pass
 
@@ -108,7 +109,45 @@ def jsonld_jobs(markup,source='HiringCafe',page_url='https://hiringcafe.com/'):
         except (ValueError,TypeError):continue
     return list({j['job_url']:j for j in found}.values())
 
+STEPSTONE_HOSTS={'www.stepstone.de','stepstone.de'}
+
+def stepstone_search_url(keywords='',location=''):
+    def slug(value):return quote(re.sub(r'[^\w-]+','-',value.lower()).strip('-'),safe='-')
+    url='https://www.stepstone.de/jobs'
+    if keywords.strip():url+='/'+slug(keywords)
+    if location.strip():url+='/in-'+slug(location)
+    return url
+
+def stepstone_jobs(keywords='',location='',limit=20):
+    url=stepstone_search_url(keywords,location)
+    markup=public_get(url).text
+    def postings(html,page):
+        found=[]
+        for job in jsonld_jobs(html,source='StepStone',page_url=page):
+            parsed=urlparse(job['job_url'])
+            if parsed.hostname not in STEPSTONE_HOSTS or parsed.username or parsed.password:continue
+            job['job_url']=job['job_url'].split('?')[0];job['source_url']=job['job_url']
+            job['description_incomplete']=not bool(job['description'].strip())
+            found.append(job)
+        return found
+    result=postings(markup,url)
+    if not result:
+        links=[]
+        for anchor in BeautifulSoup(markup,'html.parser').select('a[href]'):
+            target=urljoin(url,anchor['href']).split('?')[0];parsed=urlparse(target)
+            if parsed.scheme=='https' and parsed.hostname in STEPSTONE_HOSTS and not parsed.username and not parsed.password and re.fullmatch(r'/stellenangebote--.+--[0-9]+-inline.html',parsed.path) and target not in links:
+                links.append(target)
+        for target in links[:min(limit,10)]:
+            try:result.extend(postings(public_get(target).text,target))
+            except SourceUnavailable:
+                if result:break
+                raise
+    if not result:raise SourceUnavailable('StepStone returned no readable public JobPosting data. Open StepStone in your browser and import the title, company, URL and full description manually.')
+    result=list({j['job_url']:j for j in result}.values())
+    return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in keywords.lower().split())][:min(limit,10)]
+
 def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
+    if provider=='stepstone':return stepstone_jobs(keywords,location,limit)
     if provider in {'arbeitnow','arbeitnow_uk'}:
         host='www.arbeitnow.co.uk' if provider=='arbeitnow_uk' else 'www.arbeitnow.com'
         key=provider+'-feed-v2';rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})

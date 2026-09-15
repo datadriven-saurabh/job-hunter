@@ -74,7 +74,7 @@ class ModelRouter:
                     if validator:validator(result)
                     event.update(cache_hit=True,latency_ms=0,prompt_version=prompt['version']);self._log(event);return result
                 body={'model':used_model,'system':prompt['system'],'prompt':prompt['context']+('\nValidation feedback: '+errors[-1] if errors else ''),'stream':False,'format':schema.model_json_schema(),'options':{'temperature':0,'num_ctx':self.config['context_tokens'],'num_predict':self.config['output_tokens']},'keep_alive':'5m'}
-                if used_model.startswith('qwen3'):body['think']=False
+                if used_model.startswith(('qwen3','nemotron-3-nano')):body['think']=False
                 r=httpx.post(self._url()+'/api/generate',json=body,timeout=self.config['timeout_seconds'],trust_env=False);r.raise_for_status();raw=r.json()
                 result=schema.model_validate_json(raw['response'])
                 if validator:validator(result)

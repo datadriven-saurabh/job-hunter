@@ -66,3 +66,11 @@ Caches include profile/job/prompt/model versions. `data/ai-cache`, `answer-cache
 - Studio kit routes provide validated PDF/Markdown/text downloads.
 
 Run `.venv/bin/python -m pytest -q` and `npm --prefix frontend run build`. `RUN_BROWSER_TESTS=1 .venv/bin/python -m pytest -q` also exercises the local browser submission guard in an isolated test environment. Tests use synthetic data and a temporary database, never your saved profile. No cloud API credentials are required for this pipeline.
+
+## StepStone Germany
+
+StepStone is available as a discovery source and in the board directory. Searches use public German keyword/location pages, read embedded JobPosting data, and follow at most ten same-host public posting links when necessary. Original source links, posting timestamps and requisition identifiers are retained when supplied. StepStone posting URLs can also be entered in Application Studio; blocked pages require pasted text.
+
+Direct requests from the development machine returned HTTP 403 on September 15, 2026. This integration does not guarantee live retrieval: the UI reports **Unavailable**, offers the StepStone browser search and a manual-import action, and does not bypass login, CAPTCHA or access controls. Parser behavior is covered by synthetic fixtures; successful live extraction could not be verified from this connection. The published StepStone employer API is for publishing/managing listings, not used here as a candidate search API.
+
+See [the local DeepSeek/Nemotron model trial](MODEL_TRIALS.md) for measured compatibility results and reproduction steps. Neither new model outperformed the existing model on this small extraction benchmark; installing them does not change the selected model.

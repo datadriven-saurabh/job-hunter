@@ -1,5 +1,6 @@
 'use client';
 const boards=[
+ ['StepStone Germany','https://www.stepstone.de','Public pages integrated; browser/manual import if blocked'],
  ['Arbeitnow Europe','https://www.arbeitnow.com','Public API integrated'],
  ['Arbeitnow UK','https://www.arbeitnow.co.uk','Public API integrated'],
  ['Remote OK','https://remoteok.com','Public feed integrated'],

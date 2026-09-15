@@ -225,3 +225,21 @@ def test_exact_job_dedup_preserves_sources():
         rows=[r for r in db.applications() if r['company_name']==JOB['company_name']]
         assert len(rows)==1 and rows[0]['source']=='Lever'
         assert len(rows[0]['alternative_sources'])==2
+
+
+def test_nemotron_structured_output_disables_thinking(monkeypatch):
+    from backend.agents import llm
+    monkeypatch.setenv('ENABLE_LOCAL_LLM','true');calls=[]
+    class Response:
+        def raise_for_status(self):pass
+        def json(self):return {'response':'{"matched":[],"missing":["SQL"]}'}
+    monkeypatch.setattr(llm.httpx,'post',lambda *a,**kw:(calls.append(kw) or Response()))
+    config={'llm_provider_config':{'reasoning_model':'nemotron-3-nano:4b','local_ollama_base_url':'http://localhost:11434'}}
+    assert llm.generate_json('Synthetic fixture',config)['missing']==['SQL']
+    assert calls[0]['json']['think'] is False
+
+
+def test_model_routing_browser_preflight():
+    with TestClient(app) as c:
+        r=c.options('/api/v1/career/model-routing',headers={'Origin':'http://localhost:3000','Access-Control-Request-Method':'PUT','Access-Control-Request-Headers':'content-type'})
+        assert r.status_code==200 and 'PUT' in r.headers['access-control-allow-methods']
