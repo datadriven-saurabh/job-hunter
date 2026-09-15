@@ -134,3 +134,9 @@ Check [Troubleshooting](docs/TROUBLESHOOTING.md). If you open a GitHub issue, in
 Application Studio now generates one-page ATS resumes, cover letters, LinkedIn referral drafts and answers to application questions. It uses your verified achievements and stories, shows missing facts, and blocks exports that fail the required format or length. Job details include source, posting freshness and explicit visa-sponsorship evidence. Optional local model tiers add staged job analysis.
 
 Follow the [Career engine guide](docs/CAREER_ENGINE.md) for a step-by-step workflow, model setup, validation limits, API routes and privacy details. The fixed resume reference uses synthetic information; your own uploads and generated documents stay in your ignored local data folder.
+
+### Keep your opportunities organized
+
+Use the **Sort opportunities by** dropdown to order matches by score, posting date/time, source, location, company, or application priority. Choose ascending or descending order; missing values stay last.
+
+Click an opportunity's trash icon, or select rows and choose **Delete selected**, to remove unwanted openings from your dashboard. Only the visible page is included by Select all. Deleted openings can be restored from **Deleted opportunities** beneath the table, including after restarting the app. The same saved opening stays deleted if a search finds it again. Prepared documents remain on your computer. Opportunities currently being prepared or submitted cannot be deleted until that operation finishes.

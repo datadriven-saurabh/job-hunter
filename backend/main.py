@@ -176,6 +176,36 @@ def applications(status:Optional[ApplicationStatus]=None):
 
 queue_reservation=Lock()
 
+@app.get('/api/v1/applications/deleted')
+def deleted_opportunities():
+    return db.query('SELECT a.job_id,a.company_name,a.job_title,d.deleted_at FROM deleted_opportunities d JOIN application_records a ON a.job_id=d.job_id ORDER BY d.deleted_at DESC')
+
+class OpportunityIDs(BaseModel):
+    job_ids:List[str]=Field(min_length=1,max_length=100)
+
+@app.post('/api/v1/applications/delete')
+def delete_opportunities(body:OpportunityIDs):
+    with queue_reservation:
+        ids=list(dict.fromkeys(body.job_ids))
+        # Validate the entire request before changing anything.
+        for id in ids:
+            rows=db.query('SELECT status FROM application_records WHERE job_id=:id',{'id':id})
+            if not rows:raise HTTPException(404,'Opportunity not found.')
+            if rows[0]['status']=='QUEUED':raise HTTPException(409,'Wait for preparation or submission to finish before deleting this opportunity.')
+        with db.engine.begin() as conn:
+            for id in ids:conn.execute(db.text('INSERT OR IGNORE INTO deleted_opportunities (job_id) VALUES (:id)'),{'id':id})
+    return {'deleted':ids,'message':f'{len(ids)} opportunities deleted. Restore them from Deleted opportunities.'}
+
+@app.post('/api/v1/applications/restore')
+def restore_opportunities(body:OpportunityIDs):
+    with queue_reservation:
+        for id in body.job_ids:
+            if not db.query('SELECT job_id FROM application_records WHERE job_id=:id',{'id':id}):raise HTTPException(404,'Opportunity not found.')
+        with db.engine.begin() as conn:
+            for id in set(body.job_ids):conn.execute(db.text('DELETE FROM deleted_opportunities WHERE job_id=:id'),{'id':id})
+    return {'restored':list(dict.fromkeys(body.job_ids))}
+
+
 @app.post('/api/v1/applications/batch-apply')
 def batch(job_ids:List[str],background_tasks:BackgroundTasks,submit:bool=False):
     with queue_reservation:

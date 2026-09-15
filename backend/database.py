@@ -39,8 +39,8 @@ def config(user_id='local'):
     r = rows[0]
     return {k: json.loads(r[v]) for k,v in [('job_search_criteria','search_criteria_json'),('execution_preferences','execution_preferences_json'),('llm_provider_config','llm_config_json')]}
 
-def applications():
-    rows = query('SELECT * FROM application_records ORDER BY match_score DESC')
+def applications(include_deleted=False):
+    rows = query('SELECT * FROM application_records '+('' if include_deleted else 'WHERE job_id NOT IN (SELECT job_id FROM deleted_opportunities) ')+'ORDER BY match_score DESC')
     from backend.services.job_matching import assess
     current_profile=profile();current_config=config()
     from backend.ai.router import settings

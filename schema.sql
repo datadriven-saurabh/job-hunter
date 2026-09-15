@@ -73,3 +73,9 @@ CREATE TABLE IF NOT EXISTS source_cache (
     fetched_at REAL NOT NULL,
     payload TEXT NOT NULL
 );
+
+-- Reversible opportunity removal. Rediscovery does not revive the same record.
+CREATE TABLE IF NOT EXISTS deleted_opportunities (
+    job_id TEXT PRIMARY KEY REFERENCES application_records(job_id) ON DELETE CASCADE,
+    deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
