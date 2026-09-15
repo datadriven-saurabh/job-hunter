@@ -66,8 +66,8 @@ def listing():
     return records
 
 def profile_text(profile):
-    r=profile['base_resume']
-    return '\n'.join([r['raw_text'],' '.join(r['structured_skills'])]+[e['role']+' '+e['company']+' '+' '.join(e['bullet_points']) for e in r['experience_history']])
+    from backend.services.job_matching import profile_evidence
+    return '\n'.join(source+': '+value for source,value in profile_evidence(profile))
 
 def get(resume_id, include_archived=False):
     if resume_id=='profile':

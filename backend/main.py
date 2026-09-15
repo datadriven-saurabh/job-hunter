@@ -44,6 +44,8 @@ from backend.studio_api import router as studio_router
 app.include_router(studio_router)
 from backend.model_api import router as model_router
 app.include_router(model_router)
+from backend.career_api import router as career_router
+app.include_router(career_router)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost','127.0.0.1','testserver'])
 app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH'],allow_headers=['Content-Type'])
 
@@ -115,6 +117,9 @@ class ImportJob(BaseModel):
     description: str = Field(min_length=20, max_length=50000)
     location: str
     employment_type: str = 'Full-time'
+    requisition_id: str | None = Field(default=None,max_length=100)
+    posted_at: str | None = None
+    source: str = Field(default='',max_length=100)
 
 @app.post('/api/v1/jobs/import')
 def import_job(body: ImportJob):

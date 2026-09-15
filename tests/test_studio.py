@@ -6,7 +6,7 @@ from backend import database as db
 from backend.services.outreach import drafts
 from backend.demo import PROFILE
 
-JOB={'job_title':'Software Engineer','company_name':'Example Company','job_url':'https://jobs.lever.co/example/123','description':'Build accessible software using TypeScript, React and Python. Work with our product and design teams to deliver reliable user experiences. Your personal contact for this position is Jane Smith.'}
+JOB={'requisition_id':'REQ-123','resume_url':'https://example.com/resume','job_title':'Software Engineer','company_name':'Example Company','job_url':'https://jobs.lever.co/example/123','description':'Build accessible software using TypeScript, React and Python. Work with our product and design teams to deliver reliable user experiences. Your personal contact for this position is Jane Smith.'}
 
 def test_kit_pdf_messages_and_edits():
     with TestClient(app) as c:
@@ -17,16 +17,15 @@ def test_kit_pdf_messages_and_edits():
         pdf=c.get(f'/api/v1/studio/kits/{id}/resume')
         reader=PdfReader(io.BytesIO(pdf.content));assert len(reader.pages)==1
         text=reader.pages[0].extract_text()
-        assert PROFILE['personal_details']['full_name'].upper() in text
-        assert 'CHLOE' not in text and 'Summary' in text and 'Education' in text
-        assert len(kit['connection_note'])<=200 and JOB['job_url'] in kit['referral_message']
+        assert PROFILE['personal_details']['full_name'] in text
+        assert 'CHLOE' not in text and 'PROFILE' in text and 'EDUCATION' in text
+        assert len(kit['connection_note'])<300 and 'REQ-123' in kit['referral_message']
         assert kit['named_contacts'][0]['name']=='Jane Smith'
         assert 'not necessarily' in kit['contact_note']
         kit['cover_letter']='Reviewed letter with my own edits.'
-        assert c.patch(f'/api/v1/studio/kits/{id}',json=kit).status_code==200
-        assert c.get(f'/api/v1/studio/kits/{id}/cover_letter').text==kit['cover_letter']
+        assert c.patch(f'/api/v1/studio/kits/{id}',json=kit).status_code==422
         assert len(c.get('/api/v1/studio/kits').json())==1
-        kit['connection_note']='x'*201
+        kit['connection_note']='x'*300
         assert c.patch(f'/api/v1/studio/kits/{id}',json=kit).status_code==422
         assert c.post('/api/v1/studio/kits',json={}).status_code==400
 

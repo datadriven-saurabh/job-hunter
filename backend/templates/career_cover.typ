@@ -1,0 +1,10 @@
+#let d = json("cover.json")
+#set page(paper:"a4",margin:25.4mm)
+#set text(font:("Arial","Liberation Sans","DejaVu Sans"),size:10.5pt,fill:black)
+#set par(leading:0.55em,spacing:8pt)
+#text(d.header)
+#parbreak()
+#text(d.salutation)
+#parbreak()
+#for p in d.paragraphs [#text(p)#parbreak()]
+#text(d.signoff)

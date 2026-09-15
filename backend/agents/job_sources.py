@@ -65,7 +65,7 @@ def linkedin_cards(markup):
         if not title or not link:continue
         url=link.get('href','').split('?')[0]
         if urlparse(url).hostname not in ALLOWED:continue
-        jobs.append({'job_title':title.get_text(' ',strip=True),'company_name':company.get_text(' ',strip=True) if company else 'Company not listed','job_url':url,'location':loc.get_text(' ',strip=True) if loc else '', 'description':'','source':'LinkedIn','source_url':url,'employment_type':'Full-time','description_incomplete':True})
+        jobs.append({'job_title':title.get_text(' ',strip=True),'company_name':company.get_text(' ',strip=True) if company else 'Company not listed','job_url':url,'location':loc.get_text(' ',strip=True) if loc else '', 'description':'','source':'LinkedIn','source_url':url,'posted_at':card.select_one('time').get('datetime') if card.select_one('time') else None,'requisition_id':re.search(r'(\d+)$',url).group(1) if re.search(r'(\d+)$',url) else None,'employment_type':'Full-time','description_incomplete':True})
     return list({j['job_url']:j for j in jobs}.values())
 
 def linkedin_detail(job):
@@ -100,7 +100,7 @@ def jsonld_jobs(markup,source='HiringCafe',page_url='https://hiringcafe.com/'):
                 if node.get('jobLocationType')=='TELECOMMUTE':locations.append('Remote')
                 url=urljoin(page_url,node.get('url',''))
                 if urlparse(url).scheme!='https' or not node.get('title'):return
-                found.append({'job_title':clean(node['title']),'company_name':clean(organization.get('name','Company not listed')) if isinstance(organization,dict) else clean(organization),'job_url':url,'location':' · '.join(locations),'description':clean(node.get('description','')),'employment_type':employment(node.get('employmentType','Full-time')),'source':source,'source_url':page_url})
+                found.append({'job_title':clean(node['title']),'company_name':clean(organization.get('name','Company not listed')) if isinstance(organization,dict) else clean(organization),'job_url':url,'location':' · '.join(locations),'description':clean(node.get('description','')),'employment_type':employment(node.get('employmentType','Full-time')),'source':source,'source_url':page_url,'posted_at':node.get('datePosted'),'requisition_id':node.get('identifier',{}).get('value') if isinstance(node.get('identifier'),dict) else node.get('identifier')})
             for value in node.values():
                 if isinstance(value,(dict,list)):walk(value)
     for script in soup.select('script[type="application/ld+json"], script#__NEXT_DATA__'):
@@ -111,7 +111,7 @@ def jsonld_jobs(markup,source='HiringCafe',page_url='https://hiringcafe.com/'):
 def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
     if provider in {'arbeitnow','arbeitnow_uk'}:
         host='www.arbeitnow.co.uk' if provider=='arbeitnow_uk' else 'www.arbeitnow.com'
-        key=provider+'-feed';rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
+        key=provider+'-feed-v2';rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
         if rows and time.time()-rows[0]['fetched_at']<21600:raw=json.loads(rows[0]['payload'])
         else:
             raw=[]
@@ -120,7 +120,7 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
                 raw.extend(batch)
                 if len(batch)<100:break
             db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
-        result=[{'job_title':j['title'],'company_name':j['company_name'],'description':clean(j.get('description','')),'job_url':j['url'],'source_url':j['url'],'location':j.get('location','')+(' · Remote' if j.get('remote') else ''),'source':'Arbeitnow UK' if provider=='arbeitnow_uk' else 'Arbeitnow','employment_type':'Not specified'} for j in raw]
+        result=[{'job_title':j['title'],'company_name':j['company_name'],'description':clean(j.get('description','')),'job_url':j['url'],'source_url':j['url'],'location':j.get('location','')+(' · Remote' if j.get('remote') else ''),'source':'Arbeitnow UK' if provider=='arbeitnow_uk' else 'Arbeitnow','posted_at':j.get('created_at'),'employment_type':'Not specified'} for j in raw]
         return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in keywords.lower().split())][:limit]
     if provider=='smartrecruiters':
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}',board):raise ValueError('Enter a SmartRecruiters company identifier.')
@@ -134,17 +134,17 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
             id=card['id']
             if not re.fullmatch(r'[A-Za-z0-9_-]+',id):raise SourceUnavailable('Invalid posting ID.')
             d=public_get(base+'/'+id).json();loc=d.get('location',{})
-            return {'job_title':d['name'],'company_name':d.get('company',{}).get('name',board),'job_url':d.get('applyUrl') or 'https://jobs.smartrecruiters.com/'+board+'/'+id,'description':'\n'.join(clean(v.get('text','')) for v in d.get('jobAd',{}).get('sections',{}).values() if isinstance(v,dict)),'location':', '.join(str(loc[k]) for k in ['city','region','country'] if loc.get(k))+(' · Remote' if loc.get('remote') else ''),'employment_type':employment(d.get('typeOfEmployment',{}).get('label','Not specified')),'source':'SmartRecruiters','source_url':'https://jobs.smartrecruiters.com/'+board+'/'+id}
+            return {'job_title':d['name'],'company_name':d.get('company',{}).get('name',board),'job_url':d.get('applyUrl') or 'https://jobs.smartrecruiters.com/'+board+'/'+id,'description':'\n'.join(clean(v.get('text','')) for v in d.get('jobAd',{}).get('sections',{}).values() if isinstance(v,dict)),'location':', '.join(str(loc[k]) for k in ['city','region','country'] if loc.get(k))+(' · Remote' if loc.get('remote') else ''),'employment_type':employment(d.get('typeOfEmployment',{}).get('label','Not specified')),'source':'SmartRecruiters','requisition_id':d.get('refNumber') or id,'posted_at':d.get('releasedDate') or card.get('releasedDate'),'source_url':'https://jobs.smartrecruiters.com/'+board+'/'+id}
         with ThreadPoolExecutor(max_workers=2) as pool:return list(pool.map(detail,cards))
 
     if provider in {'remoteok','wwr'}:
-        key=provider+'-full-feed'
+        key=provider+'-full-feed-v2'
         rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
         if rows and time.time()-rows[0]['fetched_at']<21600:result=json.loads(rows[0]['payload'])
         else:
             if provider=='remoteok':
                 raw=public_get('https://remoteok.com/api').json()
-                result=[{'company_name':j['company'],'job_title':j['position'],'job_url':j['url'],'description':clean(j.get('description','')),'location':j.get('location','')+' · Remote','source':'Remote OK','source_url':j['url'],'employment_type':'Not specified'} for j in raw if j.get('position') and j.get('company') and urlparse(j.get('url','')).scheme=='https' and urlparse(j.get('url','')).hostname=='remoteok.com']
+                result=[{'company_name':j['company'],'job_title':j['position'],'job_url':j['url'],'description':clean(j.get('description','')),'location':j.get('location','')+' · Remote','source':'Remote OK','posted_at':j.get('date') or j.get('epoch'),'requisition_id':str(j['id']) if j.get('id') else None,'source_url':j['url'],'employment_type':'Not specified'} for j in raw if j.get('position') and j.get('company') and urlparse(j.get('url','')).scheme=='https' and urlparse(j.get('url','')).hostname=='remoteok.com']
             else:
                 markup=public_get('https://weworkremotely.com/remote-jobs.rss').text
                 result=wwr_jobs(markup)
@@ -156,15 +156,15 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
     if provider=='ashby':
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}',board):raise ValueError('Enter an Ashby company board slug.')
         response=public_get(f'https://api.ashbyhq.com/posting-api/job-board/{board}')
-        return [{'company_name':board,'job_title':j['title'],'job_url':j.get('applyUrl') or j['jobUrl'],'description':j.get('descriptionPlain',''),'location':j.get('location','')+(' · Remote' if j.get('isRemote') else ''),'employment_type':employment(j.get('employmentType')),'source':'Ashby','source_url':j['jobUrl']} for j in response.json().get('jobs',[]) if j.get('isListed',True)][:1000]
+        return [{'company_name':board,'job_title':j['title'],'job_url':j.get('applyUrl') or j['jobUrl'],'description':j.get('descriptionPlain',''),'location':j.get('location','')+(' · Remote' if j.get('isRemote') else ''),'employment_type':employment(j.get('employmentType')),'source':'Ashby','posted_at':j.get('publishedAt'),'requisition_id':j.get('id'),'source_url':j['jobUrl']} for j in response.json().get('jobs',[]) if j.get('isListed',True)][:1000]
     if provider=='remotive':
         # Cache the complete public feed so changing a query never exceeds the advised four calls/day.
-        key='remotive-full-feed';rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
+        key='remotive-full-feed-v2';rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
         if rows and time.time()-rows[0]['fetched_at']<21600:raw=json.loads(rows[0]['payload'])
         else:
             raw=public_get('https://remotive.com/api/remote-jobs').json().get('jobs',[])
             db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
-        result=[{'company_name':j['company_name'],'job_title':j['title'],'job_url':j['url'],'description':clean(j.get('description','')),'location':j.get('candidate_required_location','Worldwide')+' · Remote','employment_type':employment(j.get('job_type')),'salary_text':j.get('salary',''),'source':'Remotive','source_url':j['url']} for j in raw]
+        result=[{'company_name':j['company_name'],'job_title':j['title'],'job_url':j['url'],'description':clean(j.get('description','')),'location':j.get('candidate_required_location','Worldwide')+' · Remote','employment_type':employment(j.get('job_type')),'salary_text':j.get('salary',''),'source':'Remotive','posted_at':j.get('publication_date'),'requisition_id':str(j['id']) if j.get('id') else None,'source_url':j['url']} for j in raw]
         words=keywords.lower().split()
         return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in words)][:limit]
     if provider=='linkedin':
@@ -188,11 +188,11 @@ def wwr_jobs(markup):
         url=item.findtext('link','').strip()
         if urlparse(url).scheme!='https' or urlparse(url).hostname not in {'weworkremotely.com','www.weworkremotely.com'}:continue
         region=next((child.text or '' for child in item if child.tag.split('}')[-1]=='region'),'')
-        result.append({'company_name':company.strip() if separator else 'Company not listed','job_title':role.strip() if separator else title,'job_url':url,'description':clean(item.findtext('description','')),'location':region+' · Remote','employment_type':'Not specified','source':'We Work Remotely','source_url':url})
+        result.append({'company_name':company.strip() if separator else 'Company not listed','job_title':role.strip() if separator else title,'job_url':url,'description':clean(item.findtext('description','')),'location':region+' · Remote','employment_type':'Not specified','source':'We Work Remotely','posted_at':item.findtext('pubDate'),'source_url':url})
     return result
 
 def discover(provider,**kwargs):
-    key=hashlib.sha256(json.dumps([provider,kwargs],sort_keys=True).encode()).hexdigest()
+    key=hashlib.sha256(json.dumps(['metadata-v2',provider,kwargs],sort_keys=True).encode()).hexdigest()
     rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
     ttl=21600 if provider=='remotive' else 900
     if rows and time.time()-rows[0]['fetched_at']<ttl:

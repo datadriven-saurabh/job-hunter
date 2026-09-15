@@ -35,6 +35,12 @@ def contains(text, term):
 def detected(text):
     return {skill for skill,aliases in SKILLS.items() if any(contains(text,a) for a in aliases)}
 
+def affirmed_skills(text):
+    """Conservatively omit negated/aspirational clauses from candidate evidence."""
+    clauses=re.split(r'\n|(?<=[.!?])\s+|\bbut\b|;',text,flags=re.I)
+    return set().union(*(detected(c) for c in clauses if not re.search(r"\b(?:not(?! only)|never|no experience|without experience|haven.t|have not|want to learn|plan to learn|interested in learning)\b",c,re.I)))
+
+
 def family(title):
     t=title.lower()
     if re.search(r'analytics? engineer',t):return 'analytics engineering'
@@ -56,6 +62,8 @@ def profile_evidence(profile):
     r=profile['base_resume'];items=[]
     for e in r.get('experience_history',[]):
         for bullet in e.get('bullet_points',[]):items.append((e['role']+' at '+e['company'],bullet))
+        for a in e.get('achievements',[]):
+            if a.get('verified'):items.append((e['role']+' at '+e['company'],' '.join([a['outcome'],a['measurement'],a['method']])))
     items += [('Profile summary',r.get('raw_text','')),('Listed skills',', '.join(r.get('structured_skills',[])))]
     return items
 
@@ -84,9 +92,9 @@ def exclusions(job, criteria):
 def assess(job, profile, criteria):
     jd=job.get('description','');title=job['job_title'];evidence=profile_evidence(profile)
     # Description drives requirements; title alone cannot establish skill coverage.
-    requirements=detected(jd);available=detected('\n'.join(t for _,t in evidence))
+    requirements=detected(jd);available=affirmed_skills('\n'.join(t for _,t in evidence))
     lines_with_skills=[(line,detected(line)) for line in re.split(r"\n|(?<=[.!?])\s+",jd)]
-    evidence_with_skills=[(source,text,detected(text)) for source,text in evidence]
+    evidence_with_skills=[(source,text,affirmed_skills(text)) for source,text in evidence]
     rows=[]
     for skill in sorted(requirements):
         lines=[line for line,skills in lines_with_skills if skill in skills]

@@ -128,3 +128,9 @@ Use a fresh GitHub download or the source-only release ZIP. **Do not zip and sha
 ## Get help
 
 Check [Troubleshooting](docs/TROUBLESHOOTING.md). If you open a GitHub issue, include your OS, whether you used Docker or native setup, and the relevant error message. Remove emails, phone numbers, resumes, tokens and other personal details from logs and screenshots before sharing them.
+
+## Evidence-based application kits
+
+Application Studio now generates one-page ATS resumes, cover letters, LinkedIn referral drafts and answers to application questions. It uses your verified achievements and stories, shows missing facts, and blocks exports that fail the required format or length. Job details include source, posting freshness and explicit visa-sponsorship evidence. Optional local model tiers add staged job analysis.
+
+Follow the [Career engine guide](docs/CAREER_ENGINE.md) for a step-by-step workflow, model setup, validation limits, API routes and privacy details. The fixed resume reference uses synthetic information; your own uploads and generated documents stay in your ignored local data folder.

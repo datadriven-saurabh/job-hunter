@@ -1,0 +1,145 @@
+{
+  "user_id": "local",
+  "personal_details": {
+    "full_name": "Alex Morgan",
+    "email": "alex@example.com",
+    "phone": "+1 555 010 2048",
+    "location": "San Francisco, CA",
+    "linkedin_url": "https://linkedin.com/in/example",
+    "github_url": null,
+    "portfolio_url": "https://example.com/alex",
+    "work_authorization": "Not specified \u2014 update before applying"
+  },
+  "base_resume": {
+    "raw_text": "Software engineer with experience developing web applications, internal reporting tools and data workflows for cross-functional teams. Background includes TypeScript, React, Python, SQL and PostgreSQL, with documented work on application performance, testing and operational reporting. Experience spans implementation, maintenance and collaboration with product stakeholders, translating practical requirements into reliable interfaces and repeatable processes while measuring delivery outcomes against agreed project goals.",
+    "structured_skills": [
+      "TypeScript",
+      "React",
+      "Python",
+      "SQL",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "experience_history": [
+      {
+        "company": "Example Studio",
+        "role": "Software Engineer",
+        "start_date": "2022-01",
+        "end_date": "Present",
+        "bullet_points": [
+          "Reduced page load time, as measured by 35% lower page load time, by optimizing React rendering and database queries while reviewing the most frequently used application screens, comparing repeatable performance measurements and coordinating changes with the team responsible for maintaining those screens.",
+          "Built internal reporting tools, as measured by 20 team members using the reporting tools, by developing TypeScript interfaces and Python services backed by PostgreSQL, documenting the expected inputs and outputs, and working through review feedback with the people responsible for recurring operational reports.",
+          "Automated recurring data checks, as measured by 12 recurring data checks running each day, by writing Python and SQL validation routines for the reporting workflow, recording exceptions for manual review and documenting how the team could investigate inconsistent source records before publishing its reports.",
+          "Improved regression coverage, as measured by 24 repeatable checks for application workflows, by adding tests for React interfaces and Python service behavior, reviewing the expected outcomes with product colleagues and maintaining clear fixtures that covered both successful requests and common validation failures.",
+          "Delivered interface improvements, as measured by 8 reviewed application screens released, by implementing accessible React components with TypeScript, validating their behavior against agreed requirements, documenting interaction states and resolving review comments before integrating the changes into the existing application workflow."
+        ],
+        "achievements": [
+          {
+            "outcome": "Reduced page load time",
+            "measurement": "35% lower page load time",
+            "method": "optimizing React rendering and database queries while reviewing the most frequently used application screens, comparing repeatable performance measurements and coordinating changes with the team responsible for maintaining those screens",
+            "verified": true
+          },
+          {
+            "outcome": "Built internal reporting tools",
+            "measurement": "20 team members using the reporting tools",
+            "method": "developing TypeScript interfaces and Python services backed by PostgreSQL, documenting the expected inputs and outputs, and working through review feedback with the people responsible for recurring operational reports",
+            "verified": true
+          },
+          {
+            "outcome": "Automated recurring data checks",
+            "measurement": "12 recurring data checks running each day",
+            "method": "writing Python and SQL validation routines for the reporting workflow, recording exceptions for manual review and documenting how the team could investigate inconsistent source records before publishing its reports",
+            "verified": true
+          },
+          {
+            "outcome": "Improved regression coverage",
+            "measurement": "24 repeatable checks for application workflows",
+            "method": "adding tests for React interfaces and Python service behavior, reviewing the expected outcomes with product colleagues and maintaining clear fixtures that covered both successful requests and common validation failures",
+            "verified": true
+          },
+          {
+            "outcome": "Delivered interface improvements",
+            "measurement": "8 reviewed application screens released",
+            "method": "implementing accessible React components with TypeScript, validating their behavior against agreed requirements, documenting interaction states and resolving review comments before integrating the changes into the existing application workflow",
+            "verified": true
+          }
+        ]
+      },
+      {
+        "company": "Example Labs",
+        "role": "Software Developer",
+        "start_date": "2020-01",
+        "end_date": "2021-12",
+        "location": "Remote",
+        "bullet_points": [
+          "Streamlined reporting preparation, as measured by 6 recurring reports prepared through a shared workflow, by consolidating SQL queries and Python processing steps, recording the assumptions behind each output, and providing a consistent review process for colleagues responsible for checking the resulting operational summaries.",
+          "Reduced manual report preparation, as measured by 25% less preparation time, by replacing repeated spreadsheet operations with documented SQL queries, comparing the generated outputs with the previous reports and working with the reporting team to resolve differences before routine use.",
+          "Established operational documentation, as measured by 10 documented support procedures, by recording reproducible investigation steps for recurring application issues, reviewing those procedures with the support team and linking each procedure to its expected input, output and escalation decision."
+        ],
+        "achievements": [
+          {
+            "outcome": "Streamlined reporting preparation",
+            "measurement": "6 recurring reports prepared through a shared workflow",
+            "method": "consolidating SQL queries and Python processing steps, recording the assumptions behind each output, and providing a consistent review process for colleagues responsible for checking the resulting operational summaries",
+            "verified": true
+          },
+          {
+            "outcome": "Reduced manual report preparation",
+            "measurement": "25% less preparation time",
+            "method": "replacing repeated spreadsheet operations with documented SQL queries, comparing the generated outputs with the previous reports and working with the reporting team to resolve differences before routine use",
+            "verified": true
+          },
+          {
+            "outcome": "Established operational documentation",
+            "measurement": "10 documented support procedures",
+            "method": "recording reproducible investigation steps for recurring application issues, reviewing those procedures with the support team and linking each procedure to its expected input, output and escalation decision",
+            "verified": true
+          }
+        ]
+      }
+    ],
+    "education": [
+      {
+        "institution": "Example University",
+        "degree": "BSc",
+        "field_of_study": "Computer Science",
+        "graduation_year": "2021"
+      }
+    ],
+    "languages": [
+      {
+        "language": "English",
+        "level": "Professional"
+      }
+    ],
+    "certifications": [],
+    "story_bank": [
+      {
+        "story_id": "example-reporting",
+        "title": "Improving reporting preparation",
+        "competencies": [
+          "process_improvement",
+          "problem_solving",
+          "stakeholder_management"
+        ],
+        "situation": "I supported a reporting team that repeatedly prepared the same operational summaries using manual spreadsheet steps. The process made it difficult to repeat checks consistently.",
+        "task": "I was asked to make the preparation workflow repeatable while preserving the outputs the reporting team relied on.",
+        "actions": [
+          "I mapped the recurring spreadsheet operations to their source records and expected outputs.",
+          "I replaced repeated operations with documented SQL queries and compared the results with the previous reports.",
+          "I worked with the reporting team to investigate differences and recorded the assumptions behind the shared workflow."
+        ],
+        "result": "The change reduced report preparation time by 25% and gave the team a documented process for reviewing future outputs.",
+        "metrics": [
+          "25%"
+        ],
+        "tools": [
+          "SQL"
+        ],
+        "verified": true
+      }
+    ]
+  },
+  "eeo_demographics": null
+}

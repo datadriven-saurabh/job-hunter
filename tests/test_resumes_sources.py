@@ -31,10 +31,7 @@ def test_upload_recommend_choose_and_prepare():
         assert c.post(f'/api/v1/applications/{id}/resume',json={'resume_id':aid}).status_code==200
         assert c.post('/api/v1/applications/batch-apply',json=[id]).status_code==200
         doc=c.get(f'/api/v1/applications/{id}/document/resume')
-        assert doc.content.startswith(b'%PDF')
-        from pypdf import PdfReader
-        text=' '.join(p.extract_text() for p in PdfReader(io.BytesIO(doc.content)).pages)
-        assert 'Tableau' in text and 'React' not in text and 'Example Studio' not in text
+        assert doc.status_code == 404  # Unreviewed uploads cannot bypass the required template.
         assert c.get(f'/api/v1/resumes/{aid}/download').content==DATA_RESUME
         assert c.post(f'/api/v1/applications/{id}/resume',json={'resume_id':bid}).status_code==200
         assert db.get_job(id)['status']=='MATCHED'

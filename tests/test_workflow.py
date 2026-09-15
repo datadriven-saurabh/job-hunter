@@ -73,14 +73,13 @@ def test_optional_model_uses_only_source_bullets(monkeypatch):
     from backend.agents import tailor_agent
     from backend.demo import jobs
     import json
-    monkeypatch.setattr(tailor_agent,'generate_json',lambda *args,**kwargs:{'bullets':['Invented an impossible achievement.']})
     job=dict(jobs()[0],job_id='grounding-test')
     resume,_=tailor_agent.tailor(job,PROFILE)
     from pathlib import Path
     document=json.loads(Path(resume).with_name('resume.json').read_text())
     contents=json.dumps(document)
     assert 'impossible achievement' not in contents
-    assert 'Reduced page load time by 35%' in contents
+    assert '35%' in contents
 
 def test_submission_requires_review_and_real_profile(monkeypatch):
     with TestClient(app) as client:

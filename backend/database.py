@@ -43,6 +43,8 @@ def applications():
     rows = query('SELECT * FROM application_records ORDER BY match_score DESC')
     from backend.services.job_matching import assess
     current_profile=profile();current_config=config()
+    from backend.ai.router import settings
+    ai_settings=settings() if current_config else None
     for r in rows:
         r['submission_logs'] = json.loads(r.pop('submission_logs_json'))
         r['extracted_form_fields'] = json.loads(r['extracted_form_fields']) if r['extracted_form_fields'] else None
@@ -55,6 +57,10 @@ def applications():
         if current_profile and current_config:
             r['fit_analysis']=assess(r,current_profile,current_config['job_search_criteria'])
             r['match_score']=r['fit_analysis']['score']/100
+            from backend.services.job_intelligence import enrich, ranking
+            enriched=enrich(r,r)
+            for key in ['source','source_url','posted_at','posted_at_precision','first_seen_at','requisition_id','visa_status','visa_evidence','visa_source','visa_confidence','visa_conflict','visa_note','language_requirements']:r[key]=enriched[key]
+            r['application_priority']=ranking(r,current_profile,r['fit_analysis']['score'],ai_settings)
     return sorted(rows,key=lambda r:r['match_score'],reverse=True)
 
 def get_job(job_id):

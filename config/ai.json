@@ -1,0 +1,49 @@
+{
+  "version": "career-pipeline-v1",
+  "tiers": {
+    "small": "qwen2.5:1.5b",
+    "medium": null,
+    "strong": null,
+    "embedding": "nomic-embed-text"
+  },
+  "tasks": {
+    "job_extraction": "small",
+    "question_classification": "small",
+    "scoring": "medium",
+    "deep_analysis": "strong",
+    "sponsorship_review": "strong",
+    "resume_strategy": "strong",
+    "resume_writing": "medium",
+    "outreach": "medium",
+    "application_answer": "medium",
+    "embeddings": "embedding",
+    "profile_extraction": "small"
+  },
+  "thresholds": {
+    "minimum_initial_score": 55,
+    "high_value_score": 80,
+    "low_confidence": 0.7,
+    "maximum_deep_reviews": 3
+  },
+  "freshness": {
+    "preferred_days": 7,
+    "maximum_days": 30
+  },
+  "priority_weights": {
+    "fit": 0.8,
+    "freshness": 0.15,
+    "source": 0.05
+  },
+  "evaluation_weights": {
+    "skills_score": 0.4,
+    "experience_score": 0.2,
+    "domain_score": 0.1,
+    "seniority_score": 0.1,
+    "language_score": 0.1,
+    "location_score": 0.1
+  },
+  "maximum_jobs_per_analysis": 10,
+  "timeout_seconds": 45,
+  "context_tokens": 16384,
+  "output_tokens": 1800
+}

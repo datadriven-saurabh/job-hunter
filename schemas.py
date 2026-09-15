@@ -46,6 +46,32 @@ class PersonalDetails(BaseModel):
     portfolio_url: Optional[str] = None
     work_authorization: str = Field(..., description="e.g., US Citizen, EU Visa, H1B")
 
+class AchievementEvidence(BaseModel):
+    outcome: str = Field(min_length=3, max_length=500)
+    measurement: str = Field(min_length=1, max_length=300)
+    method: str = Field(min_length=3, max_length=700)
+    verified: bool = False
+
+class LanguageSkill(BaseModel):
+    language: str = Field(min_length=1,max_length=60)
+    level: str = Field(min_length=1,max_length=60)
+
+class CandidateStory(BaseModel):
+    story_id: str = Field(min_length=1,max_length=100)
+    title: str = Field(min_length=1,max_length=200)
+    competencies: List[str] = Field(default_factory=list,max_length=20)
+    situation: str = Field(default='',max_length=2000)
+    task: str = Field(default='',max_length=1000)
+    actions: List[str] = Field(default_factory=list,max_length=20)
+    result: str = Field(default='',max_length=2000)
+    metrics: List[str] = Field(default_factory=list,max_length=20)
+    tools: List[str] = Field(default_factory=list,max_length=30)
+    stakeholders: List[str] = Field(default_factory=list,max_length=20)
+    domain: str = Field(default='',max_length=200)
+    role_context: str = Field(default='',max_length=200)
+    verified: bool = False
+    occurred_at: Optional[str] = None
+
 class ExperienceItem(BaseModel):
     @field_validator('start_date','end_date')
     @classmethod
@@ -65,6 +91,8 @@ class ExperienceItem(BaseModel):
     start_date: str  # Format: YYYY-MM
     end_date: str    # Format: YYYY-MM or Present
     bullet_points: List[str]
+    location: str = ""
+    achievements: List[AchievementEvidence] = Field(default_factory=list,max_length=20)
 
 class EducationItem(BaseModel):
     @field_validator('graduation_year')
@@ -94,6 +122,9 @@ class BaseResume(BaseModel):
     structured_skills: List[str]
     experience_history: List[ExperienceItem]
     education: List[EducationItem]
+    certifications: List[str] = Field(default_factory=list,max_length=30)
+    languages: List[LanguageSkill] = Field(default_factory=list,max_length=20)
+    story_bank: List[CandidateStory] = Field(default_factory=list,max_length=40)
 
 class UserProfile(BaseModel):
     user_id: str
@@ -133,6 +164,14 @@ class LLMProviderConfig(BaseModel):
         if parsed.scheme not in {"http", "https"} or parsed.hostname not in {"localhost", "127.0.0.1", "::1"} or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ValueError("The local model URL must use a loopback address.")
         return value
+
+    model_tiers: Dict[str,str] = Field(default_factory=dict)
+
+    @field_validator("model_tiers")
+    @classmethod
+    def validate_tiers(cls,values):
+        if any(k not in {"small","medium","strong","embedding"} or not v or len(v)>100 for k,v in values.items()): raise ValueError("Use small, medium, strong and embedding model names.")
+        return values
 
     primary_model: str = "gemini-2.5-flash"
     reasoning_model: str = "qwen3:4b"
