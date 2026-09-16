@@ -101,8 +101,9 @@ def update_routing(body:RoutingUpdate):
     saved=db.config()
     if not saved:raise HTTPException(400,'Save your profile first.')
     installed={m['name'] for m in tags()}
-    if any(value not in installed for value in body.model_tiers.values()):raise HTTPException(400,'Choose installed models for every tier.')
-    try:value=LLMProviderConfig(**{**saved['llm_provider_config'],'model_tiers':body.model_tiers}).model_dump()
+    normalized={key:name if name in installed else name+':latest' for key,name in body.model_tiers.items()}
+    if any(value not in installed for value in normalized.values()):raise HTTPException(400,'Choose installed models for every tier.')
+    try:value=LLMProviderConfig(**{**saved['llm_provider_config'],'model_tiers':normalized}).model_dump()
     except ValueError:raise HTTPException(422,'Invalid model tier configuration.')
     db.execute('UPDATE system_config SET llm_config_json=:value WHERE user_id=:id',{'value':json.dumps(value),'id':'local'})
     return settings()

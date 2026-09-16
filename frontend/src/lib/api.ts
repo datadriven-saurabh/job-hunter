@@ -1,6 +1,7 @@
 export const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export async function api<T = any>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const response = await fetch(`${BASE}/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json' }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+  const revision = path === '/profile' && method === 'POST' && body && typeof body === 'object' && '_revision' in body ? String(body._revision) : null;
+  const response = await fetch(`${BASE}/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json', ...(revision ? {'If-Match': revision} : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
   if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(typeof data.detail === 'string' ? data.detail : 'Please check the form values and try again.'); }
   return response.json();
 }

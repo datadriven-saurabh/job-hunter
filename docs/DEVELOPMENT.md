@@ -27,7 +27,7 @@ On Windows replace the Python executable with `.\.venv\Scripts\python.exe`. Test
 
 ## Add a source
 
-Use an official public API/feed where available. Implement and register adapters in `backend/agents/job_sources.py`, update the discovery UI's source options and add parser/filter tests with synthetic fixtures. Include bounded requests, timeouts, caching, useful errors, source URLs and deduplication. Distinguish fetched jobs from matching jobs. Do not turn access failures into successful empty caches, claim a directory link is an integration, or add cookies/credentials to code.
+Use an official public API/feed where available. Implement and register adapters in `backend/agents/job_sources.py` and add parser/filter tests with synthetic fixtures. The discovery UI reads the registered source catalog automatically. Include bounded requests, timeouts, caching, useful errors, source URLs and deduplication. Distinguish fetched jobs from matching jobs. Do not turn access failures into successful empty caches, claim a directory link is an integration, or add cookies/credentials to code.
 
 ## Share changes
 
@@ -38,3 +38,15 @@ The current app is intended for separate local installations. Converting it into
 ## Security checks
 
 Python dependencies are bounded by `requirements.txt` and pinned in `constraints.txt`; JavaScript uses `frontend/package-lock.json`. After a planned upgrade, run the tests, regenerate constraints in a clean Python environment, and audit both sets with `pip-audit -r requirements.txt` and `npm --prefix frontend audit`. Install the PyPA `pip-audit` tool in a separate audit environment. Never copy a developer virtual environment into a tester release. See [review scope and limitations](SECURITY_REVIEW.md).
+
+## Full browser regression run
+
+```sh
+npm --prefix frontend run build
+RUN_BROWSER_TESTS=1 .venv/bin/python -m pytest -q
+node --test frontend/tests/*.test.mjs
+```
+
+The browser suite starts its own frontend and API on temporary localhost ports with a synthetic database. All employer navigation is blocked. It exercises real HTTP resume upload, preparation, Studio, coaching, deletion/restoration and pagination. Its expanded CORS origin exists only in the test wrapper, not in the distributed API.
+
+Source availability: `/api/v1/jobs/sources` returns active automatic sources. Add `?include_unavailable=true` to include the manual directory and availability reasons. Confirmed unavailable sites are documented in `MANUAL_ONLY`; fresh access blocks use a per-source one-hour suspension in the local cache. Keep blocked sites out of automatic selection, retain existing opportunities and never mistake HTTP success for successful job extraction.

@@ -117,7 +117,7 @@ Use a separate folder and OS account for each person on a shared computer. The a
 
 ## Current scope
 
-Public sources include LinkedIn guest listings, Remotive, Remote OK, We Work Remotely, Arbeitnow Europe/UK, and Greenhouse, Lever, Ashby and SmartRecruiters company boards. HiringCafe public-page extraction can be blocked. Other directory entries open in your browser for manual import. Sources may be unavailable or provide limited snapshots; logging into a website does not connect its private data to this app.
+Automatic discovery includes 23 sources: public feeds and pages plus four company-board APIs. New adapters cover Berlin Startup Jobs, EU-Startups, Relocate.me, JobFluent, Working Nomads and the HV Capital, Earlybird and Point Nine job boards. Wellfound, Built In, Y Combinator and Workable also expose public postings. The directory lists all 34 boards, including blocked/sign-in sites for manual import. Known HTTP 403 sources are excluded from automatic search; new access blocks pause a source for one hour across all keyword searches. Availability varies, and each source provides a limited snapshot. [Source checks and limitations](docs/PRODUCT_REVIEW.md#public-source-checks).
 
 Contact suggestions are names found in job text or search leads, not a verified LinkedIn connection graph. Resume generation uses supplied facts and checks the PDF is one page; it does not guarantee acceptance by every ATS. Local matching has a finite skills vocabulary and requires human review of eligibility and qualifications.
 
@@ -140,3 +140,7 @@ Follow the [Career engine guide](docs/CAREER_ENGINE.md) for a step-by-step workf
 Use the **Sort opportunities by** dropdown to order matches by score, posting date/time, source, location, company, or application priority. Choose ascending or descending order; missing values stay last.
 
 Click an opportunity's trash icon, or select rows and choose **Delete selected**, to remove unwanted openings from your dashboard. Only the visible page is included by Select all. Deleted openings can be restored from **Deleted opportunities** beneath the table, including after restarting the app. The same saved opening stays deleted if a search finds it again. Prepared documents remain on your computer. Opportunities currently being prepared or submitted cannot be deleted until that operation finishes.
+
+### Latest product review
+
+See the [product review](docs/PRODUCT_REVIEW.md) for tested workflows, source-by-source live results, fixes and remaining limitations. Searches skip previously saved jobs, and the multi-source picker covers all directory entries. Blocked websites are reported explicitly. ChatGPT subscription access to Codex does not provide app API credits; optional OpenRouter models require a separate integration and are not enabled by default.

@@ -30,8 +30,10 @@ async def run_batch(ids, submit=False):
                     resume,cover=job['tailored_resume_path'],job['tailored_cover_letter_path']
                 else:
                     resume,cover=await asyncio.to_thread(tailor,job,profile)
-                db.execute("UPDATE application_records SET status='TAILORED',tailored_resume_path=:resume,tailored_cover_letter_path=:cover WHERE job_id=:id",{'id':job_id,'resume':resume,'cover':cover})
-                log(job_id,'SUCCESS','Using reviewed documents' if submit else 'Prepared documents from the selected resume')
+                # Keep the reservation until browser execution ends; selection/deletion
+                # must not race a submission using the reviewed document paths.
+                db.execute("UPDATE application_records SET tailored_resume_path=:resume,tailored_cover_letter_path=:cover WHERE job_id=:id",{'id':job_id,'resume':resume,'cover':cover})
+                log(job_id,'SUCCESS','Using reviewed documents' if submit else 'Prepared documents from verified profile facts')
                 if not submit or job.get('demo') or os.getenv('ENABLE_LIVE_SUBMISSION')!='true' or not config['execution_preferences']['enable_headless_auto_apply'] or job['classification']!='HEADLESS_AUTO':
                     log(job_id,'NEEDS_HUMAN','Documents ready for review; use the application link and extension')
                     continue
@@ -51,21 +53,25 @@ async def run_batch(ids, submit=False):
                         await page.goto(job['job_url'],wait_until='domcontentloaded',timeout=30000)
                         if await page.locator('iframe[src*="captcha"],input[type="password"],iframe[src*="challenges.cloudflare"]').count():
                             log(job_id,'NEEDS_HUMAN','Authentication or CAPTCHA requires browser assistance');continue
-                        outcome=await fill_and_submit(page,fields(profile),resume)
+                        outcome=await fill_and_submit(page,fields(profile),resume,
+                            before_submit=lambda: log(job_id,'NEEDS_HUMAN','Submission attempt started; outcome unconfirmed until the portal confirms receipt'))
                         if outcome!='SUCCESS':
                             log(job_id,'NEEDS_HUMAN',outcome);continue
                         db.execute("UPDATE application_records SET status='APPLIED',updated_at=CURRENT_TIMESTAMP WHERE job_id=:id",{'id':job_id})
                         log(job_id,'SUCCESS','Application submission confirmed by portal')
                     finally: await browser.close()
             except Exception as exc:
-                # A failed job remains retryable, without claiming a submission occurred.
-                db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NULL THEN 'MATCHED' ELSE 'TAILORED' END WHERE job_id=:id",{'id':job_id})
+                # Release unfinished work without downgrading a confirmed submission.
+                # Any unconfirmed attempt remains blocked by the submission log guard.
+                db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NULL THEN 'MATCHED' ELSE 'TAILORED' END WHERE job_id=:id AND status='QUEUED'",{'id':job_id})
                 log(job_id,'FAILED','Application preparation or execution failed',str(exc)[:400])
+            finally:
+                db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NULL THEN 'MATCHED' ELSE 'TAILORED' END WHERE job_id=:id AND status='QUEUED'",{'id':job_id})
 
 import re
 
 
-async def fill_and_submit(page, data, resume):
+async def fill_and_submit(page, data, resume, before_submit=None):
     """Shared execution path, also exercised against a local-only test form."""
     for key,selectors in MAPPINGS.items():
         for selector in selectors:
@@ -82,6 +88,10 @@ async def fill_and_submit(page, data, resume):
     submit=page.get_by_role('button',name='Submit application',exact=False)
     if await submit.count()!=1:
         return 'Could not identify a unique submission button'
+    # Persist intent before the external side effect. A crash or click timeout
+    # can otherwise lead to a duplicate application on the next attempt.
+    if before_submit:
+        before_submit()
     await submit.click()
     try: await page.get_by_text(re.compile(r'thank you for applying|application (has been )?(received|submitted)',re.I)).first.wait_for(timeout=10000)
     except Exception:

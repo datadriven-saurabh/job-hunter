@@ -29,7 +29,8 @@ def test_upload_recommend_choose_and_prepare():
         assert matches['recommended_resume_id']==aid,matches
         assert matches['matches'][0]['matched_keywords']
         assert c.post(f'/api/v1/applications/{id}/resume',json={'resume_id':aid}).status_code==200
-        assert c.post('/api/v1/applications/batch-apply',json=[id]).status_code==200
+        assert c.post('/api/v1/applications/batch-apply',json=[id]).status_code==409
+        assert db.get_job(id)['status']=='MATCHED'  # Reject before queueing any work.
         doc=c.get(f'/api/v1/applications/{id}/document/resume')
         assert doc.status_code == 404  # Unreviewed uploads cannot bypass the required template.
         assert c.get(f'/api/v1/resumes/{aid}/download').content==DATA_RESUME

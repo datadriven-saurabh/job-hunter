@@ -11,6 +11,7 @@ import httpx
 from bs4 import BeautifulSoup
 from backend import database as db
 from backend.agents.scout_agent import fetch_feed
+from backend.agents.public_boards import BOARDS, HOSTS, public_page_jobs, hackernews_jobs, workingnomads_jobs
 
 SOURCE_INFO=[
  {'id':'stepstone','name':'StepStone Germany','kind':'public-search','note':'Public German search pages and up to 10 structured postings. Access may return HTTP 403; browser/manual import remains available.'},
@@ -26,10 +27,54 @@ SOURCE_INFO=[
  {'id':'lever','name':'Lever','kind':'company-board','note':'Public company board API.'},
  {'id':'ashby','name':'Ashby','kind':'company-board','note':'Public company board API.'},
 ]
+SOURCE_INFO.extend([{'id':key,'name':value[0],'kind':'public-search','url':value[1],
+                    'note':'Public pages; up to 10 new detail pages. Limited snapshots or access blocks are reported.'} for key,value in BOARDS.items()])
+SOURCE_INFO.append({'id':'hackernews','name':'Hacker News','kind':'public-search','url':'https://news.ycombinator.com/jobs','note':'Official public jobs API, latest 50 posts. Some posts contain only a title and employer link.'})
+SOURCE_INFO.append({'id':'workingnomads','name':'Working Nomads','kind':'public-search','url':'https://www.workingnomads.com/jobs','note':'Public jobs API; limited feed snapshot cached for six hours.'})
+SOURCE_INFO.extend([
+ {'id':'germantechjobs','name':'GermanTechJobs','kind':'public-page','url':'https://germantechjobs.de'},
+ {'id':'otta','name':'Otta / Welcome to the Jungle','kind':'public-page','url':'https://uk.welcometothejungle.com/'},
+ {'id':'startupjobs','name':'Startup.jobs Germany','kind':'public-page','url':'https://startup.jobs/locations/germany'},
+ {'id':'indexventures','name':'Index Ventures','kind':'public-page','url':'https://www.indexventures.com/startup-jobs/'},
+ {'id':'hyrise','name':'Hyrise','kind':'public-page','url':'https://www.hyrise.com/'},
+])
+# Kept in the manual directory, removed from automatic searches after live checks.
+MANUAL_ONLY={
+ 'stepstone':'Public access blocked (HTTP 403).',
+ 'hiringcafe':'Public access blocked (HTTP 403).',
+ 'indeed':'Public access blocked (HTTP 403).',
+ 'glassdoor':'Public access blocked (HTTP 403).',
+ 'startupjobs':'Public access blocked (HTTP 403).',
+ 'aijobs':'Redirects to Foorilla; no readable public job records were exposed.',
+ 'google':'No public JobPosting data in the search response. Import the employer posting.',
+ 'germantechjobs':'Redirects to JobCopilot signup from this installation; no public listings.',
+ 'otta':'Job search redirects to a sign-in page.',
+ 'indexventures':'The current jobs page requires a JavaScript search integration; no public HTML postings.',
+ 'hyrise':'Talent-community recruitment site; no public job listing feed found.',
+}
+for source in SOURCE_INFO:
+    source.setdefault('url',{
+        'stepstone':'https://www.stepstone.de/jobs','linkedin':'https://www.linkedin.com/jobs',
+        'hiringcafe':'https://hiringcafe.com/','remoteok':'https://remoteok.com/',
+        'wwr':'https://weworkremotely.com/','remotive':'https://remotive.com/',
+        'arbeitnow':'https://www.arbeitnow.com/','arbeitnow_uk':'https://www.arbeitnow.co.uk/',
+        'greenhouse':'https://www.greenhouse.com/','lever':'https://www.lever.co/',
+        'ashby':'https://www.ashbyhq.com/','smartrecruiters':'https://jobs.smartrecruiters.com/',
+    }.get(source['id'],''))
 ALLOWED={'www.linkedin.com','in.linkedin.com','uk.linkedin.com','de.linkedin.com','linkedin.com','hiringcafe.com','www.hiringcafe.com','hiring.cafe','remotive.com','api.ashbyhq.com','boards-api.greenhouse.io','api.lever.co'}
 ALLOWED.update({'www.stepstone.de','stepstone.de','de.linkedin.com','fr.linkedin.com','nl.linkedin.com','ie.linkedin.com','ca.linkedin.com','au.linkedin.com','sg.linkedin.com','www.arbeitnow.com','www.arbeitnow.co.uk','api.smartrecruiters.com','remoteok.com','weworkremotely.com','www.weworkremotely.com'})
+ALLOWED.update(HOSTS)
 
 class SourceUnavailable(ValueError):pass
+
+def source_catalog(include_unavailable=False):
+    suspended={r['cache_key'].removeprefix('source-block:'):json.loads(r['payload']) for r in db.query("SELECT * FROM source_cache WHERE cache_key LIKE 'source-block:%' AND fetched_at>:cutoff",{'cutoff':time.time()-3600})}
+    result=[]
+    for source in SOURCE_INFO:
+        reason=MANUAL_ONLY.get(source['id']) or suspended.get(source['id'],{}).get('error','')
+        entry={**source,'available':not bool(reason),'note':reason or source.get('note','Public job listings.')}
+        if include_unavailable or entry['available']:result.append(entry)
+    return result
 
 def public_get(url,params=None):
     # Fixed public destinations only, with validation at every redirect.
@@ -57,6 +102,7 @@ def public_get(url,params=None):
 def clean(value):return BeautifulSoup(html.unescape(str(value or '')),'html.parser').get_text(' ',strip=True)
 
 def employment(value):
+    if isinstance(value,list):return ', '.join(employment(item) for item in value) or 'Not specified'
     return {'full_time':'Full-time','fulltime':'Full-time','full-time':'Full-time','part_time':'Part-time','parttime':'Part-time','contract':'Contract','internship':'Internship','freelance':'Freelance'}.get(str(value).lower().replace(' ',''),str(value or 'Full-time'))
 
 def linkedin_cards(markup):
@@ -70,6 +116,9 @@ def linkedin_cards(markup):
     return list({j['job_url']:j for j in jobs}.values())
 
 def linkedin_detail(job):
+    from backend.agents.scout_agent import job_id
+    saved=saved_postings().get(job_id(job['job_url']))
+    if saved:return saved
     try:
         response=public_get(job['job_url']);soup=BeautifulSoup(response.text,'html.parser')
         description=soup.select_one('.show-more-less-html__markup, .description__text')
@@ -91,7 +140,7 @@ def jsonld_jobs(markup,source='HiringCafe',page_url='https://hiringcafe.com/'):
         elif isinstance(node,dict):
             kind=node.get('@type',[])
             if kind=='JobPosting' or isinstance(kind,list) and 'JobPosting' in kind:
-                organization=node.get('hiringOrganization',{})
+                organization=node.get('hiringOrganization') or {}
                 location=node.get('jobLocation',[]);location=location if isinstance(location,list) else [location]
                 locations=[]
                 for loc in location:
@@ -99,13 +148,14 @@ def jsonld_jobs(markup,source='HiringCafe',page_url='https://hiringcafe.com/'):
                     if isinstance(address,str):locations.append(address)
                     else:locations.append(', '.join(str(address[k]) for k in ['addressLocality','addressRegion','addressCountry'] if address.get(k)))
                 if node.get('jobLocationType')=='TELECOMMUTE':locations.append('Remote')
-                url=urljoin(page_url,node.get('url',''))
-                if urlparse(url).scheme!='https' or not node.get('title'):return
-                found.append({'job_title':clean(node['title']),'company_name':clean(organization.get('name','Company not listed')) if isinstance(organization,dict) else clean(organization),'job_url':url,'location':' · '.join(locations),'description':clean(node.get('description','')),'employment_type':employment(node.get('employmentType','Full-time')),'source':source,'source_url':page_url,'posted_at':node.get('datePosted'),'requisition_id':node.get('identifier',{}).get('value') if isinstance(node.get('identifier'),dict) else node.get('identifier')})
+                url=urljoin(page_url,node.get('url') or '')
+                if urlparse(url).scheme!='https' or urlparse(url).username or not node.get('title'):return
+                found.append({'job_title':' '.join(clean(node['title']).split()),'company_name':clean(organization.get('name','Company not listed')) if isinstance(organization,dict) else clean(organization),'job_url':url,'location':' · '.join(locations),'description':clean(node.get('description','')),'employment_type':employment(node.get('employmentType','Not specified')),'source':source,'source_url':page_url,'posted_at':node.get('datePosted'),'requisition_id':node.get('identifier',{}).get('value') if isinstance(node.get('identifier'),dict) else node.get('identifier')})
             for value in node.values():
                 if isinstance(value,(dict,list)):walk(value)
     for script in soup.select('script[type="application/ld+json"], script#__NEXT_DATA__'):
-        try:walk(json.loads(script.string or script.get_text()))
+        # Some public JSON-LD embeds literal line breaks inside string values.
+        try:walk(json.loads(script.string or script.get_text(),strict=False))
         except (ValueError,TypeError):continue
     return list({j['job_url']:j for j in found}.values())
 
@@ -147,6 +197,9 @@ def stepstone_jobs(keywords='',location='',limit=20):
     return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in keywords.lower().split())][:min(limit,10)]
 
 def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
+    if provider in BOARDS:return public_page_jobs(provider,keywords,location,limit)
+    if provider=='hackernews':return hackernews_jobs(keywords,limit)
+    if provider=='workingnomads':return workingnomads_jobs(keywords,limit)
     if provider=='stepstone':return stepstone_jobs(keywords,location,limit)
     if provider in {'arbeitnow','arbeitnow_uk'}:
         host='www.arbeitnow.co.uk' if provider=='arbeitnow_uk' else 'www.arbeitnow.com'
@@ -230,23 +283,46 @@ def wwr_jobs(markup):
         result.append({'company_name':company.strip() if separator else 'Company not listed','job_title':role.strip() if separator else title,'job_url':url,'description':clean(item.findtext('description','')),'location':region+' · Remote','employment_type':'Not specified','source':'We Work Remotely','posted_at':item.findtext('pubDate'),'source_url':url})
     return result
 
+def saved_postings():
+    from backend.agents.scout_agent import job_id
+    result={}
+    for row in db.query('SELECT a.job_id,a.job_url,a.company_name,a.job_title,d.payload FROM application_records a LEFT JOIN job_details d ON d.job_id=a.job_id'):
+        item={**json.loads(row.pop('payload') or '{}'),**row}
+        result[job_id(item['job_url'])]=item
+        for alt in item.get('alternative_sources',[]):result[job_id(alt['url'])]=item
+    return result
+
 def discover(provider,**kwargs):
-    key=hashlib.sha256(json.dumps(['metadata-v2',provider,kwargs],sort_keys=True).encode()).hexdigest()
+    source=next((s for s in source_catalog(True) if s['id']==provider),None)
+    if source and not source['available']:raise SourceUnavailable(source['note']+' Automatic search is disabled; use browser/manual import.')
+    limit=kwargs.get('limit',20)
+    # Cache a candidate pool, then prefer unseen jobs before applying the display
+    # limit. Otherwise a cached first page can permanently hide new candidates.
+    options={**kwargs,'limit':1000}
+    key=hashlib.sha256(json.dumps(['metadata-v3',provider,options],sort_keys=True).encode()).hexdigest()
     rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
     ttl=21600 if provider=='remotive' else 900
     if rows and time.time()-rows[0]['fetched_at']<ttl:
         result=json.loads(rows[0]['payload'])
         if result.get('error'):raise SourceUnavailable(result['error'])
-        return result['jobs'],True
+        return _new_first(result['jobs'],limit),True
     try:
-        jobs=retrieve(provider,**kwargs)
+        jobs=retrieve(provider,**options)
         if provider in {'greenhouse','lever','ashby'}:
             words=kwargs.get('keywords','').lower().split()
-            jobs=[j for j in jobs if all(w in (j['job_title']+' '+j.get('description','')).lower() for w in words)][:kwargs.get('limit',20)]
+            jobs=[j for j in jobs if all(w in (j['job_title']+' '+j.get('description','')).lower() for w in words)]
         payload={'jobs':jobs}
     except Exception as exc:
         payload={'error':str(exc)[:500]}
+        if re.search(r'HTTP (401|403|429|999)\b',payload['error']):
+            # Suppress every query for a blocked board, not just this keyword cache.
+            db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':'source-block:'+provider,'time':time.time(),'payload':json.dumps({'error':payload['error']+' Paused for one hour.'})})
         db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(payload)})
         raise SourceUnavailable(payload['error'])
     db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(payload)})
-    return jobs,False
+    return _new_first(jobs,limit),False
+
+def _new_first(jobs,limit):
+    from backend.agents.scout_agent import job_id
+    known=set(saved_postings()) | {r['job_key'] for r in db.query('SELECT job_key FROM discovery_seen')}
+    return sorted(jobs,key=lambda j:job_id(j['job_url']) in known)[:limit]

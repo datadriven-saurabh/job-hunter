@@ -9,6 +9,7 @@ os.environ['LANGCHAIN_TRACING_V2'] = 'false'
 os.environ['LANGCHAIN_TRACING'] = 'false'
 os.environ['LANGSMITH_TRACING'] = 'false'
 import json
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Optional
@@ -17,8 +18,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from threading import Lock
-from functools import lru_cache
+from backend.state import queue_reservation, profile_write
 from pydantic import BaseModel, Field
 from schemas import UserProfile, SystemVariables, ApplicationStatus, InterviewQuestion, UserAnswerFeedback
 from backend import database as db
@@ -29,13 +29,22 @@ from backend.agents.coach_agent import questions, feedback
 from backend import demo
 from backend.resume_api import router as resume_router
 from backend.services import resumes
-from backend.agents.job_sources import SOURCE_INFO, discover as discover_source
+from backend.agents.job_sources import SOURCE_INFO, source_catalog, discover as discover_source
 
 @asynccontextmanager
 async def lifespan(app):
     db.init_db()
-    # Interrupted work is made retryable on startup.
-    db.execute("UPDATE application_records SET status='MATCHED' WHERE status='QUEUED'")
+    # Keep reviewed documents and any unconfirmed submission log after a restart.
+    db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NULL THEN 'MATCHED' ELSE 'TAILORED' END WHERE status='QUEUED'")
+    app.state.chromium_path = ''
+    async def probe_browser():
+        from playwright.async_api import async_playwright
+        async with async_playwright() as pw:
+            return pw.chromium.executable_path
+    try:
+        app.state.chromium_path = await asyncio.wait_for(probe_browser(), timeout=10)
+    except Exception:
+        pass  # Browser setup must not prevent discovery or document preparation.
     yield
 
 app=FastAPI(title='Job Hunter Orchestrator API',version='1.0.0',lifespan=lifespan)
@@ -47,7 +56,7 @@ app.include_router(model_router)
 from backend.career_api import router as career_router
 app.include_router(career_router)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost','127.0.0.1','testserver'])
-app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT'],allow_headers=['Content-Type'])
+app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT'],allow_headers=['Content-Type','If-Match'])
 
 from backend.security import LocalSecurityMiddleware
 app.add_middleware(LocalSecurityMiddleware)
@@ -70,10 +79,8 @@ def profile_ready(profile):
     p=profile['personal_details']
     return bool(p['email'].split('@')[-1] not in {'example.com','example.org','example.net'} and 'not specified' not in p['work_authorization'].lower() and not any(e['company']=='Example Studio' for e in profile['base_resume']['experience_history']))
 
-@lru_cache(maxsize=1)
 def browser_path():
-    from playwright.sync_api import sync_playwright
-    with sync_playwright() as pw: return pw.chromium.executable_path
+    return getattr(app.state, 'chromium_path', '')
 
 @app.get('/api/v1/runtime')
 def runtime():
@@ -90,16 +97,22 @@ def runtime():
     return {'model_ready':model_ready,'local_ai_enabled':os.getenv('ENABLE_LOCAL_LLM')=='true','model':model,'headless_enabled':os.getenv('ENABLE_LIVE_SUBMISSION')=='true','browser_installed':browser_ready,'profile_ready':profile_ready(db.profile())}
 
 @app.get('/api/v1/profile')
-def get_profile(): return db.profile()
+def get_profile():
+    profile = db.profile()
+    return {**profile, '_revision': db.profile_revision(profile)} if profile else None
 
 @app.post('/api/v1/profile')
-def save_profile(profile: UserProfile):
+def save_profile(profile: UserProfile, request: Request = None):
     if profile.user_id!='local': raise HTTPException(400,'This local edition uses user_id "local".')
-    p=profile.personal_details.model_dump();p.update(user_id=profile.user_id,base_resume_json=profile.base_resume.model_dump_json(),eeo_demographics_json=profile.eeo_demographics.model_dump_json() if profile.eeo_demographics else None)
-    cols=list(p)
-    db.execute(f"INSERT INTO user_profiles ({','.join(cols)}) VALUES ({','.join(':'+k for k in cols)}) ON CONFLICT(user_id) DO UPDATE SET "+','.join(f'{k}=excluded.{k}' for k in cols if k!='user_id')+',updated_at=CURRENT_TIMESTAMP',p)
-    if not db.config(): save_config(SystemVariables(**demo.CONFIG))
-    return {'status':'success','user_id':profile.user_id}
+    with profile_write:
+        expected = request.headers.get('if-match') if request else None
+        if expected and expected != db.profile_revision(db.profile()):
+            raise HTTPException(409,'Your profile changed in another editor. Reopen My profile or reload candidate evidence, then reapply your edits to the latest version.')
+        p=profile.personal_details.model_dump();p.update(user_id=profile.user_id,base_resume_json=profile.base_resume.model_dump_json(),eeo_demographics_json=profile.eeo_demographics.model_dump_json() if profile.eeo_demographics else None)
+        cols=list(p)
+        db.execute(f"INSERT INTO user_profiles ({','.join(cols)}) VALUES ({','.join(':'+k for k in cols)}) ON CONFLICT(user_id) DO UPDATE SET "+','.join(f'{k}=excluded.{k}' for k in cols if k!='user_id')+',updated_at=CURRENT_TIMESTAMP',p)
+        if not db.config(): save_config(SystemVariables(**demo.CONFIG))
+        return {'status':'success','user_id':profile.user_id,'_revision':db.profile_revision(db.profile())}
 
 @app.get('/api/v1/config')
 def get_config(): return db.config() or demo.CONFIG
@@ -127,7 +140,7 @@ def import_job(body: ImportJob):
     if parsed.scheme!='https' or not parsed.hostname or parsed.username: raise HTTPException(400,'Use a valid HTTPS application URL.')
     p=require_profile()
     result=discovery_graph.invoke({'jobs':[body.model_dump()],'profile':p,'criteria':db.config()['job_search_criteria']})
-    return {'message':'Opportunity imported.' if result['count'] else 'This job was excluded by your search preferences.', 'count':result['count']}
+    return {'message':'Opportunity imported.' if result['count'] else 'Already saved; no duplicate added.' if result.get('matched') else 'This job was excluded by your search preferences.', 'count':result['count']}
 
 class SearchRequest(BaseModel):
     provider: str='demo'
@@ -135,11 +148,12 @@ class SearchRequest(BaseModel):
     keywords: str=Field(default='',max_length=200)
     location: str=Field(default='',max_length=200)
     limit: int=Field(default=20,ge=1,le=100)
-    sources: List[str]=Field(default_factory=list,max_length=8)
+    sources: List[str]=Field(default_factory=list,max_length=40)
+    boards: dict[str,str]=Field(default_factory=dict,max_length=4)
     page_url: str=Field(default='',max_length=2000)
 
 @app.get('/api/v1/jobs/sources')
-def job_sources(): return SOURCE_INFO
+def job_sources(include_unavailable:bool=False): return source_catalog(include_unavailable)
 
 @app.post('/api/v1/jobs/search')
 def search(body:SearchRequest, user_id:str='local'):
@@ -155,15 +169,23 @@ def search(body:SearchRequest, user_id:str='local'):
     from collections import Counter
     from backend.services.job_matching import exclusions
     reports=[];total=0
-    for provider in providers:
+    from concurrent.futures import ThreadPoolExecutor
+    def fetch_source(provider):
         try:
-            incoming,cached=discover_source(provider,board=body.board,keywords=body.keywords.strip(),location=body.location.strip(),limit=body.limit,page_url=body.page_url)
-            result=discovery_graph.invoke({'jobs':incoming,'profile':p,'criteria':criteria})
+            return discover_source(provider,board=body.boards.get(provider,body.board),keywords=body.keywords.strip(),location=body.location.strip(),limit=body.limit,page_url=body.page_url)
+        except Exception as exc:return exc
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        fetched=list(pool.map(fetch_source,providers))
+    for provider,source_result in zip(providers,fetched):
+        try:
+            if isinstance(source_result,Exception):raise source_result
+            incoming,cached=source_result
+            result=discovery_graph.invoke({'jobs':incoming,'profile':p,'criteria':criteria,'skip_seen':True})
             total+=result['count']
-            reports.append({'source':provider,'status':'success','fetched':len(incoming),'matched':result['count'],'cached':cached,'excluded_reasons':dict(Counter(reason for j in incoming for reason in exclusions(j,criteria))),'incomplete_descriptions':sum(bool(j.get('description_incomplete')) for j in incoming)})
+            reports.append({'source':provider,'status':'success','fetched':len(incoming),'matched':result['count'],'already_seen':result.get('skipped',0),'cached':cached,'excluded_reasons':dict(Counter(reason for j in incoming for reason in exclusions(j,criteria))),'incomplete_descriptions':sum(bool(j.get('description_incomplete')) for j in incoming)})
         except Exception as exc:
             reports.append({'source':provider,'status':'unavailable','message':str(exc)[:500],'fetched':0,'matched':0})
-    return {'message':f'Discovery finished: {total} matching opportunities across {sum(r["status"]=="success" for r in reports)} available sources.','count':total,'sources':reports}
+    return {'message':f'Discovery finished: {total} new opportunities; {sum(r.get("already_seen",0) for r in reports)} previously seen or duplicate postings skipped across {sum(r["status"]=="success" for r in reports)} available sources.','count':total,'sources':reports}
 
 @app.post('/api/v1/demo')
 def load_demo():
@@ -173,8 +195,6 @@ def load_demo():
 @app.get('/api/v1/applications')
 def applications(status:Optional[ApplicationStatus]=None):
     return [j for j in db.applications() if not status or j['status']==status.value]
-
-queue_reservation=Lock()
 
 @app.get('/api/v1/applications/deleted')
 def deleted_opportunities():
@@ -229,11 +249,13 @@ def reserve_batch(job_ids,background_tasks,submit=False):
     for j in jobs:
         if j['status'] not in ['DISCOVERED','MATCHED','TAILORED']: raise HTTPException(409,'Only discovered, matched, or tailored applications can be queued.')
         if any('unconfirmed' in l['action'].lower() for l in j['submission_logs']): raise HTTPException(409,'Review the unconfirmed submission on the employer portal before retrying.')
+        if not submit and resumes.selected(j['job_id']) not in {None,'profile'}:
+            raise HTTPException(409,'Preparation uses the fixed template and your saved profile. Review the upload in My documents, add its verified facts to Candidate evidence in Application Studio, and select Profile resume before preparing. The original upload remains available for manual applications.')
     for j in jobs:
         # Low-score jobs can be tailored but are always routed to human review.
         if j['match_score']<config['execution_preferences']['auto_apply_threshold_score']:
             db.execute("UPDATE application_records SET classification='HUMAN_IN_THE_LOOP_LINK' WHERE job_id=:id",{'id':j['job_id']})
-        if not submit: resumes.select_best(j)
+        if not submit: resumes.select(j['job_id'],'profile')
         db.execute("UPDATE application_records SET status='QUEUED' WHERE job_id=:id",{'id':j['job_id']})
     background_tasks.add_task(run_batch,ids,submit=submit)
     return {'message':f'Queued {len(ids)} applications for '+('submission.' if submit else 'document preparation and review.')}

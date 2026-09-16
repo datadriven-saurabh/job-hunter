@@ -50,6 +50,7 @@ def test_structured_job_link(monkeypatch):
 
 
 def test_model_comparison_is_measured_and_local(monkeypatch):
+    monkeypatch.setenv('ENABLE_LOCAL_LLM','true')
     import backend.model_api as models
     monkeypatch.setattr(models,'tags',lambda:[{'name':'test-model'}])
     monkeypatch.setattr(models,'generate_json',lambda *a,**k:{'matched':['SQL','Python'],'missing':['dbt']})

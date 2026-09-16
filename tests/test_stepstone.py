@@ -41,7 +41,8 @@ def test_stepstone_blocks_reported_not_empty_success(monkeypatch):
         response=c.post('/api/v1/jobs/search',json={'provider':'stepstone','keywords':'Data Analyst','location':'Berlin'}).json()
         assert response['sources'][0]['status']=='unavailable'
         assert '403' in response['sources'][0]['message']
-        assert any(s['id']=='stepstone' for s in c.get('/api/v1/jobs/sources').json())
+        assert not any(s['id']=='stepstone' for s in c.get('/api/v1/jobs/sources').json())
+        assert any(s['id']=='stepstone' and not s['available'] for s in c.get('/api/v1/jobs/sources?include_unavailable=true').json())
 
 
 def test_stepstone_empty_markup_is_unavailable(monkeypatch):

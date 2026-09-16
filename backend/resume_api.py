@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from backend import database as db
 from backend.services import resumes
+from backend.state import queue_reservation
 
 router=APIRouter(prefix='/api/v1')
 
@@ -57,6 +58,10 @@ class Selection(BaseModel):
 
 @router.post('/applications/{job_id}/resume')
 def choose(job_id:str,body:Selection):
+    with queue_reservation:
+        return _choose(job_id,body)
+
+def _choose(job_id,body):
     job=db.get_job(job_id)
     if not job:raise HTTPException(404,'Application not found.')
     if job['status'] not in {'DISCOVERED','MATCHED','TAILORED'}:raise HTTPException(409,'Resume selection is locked while processing or after submission.')

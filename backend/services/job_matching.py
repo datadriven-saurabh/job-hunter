@@ -38,7 +38,7 @@ def detected(text):
 def affirmed_skills(text):
     """Conservatively omit negated/aspirational clauses from candidate evidence."""
     clauses=re.split(r'\n|(?<=[.!?])\s+|\bbut\b|;',text,flags=re.I)
-    return set().union(*(detected(c) for c in clauses if not re.search(r"\b(?:not(?! only)|never|no experience|without experience|haven.t|have not|want to learn|plan to learn|interested in learning)\b",c,re.I)))
+    return set().union(*(detected(c) for c in clauses if not re.search(r"\b(?:not(?! only)|never|no experience|without experience|haven.t|have not|want to learn|plan to learn|interested in learning|currently learning|am learning|beginner in|no knowledge|lack of experience)\b",c,re.I)))
 
 
 def family(title):
@@ -79,10 +79,28 @@ def experience_years(profile):
         except (KeyError,ValueError):continue
     return round(len(months)/12,1)
 
+COUNTRY_ALIASES={
+ 'germany':('germany','deutschland','de','deu'),
+ 'india':('india','ind','bharat'),
+ 'netherlands':('netherlands','nederland','nl','nld'),
+ 'france':('france','fr','fra'),
+ 'united kingdom':('united kingdom','uk','great britain','gb','england','scotland','wales','northern ireland'),
+ 'united states':('united states','united states of america','usa','us'),
+}
+EU_COUNTRIES=('austria','belgium','bulgaria','croatia','cyprus','czechia','czech republic','denmark','estonia','finland','france','germany','greece','hungary','ireland','italy','latvia','lithuania','luxembourg','malta','netherlands','poland','portugal','romania','slovakia','slovenia','spain','sweden')
+
+def location_matches(location,target):
+    """Explicit country aliases only; a city or remote label is not work authorization."""
+    target=target.strip().casefold()
+    if contains(location,target):return True
+    canonical=next((name for name,aliases in COUNTRY_ALIASES.items() if target in aliases),target)
+    countries=EU_COUNTRIES if target in {'eu','european union'} else EU_COUNTRIES+('united kingdom','norway','switzerland','iceland','albania','serbia','ukraine','moldova','montenegro','north macedonia','bosnia and herzegovina') if target=='europe' else (canonical,)
+    return any(contains(location,alias) for country in countries for alias in COUNTRY_ALIASES.get(country,(country,)))
+
 def exclusions(job, criteria):
     content=job['job_title']+' '+job.get('description','');loc=job.get('location','');reasons=[]
     if any(contains(content,x) for x in criteria.get('dealbreaker_keywords',[])):reasons.append('Excluded keyword')
-    if loc and criteria.get('target_locations') and not any(x.lower() in loc.lower() for x in criteria['target_locations']):reasons.append('Location preference')
+    if loc and criteria.get('target_locations') and not any(location_matches(loc,x) for x in criteria['target_locations']):reasons.append('Location preference')
     if criteria.get('min_salary_threshold') and job.get('salary_max') and job['salary_max']<criteria['min_salary_threshold']:reasons.append('Salary preference')
     if not all(contains(content,x) for x in criteria.get('required_stack_keywords',[])):reasons.append('Required search keyword')
     kind=job.get('employment_type','')
@@ -92,8 +110,10 @@ def exclusions(job, criteria):
 def assess(job, profile, criteria):
     jd=job.get('description','');title=job['job_title'];evidence=profile_evidence(profile)
     # Description drives requirements; title alone cannot establish skill coverage.
-    requirements=detected(jd);available=affirmed_skills('\n'.join(t for _,t in evidence))
-    lines_with_skills=[(line,detected(line)) for line in re.split(r"\n|(?<=[.!?])\s+",jd)]
+    def required_mentions(line):
+        return {skill for skill in detected(line) if not any(re.search(r'(?<!\w)'+re.escape(alias)+r'(?!\w)\s+(?:is\s+)?not (?:required|needed|necessary)',line,re.I) for alias in SKILLS[skill])}
+    lines_with_skills=[(line,required_mentions(line)) for line in re.split(r"\n|(?<=[.!?])\s+|;|\bbut\b",jd)]
+    requirements=set().union(*(skills for _,skills in lines_with_skills));available=affirmed_skills('\n'.join(t for _,t in evidence))
     evidence_with_skills=[(source,text,affirmed_skills(text)) for source,text in evidence]
     rows=[]
     for skill in sorted(requirements):
@@ -117,9 +137,14 @@ def assess(job, profile, criteria):
     eligibility=[]
     flat=re.sub(r'\s+',' ',jd)
     professional_text=' '.join(t for _,t in evidence)
+    from backend.services.job_intelligence import language_requirements,language_eligibility
+    language_rules=language_requirements(jd)
+    language_check=language_eligibility(language_rules,profile)
+    for language in language_check['missing']+language_check['unknown']:
+        eligibility.append('Verify language requirement: '+language+' proficiency is missing or below the stated level.')
     for language,pattern in [('German',r'(?:speak|fluent|fluency|proficien\w*|require\w*).{0,40}German|German.{0,35}(?:required|C1|B2|fluent)|(?:sprichst|Deutschkenntnisse).{0,25}Deutsch|Deutschkenntnisse'),('English C1',r'English.{0,25}C1|C1.{0,25}English')]:
         found=re.search(pattern,flat,re.I)
-        if found and not contains(professional_text,language):eligibility.append('Verify language requirement: '+found.group(0))
+        if found and not any(r['language']==language.split()[0] for r in language_rules) and not re.search(r'not (?:required|needed|necessary)',found.group(0),re.I) and not contains(professional_text,language):eligibility.append('Verify language requirement: '+found.group(0))
     region=re.search(r'(?:remote|remotely).{0,45}(?:within|only|based in).{0,100}',flat,re.I)
     if region:eligibility.append('Verify permitted work location: '+region.group(0))
     if required:warnings.append(f'{required}+ years mentioned; your dated work history totals about {years} years. Domain-specific experience still needs review.')

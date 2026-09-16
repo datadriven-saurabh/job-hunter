@@ -1,6 +1,7 @@
 """Local-only model selection and reproducible small-task comparisons."""
 import copy
 import json
+import os
 import time
 from threading import Lock
 import httpx
@@ -25,7 +26,7 @@ def tags():
     except Exception:raise HTTPException(503,'Local Ollama is unavailable.')
 
 @router.get('')
-def models():return {'models':[{'name':m['name'],'size_bytes':m.get('size',0)} for m in tags()],'active':db.config()['llm_provider_config']['reasoning_model'],'note':'Local downloads have no API usage fee. Memory and speed vary. Model licenses still apply.'}
+def models():return {'models':[{'name':m['name'],'size_bytes':m.get('size',0)} for m in tags()],'active':db.config()['llm_provider_config']['reasoning_model'],'enabled':os.getenv('ENABLE_LOCAL_LLM')=='true','note':'Local downloads have no API usage fee. Memory and speed vary. Model licenses still apply.'}
 
 class Active(BaseModel):name:str=Field(max_length=100)
 
@@ -47,6 +48,7 @@ def comparison():return json.loads(state_path().read_text()) if state_path().exi
 
 @router.post('/compare')
 def compare(body:Compare,tasks:BackgroundTasks):
+    if os.getenv('ENABLE_LOCAL_LLM')!='true':raise HTTPException(409,'Enable local AI before benchmarking models. Disabled generation is not a model-quality result.')
     installed={m['name'] for m in tags()}
     if any(m not in installed for m in body.models):raise HTTPException(400,'Use installed models only.')
     if not lock.acquire(False):raise HTTPException(409,'A comparison is already running.')

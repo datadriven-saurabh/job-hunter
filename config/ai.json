@@ -1,5 +1,5 @@
 {
-  "version": "career-pipeline-v2",
+  "version": "career-pipeline-v3",
   "tiers": {
     "small": "qwen2.5:1.5b",
     "medium": null,

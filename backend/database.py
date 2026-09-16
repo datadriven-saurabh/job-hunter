@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 from pathlib import Path
 from sqlalchemy import create_engine, text, event
@@ -39,8 +40,18 @@ def config(user_id='local'):
     r = rows[0]
     return {k: json.loads(r[v]) for k,v in [('job_search_criteria','search_criteria_json'),('execution_preferences','execution_preferences_json'),('llm_provider_config','llm_config_json')]}
 
-def applications(include_deleted=False):
-    rows = query('SELECT * FROM application_records '+('' if include_deleted else 'WHERE job_id NOT IN (SELECT job_id FROM deleted_opportunities) ')+'ORDER BY match_score DESC')
+def profile_revision(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+def applications(include_deleted=False, _job_id=None):
+    where=[]
+    if not include_deleted:where.append('a.job_id NOT IN (SELECT job_id FROM deleted_opportunities)')
+    if _job_id is not None:where.append('a.job_id=:id')
+    rows=query('SELECT a.*,d.payload,s.resume_id AS selected_resume_id,r.label AS selected_resume_label '
+               'FROM application_records a LEFT JOIN job_details d ON d.job_id=a.job_id '
+               'LEFT JOIN application_resume_selection s ON s.job_id=a.job_id '
+               'LEFT JOIN resumes r ON r.resume_id=s.resume_id '+
+               ('WHERE '+' AND '.join(where) if where else '')+' ORDER BY a.match_score DESC', {'id':_job_id})
     from backend.services.job_matching import assess
     current_profile=profile();current_config=config()
     from backend.ai.router import settings
@@ -48,12 +59,9 @@ def applications(include_deleted=False):
     for r in rows:
         r['submission_logs'] = json.loads(r.pop('submission_logs_json'))
         r['extracted_form_fields'] = json.loads(r['extracted_form_fields']) if r['extracted_form_fields'] else None
-        detail = query('SELECT payload FROM job_details WHERE job_id=:id', {'id': r['job_id']})
-        if detail: r.update(json.loads(detail[0]['payload']))
-        selection=query('SELECT s.resume_id,r.label FROM application_resume_selection s LEFT JOIN resumes r ON r.resume_id=s.resume_id WHERE s.job_id=:id',{'id':r['job_id']})
-        if selection:
-            r['selected_resume_id']=selection[0]['resume_id']
-            r['selected_resume_label']=selection[0]['label'] or 'Profile resume'
+        payload=r.pop('payload')
+        if payload:r.update(json.loads(payload))
+        if r.get('selected_resume_id')=='profile':r['selected_resume_label']='Profile resume'
         if current_profile and current_config:
             r['fit_analysis']=assess(r,current_profile,current_config['job_search_criteria'])
             r['match_score']=r['fit_analysis']['score']/100
@@ -64,4 +72,5 @@ def applications(include_deleted=False):
     return sorted(rows,key=lambda r:r['match_score'],reverse=True)
 
 def get_job(job_id):
-    return next((r for r in applications() if r['job_id']==job_id), None)
+    rows=applications(_job_id=job_id)
+    return rows[0] if rows else None

@@ -1,11 +1,69 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {Search,Loader2,ExternalLink,Check} from 'lucide-react';
 import {api} from '@/lib/api';
 import JobBoardDirectory from './JobBoardDirectory';
+export type Source={id:string;name:string;kind:string;note:string;url?:string;available:boolean};
+const companyIds=['greenhouse','lever','ashby','smartrecruiters'];
 export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;hasProfile:boolean;onComplete:()=>void}){
- const [provider,setProvider]=useState('multi'),[sources,setSources]=useState(['linkedin','remotive','remoteok','wwr']),[keywords,setKeywords]=useState(config?.job_search_criteria.target_roles[0]||''),[location,setLocation]=useState(config?.job_search_criteria.target_locations[0]||''),[board,setBoard]=useState(''),[pageUrl,setPageUrl]=useState(''),[limit,setLimit]=useState(20),[busy,setBusy]=useState(false),[report,setReport]=useState<any>(null),[error,setError]=useState(''),[manual,setManual]=useState({company_name:'',job_title:'',job_url:'',description:'',location:''});
- const company=['greenhouse','lever','ashby','smartrecruiters'].includes(provider);
- async function search(){setBusy(true);setError('');setReport(null);try{let result;if(provider==='demo'&&!hasProfile)result=await api('/demo','POST');else if(provider==='manual')result=await api('/jobs/import','POST',manual);else result=await api('/jobs/search','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],board,keywords,location,limit,page_url:pageUrl});setReport(result)}catch(e){setError(e instanceof Error?e.message:'Discovery failed')}finally{setBusy(false)}}
- return <><JobBoardDirectory/><h2>Search beyond a single board.</h2><p>Discover public openings, compare them with your profile, and keep everything in one workspace.</p><label>Job source<select value={provider} onChange={e=>{setProvider(e.target.value);setReport(null)}}><option value="multi">Search multiple boards</option><option value="arbeitnow">Arbeitnow · Europe</option><option value="arbeitnow_uk">Arbeitnow · UK</option><option value="smartrecruiters">SmartRecruiters · company board</option><option value="remoteok">Remote OK · public feed</option><option value="wwr">We Work Remotely · public feed</option><option value="stepstone">StepStone · Germany public listings</option><option value="linkedin">LinkedIn · public listings</option><option value="hiringcafe">HiringCafe · public page</option><option value="remotive">Remotive · remote jobs</option><option value="greenhouse">Greenhouse · company board</option><option value="lever">Lever · company board</option><option value="ashby">Ashby · company board</option><option value="manual">Import a posting manually</option><option value="demo">Demo opportunities</option></select></label>{provider==='multi'&&<div className="source-checkboxes">{[['stepstone','StepStone Germany'],['linkedin','LinkedIn'],['remotive','Remotive'],['remoteok','Remote OK'],['wwr','We Work Remotely'],['hiringcafe','HiringCafe'],['arbeitnow','Arbeitnow Europe']].map(([id,name])=><label className="check-label" key={id}><input type="checkbox" checked={sources.includes(id)} onChange={e=>setSources(e.target.checked?[...sources,id]:sources.filter(s=>s!==id))}/>{name}</label>)}</div>}{company&&<label>Company board slug<input value={board} onChange={e=>setBoard(e.target.value)} placeholder="The company identifier from its careers URL"/></label>}{!['demo','manual'].includes(provider)&&<><label>Job title or keywords<input value={keywords} onChange={e=>setKeywords(e.target.value)} placeholder="e.g. Data Analyst"/></label><div className="form-grid"><label>Search location<input value={location} onChange={e=>setLocation(e.target.value)} placeholder="e.g. India or Remote"/><small>Overrides your saved location filter for this search.</small></label><label>Results per source<select value={limit} onChange={e=>setLimit(Number(e.target.value))}>{[10,20,25,50,100].map(n=><option value={n} key={n}>{n}</option>)}</select></label></div></>}{provider==='stepstone'&&<small>Searches StepStone Germany. Up to 10 structured postings per search. If public access is blocked, use the browser link and manual import.</small>}{(provider==='hiringcafe'||provider==='multi'&&sources.includes('hiringcafe'))&&<label>HiringCafe page URL · optional<input type="url" value={pageUrl} onChange={e=>setPageUrl(e.target.value)} placeholder="https://hiringcafe.com/"/><small>Public structured page data only. Access blocks are reported.</small></label>}{provider==='manual'&&<>{[['company_name','Company'],['job_title','Job title'],['job_url','Application URL'],['location','Location']].map(([key,label])=><label key={key}>{label}<input value={manual[key as keyof typeof manual]} onChange={e=>setManual({...manual,[key]:e.target.value})}/></label>)}<label>Full job description<textarea rows={6} value={manual.description} onChange={e=>setManual({...manual,description:e.target.value})}/></label></>}<div className="demo-note">{provider==='demo'?'Sample roles only. Demo applications are never submitted.':'Public access only: no account cookies or CAPTCHA bypass. Counts show keyword candidates, not total downloaded listings. LinkedIn retrieves up to 25 listings per search. Remotive credits the original listing and caches its feed for six hours.'}</div>{error&&<div className="error-banner" role="alert">{error}</div>}<button className="primary full" disabled={busy||company&&!board.trim()||provider==='multi'&&!sources.length||!hasProfile&&provider!=='demo'} onClick={search}>{busy?<Loader2 size={15} className="spin"/>:<Search size={15}/>} {busy?'Reading public job boards…':'Find openings'}</button>{!hasProfile&&provider!=='demo'&&<p>Save My profile before matching live jobs.</p>}{report&&<div className="discovery-report" role="status"><h3>{report.message}</h3>{report.sources?.map((r:any)=><div key={r.source} className="source-report"><strong>{r.source} · {r.status==='success'?`${r.matched} retained / ${r.fetched} keyword candidates${r.cached?' · cached':''}`:'Unavailable'}</strong>{r.message&&<p>{r.message}</p>}{r.excluded_reasons&&Object.entries(r.excluded_reasons).map(([reason,count])=><p key={reason}>{String(count)} excluded: {reason}</p>)}{r.incomplete_descriptions>0&&<p>{r.incomplete_descriptions} listings have limited descriptions. Review the original postings before choosing a resume.</p>}{r.status==='unavailable'&&r.source==='stepstone'&&<><a className="text-link" href={'https://www.stepstone.de/jobs/'+encodeURIComponent(keywords.trim().replace(/\s+/g,'-'))+(location.trim()?'/in-'+encodeURIComponent(location.trim().replace(/\s+/g,'-')):'')} target="_blank" rel="noreferrer">Open StepStone search <ExternalLink size={12}/></a><button className="text-link" onClick={()=>{setProvider('manual');setReport(null)}}>Import a StepStone posting manually</button></>}{r.status==='unavailable'&&r.source==='hiringcafe'&&<a className="text-link" href="https://hiringcafe.com/" target="_blank" rel="noreferrer">Open HiringCafe <ExternalLink size={12}/></a>}</div>)}<button className="outline full" onClick={onComplete}><Check size={15}/> View opportunities</button></div>}</>
+ const [catalog,setCatalog]=useState<Source[]>([]),[provider,setProvider]=useState('multi'),[sources,setSources]=useState(['linkedin','remotive','remoteok','wwr']);
+ const [keywords,setKeywords]=useState(config?.job_search_criteria.target_roles[0]||''),[location,setLocation]=useState(config?.job_search_criteria.target_locations[0]||''),[boards,setBoards]=useState<Record<string,string>>({}),[pageUrl,setPageUrl]=useState(''),[limit,setLimit]=useState(20);
+ const [busy,setBusy]=useState(false),[report,setReport]=useState<any>(null),[error,setError]=useState('');
+ const [manual,setManual]=useState({company_name:'',job_title:'',job_url:'',description:'',location:''});
+ async function refreshSources(){const rows=await api<Source[]>('/jobs/sources?include_unavailable=true');setCatalog(rows);setSources(current=>current.filter(id=>rows.some(s=>s.id===id&&s.available)));return rows;}
+ useEffect(()=>{refreshSources().catch(e=>setError(e.message))},[]);
+ const activeCatalog=catalog.filter(s=>s.available);
+ const selectedSources=provider==='multi'?sources:[provider];
+ const companySources=selectedSources.filter(s=>companyIds.includes(s));
+ const missingBoard=companySources.some(s=>!boards[s]?.trim());
+ async function search(){
+  setBusy(true);setError('');setReport(null);
+  try{
+   let result;
+   if(provider==='demo'&&!hasProfile)result=await api('/demo','POST');
+   else if(provider==='manual')result=await api('/jobs/import','POST',manual);
+   else result=await api('/jobs/search','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],boards,keywords,location,limit,page_url:pageUrl});
+   setReport(result);
+   const rows=await refreshSources();
+   if(!['multi','demo','manual'].includes(provider)&&!rows.some(s=>s.id===provider&&s.available))setProvider('multi');
+  }catch(e){setError(e instanceof Error?e.message:'Discovery failed')}
+  finally{setBusy(false)}
+ }
+ return <>
+  <JobBoardDirectory sources={catalog}/>
+  <h2>Search beyond a single board.</h2>
+  <p>Check for new openings. Previously saved jobs, including deleted opportunities, are skipped. Public feeds must still be checked to discover new postings.</p>
+  <fieldset disabled={busy} className="discovery-controls">
+   <label>Job source<select aria-label="Job source" value={provider} onChange={e=>{setProvider(e.target.value);setReport(null)}}>
+    <option value="multi">Search multiple boards</option>
+    {activeCatalog.map(s=><option key={s.id} value={s.id}>{s.name}{s.kind==='company-board'?' · company board':''}</option>)}
+    <option value="manual">Import a posting manually</option><option value="demo">Demo opportunities</option>
+   </select></label>
+   {provider==='multi'&&<><div className="detail-actions"><button className="outline compact" onClick={()=>setSources(activeCatalog.filter(s=>s.kind!=='company-board').map(s=>s.id))}>Select all public boards</button><button className="outline compact" onClick={()=>setSources([])}>Clear sources</button></div><div className="source-checkboxes">
+    {activeCatalog.map(s=><label className="check-label" key={s.id}><input type="checkbox" checked={sources.includes(s.id)} onChange={e=>setSources(e.target.checked?[...sources,s.id]:sources.filter(x=>x!==s.id))}/>{s.name}</label>)}
+   </div></>}
+   {companySources.map(id=><label key={id}>{catalog.find(s=>s.id===id)?.name||id} company board slug<input value={boards[id]||''} maxLength={80} onChange={e=>setBoards({...boards,[id]:e.target.value})} placeholder="Company identifier from its careers URL"/><small>These platforms host separate employer boards. Add a company identifier to search it.</small></label>)}
+   {!['demo','manual'].includes(provider)&&<>
+    <label>Job title or keywords<input value={keywords} maxLength={200} onChange={e=>setKeywords(e.target.value)} placeholder="e.g. Data Analyst"/></label>
+    <div className="form-grid"><label>Search location<input value={location} maxLength={200} onChange={e=>setLocation(e.target.value)} placeholder="e.g. India or Remote"/><small>Overrides your saved location filter for this search.</small></label><label>Results per source<select aria-label="Results per source" value={limit} onChange={e=>setLimit(Number(e.target.value))}>{[10,20,25,50,100].map(n=><option value={n} key={n}>{n}</option>)}</select></label></div>
+    {catalog.find(s=>s.id===provider)?.note&&<p className="muted">{catalog.find(s=>s.id===provider)?.note}</p>}
+   </>}
+   {selectedSources.includes('hiringcafe')&&<label>HiringCafe page URL · optional<input type="url" value={pageUrl} maxLength={2000} onChange={e=>setPageUrl(e.target.value)} placeholder="https://hiringcafe.com/"/></label>}
+   {provider==='manual'&&<>{[['company_name','Company'],['job_title','Job title'],['job_url','Application URL'],['location','Location']].map(([key,label])=><label key={key}>{label}<input value={manual[key as keyof typeof manual]} onChange={e=>setManual({...manual,[key]:e.target.value})}/></label>)}<label>Full job description<textarea rows={6} value={manual.description} onChange={e=>setManual({...manual,description:e.target.value})}/></label></>}
+  </fieldset>
+  <div className="demo-note">{provider==='demo'?'Sample roles only. Demo applications are never submitted.':'Public access only. Each source has a bounded snapshot; this is not a search of every job on every website. Public-page adapters read up to 10 new details; LinkedIn reads up to 25 cards. Feeds are cached and no account cookies are used. Blocked sources are removed from automatic search and remain in the manual directory. New access blocks pause a board for one hour.'}</div>
+  {error&&<div className="error-banner" role="alert">{error}</div>}
+  <button className="primary full" disabled={busy||missingBoard||provider==='multi'&&!sources.length||!hasProfile&&provider!=='demo'} onClick={search}>{busy?<Loader2 size={15} className="spin"/>:<Search size={15}/>} {busy?'Checking public sources for new jobs…':'Find openings'}</button>
+  {!hasProfile&&provider!=='demo'&&<p>Save My profile before matching live jobs.</p>}
+  {report&&<div className="discovery-report" role="status"><h3>{report.message}</h3>{report.sources?.map((r:any)=>{
+   const source=catalog.find(s=>s.id===r.source);
+   return <div key={r.source} className="source-report"><strong>{source?.name||r.source} · {r.status==='success'?`${r.matched} new / ${r.fetched} candidates${r.cached?' · cached':''}`:'Unavailable'}</strong>
+    {r.already_seen>0&&<p>{r.already_seen} previously seen or duplicate postings skipped.</p>}
+    {r.message&&<p>{r.message}</p>}
+    {r.excluded_reasons&&Object.entries(r.excluded_reasons).map(([reason,count])=><p key={reason}>{String(count)} candidates conflict with: {reason}</p>)}
+    {r.incomplete_descriptions>0&&<p>{r.incomplete_descriptions} listings have limited descriptions. Review the original posting before prioritizing.</p>}
+    {r.status==='unavailable'&&<div className="detail-actions">{source?.url&&<a className="text-link" href={source.url} target="_blank" rel="noreferrer">Open {source.name} <ExternalLink size={12}/></a>}<button className="text-link" onClick={()=>{setProvider('manual');setReport(null)}}>Import a posting manually</button></div>}
+   </div>
+  })}<button className="outline full" onClick={onComplete}><Check size={15}/> View opportunities</button></div>}
+ </>
 }

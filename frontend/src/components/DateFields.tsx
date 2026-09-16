@@ -9,5 +9,5 @@ export function MonthField({label,value,onChange,allowPresent=false}:{label:stri
 }
 export function YearField({value,onChange}:{value:string;onChange:(v:string)=>void}){
  const current=new Date().getFullYear();const years=Array.from({length:current+11-1950},(_,i)=>String(current+10-i));
- return <label>Graduation year<select required value={value} onChange={e=>onChange(e.target.value)}><option value="">Select year</option>{years.map(year=><option key={year}>{year}</option>)}</select></label>
+ return <label>Graduation year<select aria-label="Graduation year" required value={value} onChange={e=>onChange(e.target.value)}><option value="">Select year</option>{years.map(year=><option key={year}>{year}</option>)}</select></label>
 }

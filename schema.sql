@@ -74,6 +74,14 @@ CREATE TABLE IF NOT EXISTS source_cache (
     payload TEXT NOT NULL
 );
 
+-- Search history includes filtered-out jobs. Changed filters/content are eligible again.
+CREATE TABLE IF NOT EXISTS discovery_seen (
+    job_key TEXT PRIMARY KEY,
+    content_hash TEXT NOT NULL,
+    criteria_hash TEXT NOT NULL,
+    seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Reversible opportunity removal. Rediscovery does not revive the same record.
 CREATE TABLE IF NOT EXISTS deleted_opportunities (
     job_id TEXT PRIMARY KEY REFERENCES application_records(job_id) ON DELETE CASCADE,

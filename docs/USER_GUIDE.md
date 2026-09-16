@@ -20,7 +20,7 @@ Click Find opportunities. Choose a public feed or a company board, enter keyword
 
 A **company board identifier** is the employer's part of its career URL. For example, in `https://jobs.lever.co/example-company`, the identifier is `example-company`. This is a format example, not a real board to use. Greenhouse, Lever, Ashby and SmartRecruiters need a real employer identifier.
 
-Source reports distinguish retained jobs, keyword candidates and exclusions. They do not report the total size of a website's job database. Results may be cached to avoid excessive requests. A zero can mean no keyword matches; HTTP 403/429 means the site blocked or limited a request. Do not repeatedly retry a blocked source.
+Source reports distinguish new jobs, previously seen or duplicate postings, keyword candidates and preference conflicts. Searches skip saved jobs, including deleted entries; changing filters can reconsider previously excluded candidates. They do not report the total size of a website's job database. Results may be cached to avoid excessive requests. A zero can mean no keyword matches; HTTP 403/429 means the site blocked or limited a request. Do not repeatedly retry a blocked source.
 
 If a job isn't available through discovery, use Application Studio to paste its URL and full description. That creates a draft kit without adding it to the application tracker. To track it, choose **Import a posting manually** in Find opportunities; tracker imports still use your preference filters.
 
@@ -57,7 +57,7 @@ Open Application studio, or use its shortcut in a job's detail panel.
 
 **Application Studio uses My profile**, not an uploaded resume variant. It selects relevant existing bullets, preserves role/date facts and validates one-page output. The full history stays in your profile. If unusually long text cannot fit legibly, shorten it instead of expecting tiny text or clipping.
 
-Standard **Prepare applications** is a separate workflow: it lets you choose a resume variant. A selected uploaded PDF stays unchanged and may be multiple pages. Choosing the profile resume produces the new one-page format. Changing a selected resume invalidates previously prepared documents; prepare again and review the new PDF.
+Standard **Prepare applications** also uses the fixed one-page template and verified My profile facts. The preparation dialog shows the closest text match, but its generation source is Profile resume. If an uploaded version has better achievements, review its extracted text in My documents, then add and verify those facts in Application Studio → Candidate evidence. Original uploads remain downloadable for manual applications. Changing a resume selection invalidates previously prepared documents.
 
 ## 7. Find people and draft referral requests
 
@@ -92,3 +92,13 @@ Leave this off while learning the app. Both the server's `ENABLE_LIVE_SUBMISSION
 Prepare, download and review documents, then use the explicit reviewed-submission control for eligible non-demo Lever/Greenhouse jobs. Supported URLs, score thresholds, a real profile and the daily limit are checked. Missing required fields, authentication, CAPTCHA or an unconfirmed result require human review. Generic browser support is not guaranteed for every employer. Unconfirmed submissions are not automatically retried.
 
 In native setup, edit `.env` and restart. Docker uses its Compose environment; native `.env` AI/submission settings do not override the base Docker configuration.
+
+## Search all supported sources
+
+In Find opportunities, choose **Select all public boards** to check the currently available public sources (19 at release). To include Greenhouse, Lever, Ashby or SmartRecruiters, check each one and enter a real employer board slug. Public-page adapters inspect at most 10 new posting pages per check, so results are a limited snapshot. Known blocked sources are removed from the picker and kept in **Job board directory** for manual import. Newly blocked boards report Unavailable and are paused for one hour across searches. A working browser login does not grant the app API access. [Current source checks](PRODUCT_REVIEW.md#public-source-checks)
+
+Discover jobs shows 100 opportunities per page; use Next page and Previous page to reach the rest. Select all selects only the visible page.
+
+## Recover an edit conflict
+
+If saving says your profile changed in another editor, keep a copy of your unsaved changes. Reopen My profile or use Reload saved evidence, then reapply those changes to the latest saved profile. This prevents an old editor from overwriting newer facts.

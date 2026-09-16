@@ -5,11 +5,12 @@ import re
 from urllib.parse import urlparse
 
 SOURCE_HOSTS={'stepstone.de':'StepStone','linkedin.com':'LinkedIn','remoteok.com':'Remote OK','weworkremotely.com':'We Work Remotely','remotive.com':'Remotive','arbeitnow.com':'Arbeitnow','arbeitnow.co.uk':'Arbeitnow UK','greenhouse.io':'Greenhouse','lever.co':'Lever','ashbyhq.com':'Ashby','smartrecruiters.com':'SmartRecruiters','workable.com':'Workable','hiringcafe.com':'HiringCafe','hiring.cafe':'HiringCafe'}
+SOURCE_HOSTS.update({'relocate.me':'Relocate.me','berlinstartupjobs.com':'Berlin Startup Jobs','eu-startups.com':'EU-Startups','jobfluent.com':'JobFluent','jobs.hvcapital.com':'HV Capital','jobs.earlybird.com':'Earlybird VC','jobs.pointnine.com':'Point Nine Capital','workingnomads.com':'Working Nomads','wellfound.com':'Wellfound','builtin.com':'Built In','ycombinator.com':'Y Combinator','news.ycombinator.com':'Hacker News'})
 
 
 def source_name(url):
     host=urlparse(url or '').hostname or ''
-    return next((name for domain,name in SOURCE_HOSTS.items() if host==domain or host.endswith('.'+domain)),'Manual import')
+    return next((SOURCE_HOSTS[domain] for domain in sorted(SOURCE_HOSTS,key=len,reverse=True) if host==domain or host.endswith('.'+domain)),'Manual import')
 
 
 def posting_time(value):
@@ -45,9 +46,10 @@ def visa_signal(text,source_url=''):
 
 def language_requirements(text):
     result=[]
-    for sentence in re.split(r'(?<=[.!?])\s+|\n+',text):
+    for sentence in re.split(r'(?<=[.!?])\s+|\n+|;|\bbut\b|\band\s+(?=(?:English|German|French|Dutch|Spanish|Italian|Hindi)\b)',text,flags=re.I):
         for language in ['English','German','French','Dutch','Spanish','Italian','Hindi']:
             if not re.search(r'\b'+language+r'\b',sentence,re.I):continue
+            if re.search(r'not (?:required|necessary|needed)|no .{0,25}(?:required|necessary)|without .{0,25}knowledge',sentence,re.I):continue
             if re.search(r'preferred|nice.to.have|bonus|advantage|optional',sentence,re.I):importance='preferred'
             elif re.search(r'required|mandatory|must|fluent|fluency|native|C[12]|B[12]',sentence,re.I):importance='required'
             else:continue
