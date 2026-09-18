@@ -62,15 +62,15 @@ def generate_answer(user_profile,target_jd,question,*,max_words=None,max_charact
     return result
 
 
-def answer_questions(profile,job,questions,router=None):
+def answer_questions(profile,job,questions,router=None,use_cache=True):
     used=set();results=[];router=router or ModelRouter()
     for q in questions:
         key=digest([profile,job,q,dict(PROMPT_VERSIONS),sorted(used),'answers-v2'])
         path=db.DATA/'answer-cache'/f'{key}.json'
-        if path.exists():result=json.loads(path.read_text());result['cache_hit']=True
+        if use_cache and path.exists():result=json.loads(path.read_text());result['cache_hit']=True
         else:
             result=generate_answer(profile,job,used=used,router=router,**q);result['cache_hit']=False
-            if result['status']=='valid':
+            if use_cache and result['status']=='valid':
                 path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(result))
         if result['data'].get('story_id'):used.add(result['data']['story_id'])
         results.append(result)

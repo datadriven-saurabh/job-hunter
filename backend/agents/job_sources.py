@@ -21,6 +21,7 @@ SOURCE_INFO=[
  {'id':'remoteok','name':'Remote OK','kind':'public-search','note':'Public JSON feed; original Remote OK links retained.'},
  {'id':'wwr','name':'We Work Remotely','kind':'public-search','note':'Public RSS feed; original listing links retained.'},
  {'id':'linkedin','name':'LinkedIn','kind':'public-search','note':'Public guest listings; no sign-in. Availability varies by region.'},
+ {'id':'linkedin_posts','name':'LinkedIn team hiring posts','kind':'browser-assisted','url':'https://www.linkedin.com/search/results/content/?keywords=hiring','note':'Open relevant posts in your own signed-in browser and use the extension to capture the visible post for review.'},
  {'id':'hiringcafe','name':'HiringCafe','kind':'public-page','note':'Reads public page data. A 403, CAPTCHA, or sign-in wall is reported, not bypassed.'},
  {'id':'remotive','name':'Remotive','kind':'public-search','note':'Remote jobs from Remotive; listings are delayed by 24 hours. Cached for six hours.'},
  {'id':'greenhouse','name':'Greenhouse','kind':'company-board','note':'Public company board API.'},
@@ -40,6 +41,7 @@ SOURCE_INFO.extend([
 ])
 # Kept in the manual directory, removed from automatic searches after live checks.
 MANUAL_ONLY={
+ 'linkedin_posts':'Signed-in social posts are browser-assisted. Background feed crawling is disabled; use the extension on a visible post.',
  'stepstone':'Public access blocked (HTTP 403).',
  'hiringcafe':'Public access blocked (HTTP 403).',
  'indeed':'Public access blocked (HTTP 403).',
@@ -150,7 +152,7 @@ def jsonld_jobs(markup,source='HiringCafe',page_url='https://hiringcafe.com/'):
                 if node.get('jobLocationType')=='TELECOMMUTE':locations.append('Remote')
                 url=urljoin(page_url,node.get('url') or '')
                 if urlparse(url).scheme!='https' or urlparse(url).username or not node.get('title'):return
-                found.append({'job_title':' '.join(clean(node['title']).split()),'company_name':clean(organization.get('name','Company not listed')) if isinstance(organization,dict) else clean(organization),'job_url':url,'location':' · '.join(locations),'description':clean(node.get('description','')),'employment_type':employment(node.get('employmentType','Not specified')),'source':source,'source_url':page_url,'posted_at':node.get('datePosted'),'requisition_id':node.get('identifier',{}).get('value') if isinstance(node.get('identifier'),dict) else node.get('identifier')})
+                found.append({'job_title':' '.join(clean(node['title']).split()),'company_name':clean(organization.get('name','Company not listed')) if isinstance(organization,dict) else clean(organization),'job_url':url,'location':' · '.join(locations),'description':clean(node.get('description','')),'employment_type':employment(node.get('employmentType','Not specified')),'source':source,'source_url':page_url,'posted_at':node.get('datePosted'),'source_language':node.get('inLanguage'),'requisition_id':node.get('identifier',{}).get('value') if isinstance(node.get('identifier'),dict) else node.get('identifier')})
             for value in node.values():
                 if isinstance(value,(dict,list)):walk(value)
     for script in soup.select('script[type="application/ld+json"], script#__NEXT_DATA__'):

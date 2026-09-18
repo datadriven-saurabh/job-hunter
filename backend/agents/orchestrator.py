@@ -47,8 +47,11 @@ def _persist(state):
     existing=[dict(json.loads(r['payload']),job_id=r['job_id']) for r in query('SELECT job_id,payload FROM job_details')]
     identities={r['job_id']:r for r in query('SELECT job_id,company_name,job_title,job_url,status FROM application_records')}
     for entry in existing:entry.update({k:v for k,v in identities.get(entry['job_id'],{}).items() if k!='status'})
+    protected={r['job_id'] for r in query('SELECT DISTINCT job_id FROM studio_kits WHERE job_id IS NOT NULL')}
+    protected.update(id for id,record in identities.items() if record.get('status') not in {'DISCOVERED','MATCHED'})
     saved_ids=set()
     for j in state['matched']:
+        if j['job_id'] in protected:continue
         old=query('SELECT payload FROM job_details WHERE job_id=:id',{'id':j['job_id']})
         previous=json.loads(old[0]['payload']) if old else {}
         j=enrich(j,previous)
@@ -58,9 +61,9 @@ def _persist(state):
             alternatives=list({(a['source'],a['url']):a for a in duplicate.get('alternative_sources',[])+[{'source':duplicate.get('source','Manual import'),'url':duplicate['job_url']},{'source':j.get('source','Manual import'),'url':j['job_url']} ]}.values())
             preferred=j if quality(j)>quality(duplicate) else duplicate
             j=dict(preferred,job_id=duplicate['job_id'],alternative_sources=alternatives,first_seen_at=duplicate.get('first_seen_at') or j['first_seen_at'],last_seen_at=j['last_seen_at'])
-            if identities.get(j['job_id'],{}).get('status')=='QUEUED':continue
+            if j['job_id'] in protected:continue
             execute('UPDATE application_records SET job_url=:url WHERE job_id=:id',{'url':j['job_url'],'id':j['job_id']})
-        if identities.get(j['job_id'],{}).get('status')=='QUEUED':continue
+        if j['job_id'] in protected:continue
         if j['job_id'] not in identities:
             saved_ids.add(j['job_id'])
             identities[j['job_id']]=j

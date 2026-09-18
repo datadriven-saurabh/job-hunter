@@ -14,6 +14,7 @@ class ApplicationClassification(str, Enum):
 class ApplicationStatus(str, Enum):
     DISCOVERED = "DISCOVERED"
     MATCHED = "MATCHED"
+    REVIEWING = "REVIEWING"
     QUEUED = "QUEUED"
     TAILORED = "TAILORED"
     APPLIED = "APPLIED"
@@ -221,4 +222,3 @@ class UserAnswerFeedback(BaseModel):
     strengths: List[str]
     missing_elements: List[str]
     improved_answer_suggestion: str
-

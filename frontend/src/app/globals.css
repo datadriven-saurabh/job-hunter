@@ -33,3 +33,25 @@
 .table-controls select{width:auto;max-width:190px;padding:9px;border:1px solid var(--border);border-radius:8px;background:white;font:inherit;font-size:12px}.table-controls{flex-wrap:wrap}.deleted-opportunities{padding:16px 22px;border-top:1px solid var(--border);font-size:13px}.deleted-opportunities summary{cursor:pointer;font-weight:600}.deleted-opportunities p{color:var(--muted)}.deleted-opportunities>div{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 0}.table-scroll td:last-child{white-space:nowrap}
 
 .discovery-controls{border:0;padding:0;margin:0;min-width:0}
+
+/* Brighter product polish and clearer review states */
+:root{--bg:#f4f7fb;--ink:#14233a;--purple:#5746c8;--border:#dfe6f0;--soft:#eef2ff}
+body{background:radial-gradient(circle at 85% 0,#e9f4ff 0,transparent 28%),radial-gradient(circle at 28% 18%,#f2ecff 0,transparent 30%),var(--bg)}
+.sidebar{background:linear-gradient(180deg,#fff 0,#fbfcff 60%,#f5f8ff 100%);box-shadow:10px 0 35px #2740600a}
+.topbar{background:#ffffffd9;backdrop-filter:blur(14px)}
+.brand-icon,.primary{background:linear-gradient(135deg,#5746c8,#387bd9)}
+.primary{box-shadow:0 7px 18px #5746c82b;border-radius:9px;font-weight:650}
+.primary:hover:not(:disabled){background:linear-gradient(135deg,#4939ad,#276bc5);transform:translateY(-1px)}
+.outline{border-color:#dbe3ef;border-radius:9px;box-shadow:0 2px 8px #23395d0a}
+.stat-card,.workflow-card,.opportunities,.studio-card,.document-card,.resume-card{box-shadow:0 12px 34px #23395d0a}
+.stat-card{border-radius:14px;border-top-width:3px}.stat-card:nth-child(1){border-top-color:#7c5ce1}.stat-card:nth-child(2){border-top-color:#3b82d0}.stat-card:nth-child(3){border-top-color:#39a878}.stat-card:nth-child(4){border-top-color:#e69645}
+.opportunities{background:#fff;border:1px solid var(--border);border-radius:15px;padding:22px}
+.selection-bar{background:linear-gradient(90deg,#eeeaff,#e9f4ff);border:1px solid #dadbf5;border-radius:10px;margin:12px 0}.selection-bar button{color:#4936a7;font-weight:650}
+.review-action{display:inline-flex;align-items:center;gap:6px;color:#4936a7;background:#eeebff;border:1px solid #ded7ff;border-radius:8px;padding:8px 10px;margin-right:3px}.review-action:hover{background:#e2dcff}
+.status-reviewing{background:#eaf2ff;border-color:#c9dbf4;color:#2e6cab}.status-queued{background:#fff4dd;border-color:#efdaaa;color:#956918}.kit-status{display:block!important;margin-top:7px;color:#65748a!important}
+.job-signals.compact{display:flex!important;gap:6px!important;align-items:center!important;background:transparent!important;border:0!important;padding:0!important;margin:5px 0 0!important}.job-signals.compact>*{margin:0!important}
+.success-banner,.studio-progress{padding:13px 15px;margin:14px 0;border-radius:9px;background:#ecf8f1;border:1px solid #bfe3ce;color:#317455;line-height:1.6}.studio-progress{background:#eef5ff;border-color:#c8dcf7;color:#356da8}
+.intake-notice{margin:18px 0;padding:17px;border-radius:11px;background:linear-gradient(120deg,#f0edff,#edf7ff);border:1px solid #dcdcf8}.intake-notice>strong{display:block;margin-bottom:9px;color:#4936a7}.intake-notice h3{margin:14px 0 4px}
+.studio-card{border-radius:18px}.studio-card:first-child{position:sticky;top:92px}.studio-card h3{color:#243654}.studio-card input,.studio-card select,.studio-card textarea{background:#fcfdff;border-color:#d8e0ec}.asset-validation{border-radius:10px}.contact-lead{background:#f8faff;border:1px solid #e6ebf3;border-radius:9px;padding:13px;margin:9px 0}
+@media(max-width:1050px){.studio-card:first-child{position:static}.opportunities{padding:16px}}
+@media(max-width:600px){.opportunities{padding:12px}.selection-bar{align-items:flex-start;flex-wrap:wrap;gap:12px}.review-action{padding:7px}}

@@ -10,7 +10,7 @@ Job Hunter brings job discovery, profile matching, tailored resumes and outreach
 
 - Discover jobs from public feeds and company career boards.
 - Rank openings against your skills and experience, with evidence and gaps.
-- Upload several PDF, DOCX or TXT resumes and compare their relevance to a job.
+- Upload, rename, and delete several PDF, DOCX or TXT resumes; review an editable profile draft and compare each version with a job.
 - Generate a **one-page ATS resume** from your saved profile.
 - Draft and edit cover letters, LinkedIn connection notes and referral messages.
 - Use a saved job or paste a job link and description.
@@ -85,7 +85,7 @@ To update a Git installation: stop the app, back up `data`, run `git pull --ff-o
 
 1. **My profile:** contact details, work authorization, professional summary, skills, experience and education. This is the factual source for Application Studio.
 2. **Preferences:** job titles and locations you want, employment type, and any required search terms. Start with broad filters.
-3. **My documents:** optionally upload alternative resumes. Supported: text-readable PDF, DOCX and UTF-8 TXT, up to 10 MB per file. Scanned PDFs need OCR first.
+3. **My documents:** optionally upload alternative resumes. Supported: text-readable PDF, DOCX and UTF-8 TXT, up to 10 MB per file. Each upload creates a local, editable profile draft and suggested job titles; nothing is saved to your profile until you review it. Scanned PDFs need OCR first.
 4. **Find opportunities:** choose a source and enter a role. Employer platforms such as Greenhouse require a company board identifier.
 5. **Application studio:** choose a job and create a one-page resume plus editable outreach drafts. Read them before sharing.
 
@@ -95,7 +95,7 @@ The **profile-fit score** helps prioritize jobs; **resume text similarity** help
 
 - [Native setup without Docker](docs/NATIVE_SETUP.md) — macOS, Linux and Windows commands.
 - [Local AI models](docs/LOCAL_AI.md) — optional Ollama setup, including Docker instructions.
-- [Chrome autofill and application review](docs/USER_GUIDE.md#optional-chrome-autofill) — manual installation, no automatic sending.
+- [Chrome autofill and LinkedIn post capture](docs/USER_GUIDE.md#optional-chrome-autofill) — manual installation, visible-post capture, no automatic sending.
 - [Developer guide](docs/DEVELOPMENT.md) — tests, architecture, source adapters and contribution checks.
 
 The base Docker setup has live submission and AI generation **disabled**. Preparing documents never sends an application or LinkedIn message.
@@ -117,7 +117,7 @@ Use a separate folder and OS account for each person on a shared computer. The a
 
 ## Current scope
 
-Automatic discovery includes 23 sources: public feeds and pages plus four company-board APIs. New adapters cover Berlin Startup Jobs, EU-Startups, Relocate.me, JobFluent, Working Nomads and the HV Capital, Earlybird and Point Nine job boards. Wellfound, Built In, Y Combinator and Workable also expose public postings. The directory lists all 34 boards, including blocked/sign-in sites for manual import. Known HTTP 403 sources are excluded from automatic search; new access blocks pause a source for one hour across all keyword searches. Availability varies, and each source provides a limited snapshot. [Source checks and limitations](docs/PRODUCT_REVIEW.md#public-source-checks).
+Automatic discovery includes 23 sources: public feeds and pages plus four company-board APIs. New adapters cover Berlin Startup Jobs, EU-Startups, Relocate.me, JobFluent, Working Nomads and the HV Capital, Earlybird and Point Nine job boards. Wellfound, Built In, Y Combinator and Workable also expose public postings. The directory lists 35 sources, including blocked/sign-in sites and LinkedIn team posts for browser-assisted import. Known HTTP 403 sources are excluded from automatic search; new access blocks pause a source for one hour across all keyword searches. Availability varies, and each source provides a limited snapshot. [Source checks and limitations](docs/PRODUCT_REVIEW.md#public-source-checks).
 
 Contact suggestions are names found in job text or search leads, not a verified LinkedIn connection graph. Resume generation uses supplied facts and checks the PDF is one page; it does not guarantee acceptance by every ATS. Local matching has a finite skills vocabulary and requires human review of eligibility and qualifications.
 
@@ -139,7 +139,11 @@ Follow the [Career engine guide](docs/CAREER_ENGINE.md) for a step-by-step workf
 
 Use the **Sort opportunities by** dropdown to order matches by score, posting date/time, source, location, company, or application priority. Choose ascending or descending order; missing values stay last.
 
-Click an opportunity's trash icon, or select rows and choose **Delete selected**, to remove unwanted openings from your dashboard. Only the visible page is included by Select all. Deleted openings can be restored from **Deleted opportunities** beneath the table, including after restarting the app. The same saved opening stays deleted if a search finds it again. Prepared documents remain on your computer. Opportunities currently being prepared or submitted cannot be deleted until that operation finishes.
+Click **Review** to move an opportunity out of New and into the stable Reviewing shortlist. Its Application Studio kit starts in the background and survives navigation, refreshes, and later searches. Select rows to review or delete in bulk; Select page affects only the visible page.
+
+Click an opportunity's trash icon, or select rows and choose **Delete selected**, to remove unwanted openings. Deleted listings can be restored from **Deleted opportunities**, including after restarting. The same opening stays excluded if another search finds it. Deleting a job also removes its generated kits, answers, prepared documents, and derived job data; restoring the listing does not restore those files. Opportunities currently being submitted cannot be deleted until that operation finishes.
+
+See [project context](docs/PROJECT_CONTEXT.md) for the durable architecture, state model, privacy boundaries, and release checklist.
 
 ### Latest product review
 

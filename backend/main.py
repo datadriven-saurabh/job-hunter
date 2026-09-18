@@ -34,8 +34,13 @@ from backend.agents.job_sources import SOURCE_INFO, source_catalog, discover as 
 @asynccontextmanager
 async def lifespan(app):
     db.init_db()
+    from backend.services import studio_store
+    import shutil
+    studio_store.migrate_kits()
+    shutil.rmtree(db.DATA/'kits'/'.pending',ignore_errors=True)
+    db.execute("UPDATE studio_runs SET state='failed',error='Preparation was interrupted by a restart. Retry from Application Studio.' WHERE state IN ('queued','running')")
     # Keep reviewed documents and any unconfirmed submission log after a restart.
-    db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NULL THEN 'MATCHED' ELSE 'TAILORED' END WHERE status='QUEUED'")
+    db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NOT NULL THEN 'TAILORED' WHEN job_id IN (SELECT job_id FROM studio_runs UNION SELECT job_id FROM studio_kits WHERE job_id IS NOT NULL) THEN 'REVIEWING' ELSE 'MATCHED' END WHERE status='QUEUED'")
     app.state.chromium_path = ''
     async def probe_browser():
         from playwright.async_api import async_playwright
@@ -56,7 +61,7 @@ app.include_router(model_router)
 from backend.career_api import router as career_router
 app.include_router(career_router)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost','127.0.0.1','testserver'])
-app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT'],allow_headers=['Content-Type','If-Match'])
+app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT','DELETE'],allow_headers=['Content-Type','If-Match'])
 
 from backend.security import LocalSecurityMiddleware
 app.add_middleware(LocalSecurityMiddleware)
@@ -193,8 +198,10 @@ def load_demo():
     return search(SearchRequest())
 
 @app.get('/api/v1/applications')
-def applications(status:Optional[ApplicationStatus]=None):
-    return [j for j in db.applications() if not status or j['status']==status.value]
+def applications(status:Optional[ApplicationStatus]=None,phase:str='all'):
+    if phase not in {'all','new','reviewing'}:raise HTTPException(400,'Unknown opportunity phase.')
+    phases={'new':{'DISCOVERED','MATCHED'},'reviewing':{'REVIEWING','QUEUED','TAILORED'}}
+    return [j for j in db.applications() if (not status or j['status']==status.value) and (phase=='all' or j['status'] in phases[phase])]
 
 @app.get('/api/v1/applications/deleted')
 def deleted_opportunities():
@@ -202,6 +209,19 @@ def deleted_opportunities():
 
 class OpportunityIDs(BaseModel):
     job_ids:List[str]=Field(min_length=1,max_length=100)
+
+@app.post('/api/v1/applications/review')
+def review_opportunities(body:OpportunityIDs,tasks:BackgroundTasks):
+    from backend.services import studio_store
+    from backend.studio_api import generate_review
+    with queue_reservation:
+        ids=list(dict.fromkeys(body.job_ids));jobs=[require_job(id) for id in ids]
+        if any(j['status'] not in {'DISCOVERED','MATCHED','TAILORED','REVIEWING'} for j in jobs):raise HTTPException(409,'Only new or reviewing opportunities can be moved into review.')
+        for id in ids:
+            db.execute("UPDATE application_records SET status='REVIEWING',updated_at=CURRENT_TIMESTAMP WHERE job_id=:id",{'id':id})
+            token=studio_store.reserve(id)
+            if token:tasks.add_task(generate_review,id,token)
+    return {'reviewing':ids,'message':f'{len(ids)} opportunities moved to Reviewing. Application Studio prepares missing kits in the background.'}
 
 @app.post('/api/v1/applications/delete')
 def delete_opportunities(body:OpportunityIDs):
@@ -214,7 +234,9 @@ def delete_opportunities(body:OpportunityIDs):
             if rows[0]['status']=='QUEUED':raise HTTPException(409,'Wait for preparation or submission to finish before deleting this opportunity.')
         with db.engine.begin() as conn:
             for id in ids:conn.execute(db.text('INSERT OR IGNORE INTO deleted_opportunities (job_id) VALUES (:id)'),{'id':id})
-    return {'deleted':ids,'message':f'{len(ids)} opportunities deleted. Restore them from Deleted opportunities.'}
+        from backend.services.studio_store import remove_artifacts
+        for id in ids:remove_artifacts(id)
+    return {'deleted':ids,'message':f'{len(ids)} opportunities deleted with their application kits and generated data. The job listing can be restored; documents must be regenerated.'}
 
 @app.post('/api/v1/applications/restore')
 def restore_opportunities(body:OpportunityIDs):
@@ -247,7 +269,7 @@ def reserve_batch(job_ids,background_tasks,submit=False):
     used=db.query("SELECT COUNT(*) n FROM application_records WHERE status='QUEUED' OR (status='APPLIED' AND date(updated_at)=date('now'))")[0]['n']
     if len(ids)+used>daily: raise HTTPException(400,'This batch exceeds your remaining daily application limit.')
     for j in jobs:
-        if j['status'] not in ['DISCOVERED','MATCHED','TAILORED']: raise HTTPException(409,'Only discovered, matched, or tailored applications can be queued.')
+        if j['status'] not in ['DISCOVERED','MATCHED','TAILORED','REVIEWING']: raise HTTPException(409,'Only new or reviewing applications can be queued.')
         if any('unconfirmed' in l['action'].lower() for l in j['submission_logs']): raise HTTPException(409,'Review the unconfirmed submission on the employer portal before retrying.')
         if not submit and resumes.selected(j['job_id']) not in {None,'profile'}:
             raise HTTPException(409,'Preparation uses the fixed template and your saved profile. Review the upload in My documents, add its verified facts to Candidate evidence in Application Studio, and select Profile resume before preparing. The original upload remains available for manual applications.')
@@ -264,9 +286,14 @@ class StatusUpdate(BaseModel):
     status:ApplicationStatus
 
 @app.patch('/api/v1/applications/{job_id}')
-def update_status(job_id:str,body:StatusUpdate):
+def update_status(job_id:str,body:StatusUpdate,tasks:BackgroundTasks):
+    with queue_reservation:
+        if body.status==ApplicationStatus.REVIEWING:return review_opportunities(OpportunityIDs(job_ids=[job_id]),tasks)
+        return _update_status(job_id,body)
+
+def _update_status(job_id,body):
     job=require_job(job_id)
-    allowed={'DISCOVERED':['MATCHED','REJECTED'],'MATCHED':['APPLIED','REJECTED'],'TAILORED':['APPLIED','REJECTED'],'APPLIED':['INTERVIEWING','REJECTED'],'INTERVIEWING':['OFFER','REJECTED'],'REJECTED':['MATCHED'],'OFFER':[],'QUEUED':[]}
+    allowed={'DISCOVERED':['MATCHED','REJECTED'],'MATCHED':['APPLIED','REJECTED'],'REVIEWING':['APPLIED','REJECTED'],'TAILORED':['APPLIED','REJECTED'],'APPLIED':['INTERVIEWING','REJECTED'],'INTERVIEWING':['OFFER','REJECTED'],'REJECTED':['MATCHED'],'OFFER':[],'QUEUED':[]}
     if body.status.value not in allowed[job['status']]: raise HTTPException(409,'This status transition is not available.')
     db.execute('UPDATE application_records SET status=:status,updated_at=CURRENT_TIMESTAMP WHERE job_id=:id',{'id':job_id,'status':body.status.value})
     log(job_id,'SUCCESS',f'Status manually updated to {body.status.value}')

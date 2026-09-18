@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS application_records (
     job_url TEXT NOT NULL,
     match_score FLOAT NOT NULL,
     classification VARCHAR(50) NOT NULL, -- HEADLESS_AUTO | HUMAN_IN_THE_LOOP_LINK
-    status VARCHAR(50) NOT NULL,        -- DISCOVERED | MATCHED | QUEUED | TAILORED | APPLIED | INTERVIEWING | REJECTED | OFFER
+    status VARCHAR(50) NOT NULL,        -- DISCOVERED | MATCHED | REVIEWING | QUEUED | TAILORED | APPLIED | INTERVIEWING | REJECTED | OFFER
     tailored_resume_path TEXT,
     tailored_cover_letter_path TEXT,
     extracted_form_fields JSONB,
@@ -86,4 +86,19 @@ CREATE TABLE IF NOT EXISTS discovery_seen (
 CREATE TABLE IF NOT EXISTS deleted_opportunities (
     job_id TEXT PRIMARY KEY REFERENCES application_records(job_id) ON DELETE CASCADE,
     deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Kits survive navigation, profile edits and discovery refreshes.
+CREATE TABLE IF NOT EXISTS studio_kits (
+    kit_id TEXT PRIMARY KEY,
+    job_id TEXT REFERENCES application_records(job_id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_studio_job ON studio_kits(job_id,created_at);
+CREATE TABLE IF NOT EXISTS studio_runs (
+    job_id TEXT PRIMARY KEY REFERENCES application_records(job_id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    state TEXT NOT NULL,
+    error TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

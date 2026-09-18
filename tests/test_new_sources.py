@@ -74,6 +74,14 @@ def test_access_block_suspends_entire_source_across_queries(monkeypatch):
         assert 'startupjobs' in {s['id'] for s in c.get('/api/v1/jobs/sources?include_unavailable=true').json()}
 
 
+def test_linkedin_team_posts_are_browser_assisted_only():
+    assert 'linkedin_posts' not in {s['id'] for s in job_sources.source_catalog()}
+    source=next(s for s in job_sources.source_catalog(True) if s['id']=='linkedin_posts')
+    assert not source['available']
+    assert source['kind']=='browser-assisted'
+    assert source['url'].startswith('https://www.linkedin.com/search/results/content/')
+
+
 def test_literal_newlines_in_public_jsonld_do_not_drop_job():
     jobs=job_sources.jsonld_jobs('<script type="application/ld+json">{"@type":"JobPosting","title":"Data Analyst","description":"SQL\nanalytics","hiringOrganization":{"name":"Example"}}</script>')
     assert len(jobs)==1 and 'SQL' in jobs[0]['description']

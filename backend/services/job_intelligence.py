@@ -81,6 +81,8 @@ def enrich(job,previous=None,now=None):
     out['requisition_id']=job.get('requisition_id') or extract_requisition(job.get('description',''))
     out.update(visa_signal(job.get('description',''),out['source_url']))
     out['language_requirements']=language_requirements(job.get('description',''))
+    from backend.services.posting_language import posting_language
+    out['posting_language']=posting_language(job.get('description',''),job.get('source_language'))
     return out
 
 

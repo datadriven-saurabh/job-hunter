@@ -42,16 +42,18 @@ Priority labels: Apply first, Consider, Stretch / low fit, and Review details. S
 
 In My documents, choose Upload resumes. You can select several files. Each may be up to 10 MB: text-readable PDF, DOCX, or UTF-8 TXT. A scanned image PDF needs OCR before upload.
 
-The app stores each original and extracts a local keyword corpus. Uploading a resume does **not** replace or automatically update My profile. You can review extracted text and rename versions.
+The app stores each original and extracts a local keyword corpus. Uploading opens an editable profile draft and suggested job titles. It does **not** replace My profile until you review and save the draft. You can review extracted text, rename versions so matching suggestions are recognizable, build a new draft from any version, or delete an upload. Deleting an upload retains the already-saved profile and existing job kits.
 
-## 6. Create a one-page application kit
+## 6. Review opportunities and create a one-page application kit
+
+In New opportunities, choose **Review** for one job or select several and choose **Move selected to Reviewing**. Those jobs leave New, remain stable across later searches, and start their Application Studio kits in the background. Open Reviewing to see preparation status and open the saved workspace. If preparation is interrupted, Application Studio shows a retry action.
 
 Open Application studio, or use its shortcut in a job's detail panel.
 
 1. Select a saved job, or enter a public posting URL and click Read public job link.
 2. Check the title, employer and description. For blocked or unsupported pages, paste the missing information yourself.
 3. Optionally enter the name of a recipient you have verified.
-4. Click Create application kit.
+4. Wait for the background kit or click Create validated application kit. Creating again saves a new version; earlier versions remain selectable.
 5. Preview/download the one-page PDF. Edit the cover letter, connection note and referral message as needed.
 6. Click Save edited drafts before downloading the text; downloads contain the last saved version.
 
@@ -82,6 +84,8 @@ Interview coach provides template-based practice without a model. With local AI 
 5. Open a saved job's exact application URL.
 6. Open the extension, select that job and choose Fill this application.
 7. Review all fields, attach your resume and complete the employer's remaining steps yourself.
+
+To capture a hiring post shared by someone on LinkedIn, open that individual post, open the extension, and choose **Capture visible LinkedIn post**. Enter or correct the exact job title, company, location, and application URL, review the captured post text, then choose **Import and match**. The extension reads only the visible post after you click; it does not crawl your feed, access your connection graph, bypass LinkedIn controls, or send a connection request.
 
 The extension fills supported visible empty contact fields. It does not overwrite existing answers or submit. It cannot solve every form or login flow. It connects to the API on localhost:8000.
 

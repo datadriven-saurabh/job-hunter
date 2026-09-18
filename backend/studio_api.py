@@ -1,12 +1,15 @@
 import json
 import re
 import uuid
+import shutil
 from urllib.parse import urlparse
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 from bs4 import BeautifulSoup
 from backend import database as db
+from backend.state import queue_reservation
+from backend.services import studio_store as store
 from backend.agents.job_sources import public_get, jsonld_jobs, ALLOWED, SourceUnavailable
 from backend.services.career_generator import generateATSResume, generateCoverLetter, generateLinkedInReferralMessage
 from backend.services.career_render import render_resume,render_cover
@@ -61,51 +64,114 @@ class KitUpdate(BaseModel):
 
 def directory(id):
     if not re.fullmatch(r'[a-f0-9]{32}',id):raise HTTPException(404,'Draft not found.')
+    if not db.query('SELECT kit_id FROM studio_kits WHERE kit_id=:id',{'id':id}):raise HTTPException(404,'Draft not found.')
     path=db.DATA/'kits'/id
     if not (path/'kit.json').exists():raise HTTPException(404,'Draft not found.')
     return path
 
+@router.get('/jobs/{job_id}')
+def job_workspace(job_id:str):
+    return store.workspace(job_id)
+
+@router.post('/jobs/{job_id}/retry')
+def retry_workspace(job_id:str,tasks:BackgroundTasks):
+    token=store.reserve(job_id,reuse=False)
+    if token:tasks.add_task(generate_review,job_id,token)
+    return {'state':'queued' if token else 'running'}
+
+def generate_review(job_id,token):
+    with store.generation_worker:
+        with queue_reservation:
+            if not store.current(job_id,token):return
+            store.finish(job_id,token,'running')
+            job=db.get_job(job_id);profile=db.profile()
+        try:
+            _generate_kit(KitRequest(job_id=job_id),profile,job,token)
+        except Exception as exc:
+            with queue_reservation:
+                message=exc.detail if isinstance(exc,HTTPException) else 'Preparation failed. Review your profile and retry from Application Studio.'
+                store.finish(job_id,token,'failed',str(message)[:500])
+
 @router.post('/kits')
 def create(body:KitRequest):
-    profile=db.profile()
-    if not profile:raise HTTPException(400,'Save My profile first.')
-    job=db.get_job(body.job_id) if body.job_id else body.model_dump()
-    if not job:raise HTTPException(404,'Job not found.')
+    with queue_reservation:
+        profile=db.profile()
+        if not profile:raise HTTPException(400,'Save My profile first.')
+        if body.job_id:job=db.get_job(body.job_id)
+        else:
+            from backend.agents.scout_agent import job_id
+            job=db.get_job(job_id(body.job_url)) or body.model_dump()
+        if not job:raise HTTPException(404,'Job not found.')
+        linked=job.get('job_id') or None
+        token=store.reserve(linked,reuse=False) if linked else None
+        if linked and not token:raise HTTPException(409,'A kit is already being prepared for this opportunity.')
+    try:return _generate_kit(body,profile,job,token)
+    except Exception:
+        with queue_reservation:
+            if linked:store.finish(linked,token,'failed','Preparation failed. Review required profile and job details, then retry.')
+        raise
+
+def _generate_kit(body,profile,job,token=None):
     if not all(str(job.get(k,'')).strip() for k in ['job_title','company_name','job_url']) or len(job.get('description','').strip())<80:raise HTTPException(400,'Provide company, title, job URL and a full description of at least 80 characters.')
     parsed=urlparse(job['job_url'])
     if parsed.scheme!='https' or not parsed.hostname or parsed.username:raise HTTPException(400,'Use a valid HTTPS job URL.')
     if body.requisition_id:job=dict(job,requisition_id=body.requisition_id)
     job=enrich(job)
-    id=uuid.uuid4().hex;path=db.DATA/'kits'/id;path.mkdir(parents=True,exist_ok=True)
-    router=ModelRouter()
+    id=uuid.uuid4().hex;path=db.DATA/'kits'/'.pending'/id;path.mkdir(parents=True,exist_ok=True)
     try:
-        assets={'resume':generateATSResume(profile,job,router=router),
-                'cover_letter':generateCoverLetter(profile,job,router=router,recipient=body.recipient),
-                'connection_note':generateLinkedInReferralMessage(profile,job,'invite_note',recipient=body.recipient,resume_url=body.resume_url),
-                'referral_message':generateLinkedInReferralMessage(profile,job,body.message_type,recipient=body.recipient,resume_url=body.resume_url,shared_context=body.shared_context)}
-    except ValueError as e:raise HTTPException(400,str(e))
-    for name,renderer in [('resume',render_resume),('cover_letter',render_cover)]:
-        asset=assets[name]
-        if asset['status']=='valid':
-            try:renderer(asset,path)
-            except ValueError as e:
-                asset['status']='needs_user_input';asset['validation']['valid']=False
-                asset['validation']['errors'].append({'code':'page_layout','message':str(e)})
-    leads=drafts(job,profile,body.recipient)
-    kit={k:leads[k] for k in ['named_contacts','contact_searches','contact_note']}
-    kit.update(id=id,job=job,assets=assets,template=RESUME_FORMAT,resume_source='Saved My profile; verified evidence',resume_pages=1 if assets['resume']['status']=='valid' else None,
-               resume_markdown=assets['resume']['preview'],**{k:assets[k]['preview'] for k in ['cover_letter','connection_note','referral_message']},
-               generation_options={'recipient':body.recipient,'resume_url':body.resume_url,'shared_context':body.shared_context,'message_type':body.message_type},model_usage=router.events)
-    (path/'kit.json').write_text(json.dumps(kit))
-    return kit
+        router=ModelRouter();router.cache_enabled=False
+        try:
+            assets={'resume':generateATSResume(profile,job,router=router),
+                    'cover_letter':generateCoverLetter(profile,job,router=router,recipient=body.recipient),
+                    'connection_note':generateLinkedInReferralMessage(profile,job,'invite_note',recipient=body.recipient,resume_url=body.resume_url),
+                    'referral_message':generateLinkedInReferralMessage(profile,job,body.message_type,recipient=body.recipient,resume_url=body.resume_url,shared_context=body.shared_context)}
+        except ValueError as e:
+            shutil.rmtree(path,ignore_errors=True)
+            raise HTTPException(400,str(e))
+        for name,renderer in [('resume',render_resume),('cover_letter',render_cover)]:
+            asset=assets[name]
+            if asset['status']=='valid':
+                try:renderer(asset,path)
+                except ValueError as e:
+                    asset['status']='needs_user_input';asset['validation']['valid']=False
+                    asset['validation']['errors'].append({'code':'page_layout','message':str(e)})
+        leads=drafts(job,profile,body.recipient)
+        kit={k:leads[k] for k in ['named_contacts','contact_searches','contact_note']}
+        from datetime import datetime,timezone
+        kit.update(id=id,created_at=datetime.now(timezone.utc).isoformat(),job=job,assets=assets,template=RESUME_FORMAT,resume_source='Saved My profile; verified evidence',resume_pages=1 if assets['resume']['status']=='valid' else None,
+                   resume_markdown=assets['resume']['preview'],**{k:assets[k]['preview'] for k in ['cover_letter','connection_note','referral_message']},
+                   generation_options={'recipient':body.recipient,'resume_url':body.resume_url,'shared_context':body.shared_context,'message_type':body.message_type,'requisition_id':body.requisition_id},model_usage=router.events)
+        with queue_reservation:
+            linked=job.get('job_id') or None
+            if linked and not store.current(linked,token):
+                shutil.rmtree(path,ignore_errors=True)
+                raise HTTPException(409,'This opportunity was deleted or preparation was cancelled.')
+            store.write_kit(path,kit)
+            path.rename(db.DATA/'kits'/id)
+            db.execute('INSERT INTO studio_kits(kit_id,job_id) VALUES (:kit,:job)',{'kit':id,'job':linked})
+            if linked:store.finish(linked,token,store.kit_state(kit))
+        return kit
+    finally:
+        shutil.rmtree(path,ignore_errors=True)
 
 @router.get('/kits')
-def list_kits():
-    paths=sorted((db.DATA/'kits').glob('*/kit.json'),key=lambda p:p.stat().st_mtime,reverse=True)
-    return [json.loads(p.read_text()) for p in paths[:100]]
+def list_kits(job_id:str|None=None):
+    if job_id and not store.active(job_id):raise HTTPException(404,'Opportunity not found.')
+    rows=db.query('SELECT kit_id FROM studio_kits '+('WHERE job_id=:id ' if job_id else '')+'ORDER BY created_at DESC,rowid DESC',{'id':job_id})
+    result=[]
+    for row in rows:
+        path=db.DATA/'kits'/row['kit_id']/'kit.json'
+        if path.is_file():result.append(json.loads(path.read_text()))
+    return result
+
+@router.get('/kits/{id}')
+def read_kit(id:str):return json.loads((directory(id)/'kit.json').read_text())
 
 @router.patch('/kits/{id}')
 def edit(id:str,body:KitUpdate):
+    with queue_reservation:return _edit(id,body)
+
+def _edit(id,body):
     path=directory(id);kit=json.loads((path/'kit.json').read_text())
     if 'assets' not in kit:raise HTTPException(409,'Regenerate this legacy kit to use the validated pipeline.')
     changes=body.model_dump();errors=[]
@@ -133,7 +199,12 @@ def edit(id:str,body:KitUpdate):
             from pathlib import Path
             Path(rendered).replace(path/'cover-letter.pdf')
         except ValueError as e:raise HTTPException(422,str(e))
-    (path/'kit.json').write_text(json.dumps(kit));return kit
+    store.write_kit(path,kit)
+    job_id=kit.get('job',{}).get('job_id')
+    if job_id and store.latest(job_id) and store.latest(job_id).get('id')==id:
+        rows=db.query('SELECT token FROM studio_runs WHERE job_id=:id',{'id':job_id})
+        if rows:store.finish(job_id,rows[0]['token'],store.kit_state(kit))
+    return kit
 
 @router.get('/kits/{id}/resume')
 def download_resume(id:str):
@@ -159,3 +230,23 @@ def download_text(id:str,kind:str):
     kit=json.loads((directory(id)/'kit.json').read_text())
     if kit.get('assets',{}).get(kind,{}).get('status') not in {None,'valid'}:raise HTTPException(409,'Resolve required fields and length checks before exporting this draft.')
     return PlainTextResponse(kit[kind],headers={'Content-Disposition':f'attachment; filename="{kind}.txt"'})
+
+class KitAnswers(BaseModel):
+    questions:list[str]=Field(min_length=1,max_length=10)
+    max_words:int=Field(default=150,ge=1,le=500)
+    max_characters:int|None=Field(default=None,ge=1,le=10000)
+
+@router.post('/kits/{id}/answers')
+def saved_answers(id:str,body:KitAnswers):
+    from backend.services.application_answers import answer_questions
+    if any(not q.strip() or len(q)>2000 for q in body.questions):raise HTTPException(422,'Each question must have 1–2,000 characters.')
+    with queue_reservation:
+        path=directory(id);kit=json.loads((path/'kit.json').read_text());profile=db.profile()
+    if not profile:raise HTTPException(400,'Save My profile first.')
+    model=ModelRouter();model.cache_enabled=False
+    answers=answer_questions(profile,kit['job'],[{'question':q,'max_words':body.max_words,'max_characters':body.max_characters,'mode':'draft'} for q in body.questions],router=model,use_cache=False)
+    result={**body.model_dump(),'answers':answers}
+    with queue_reservation:
+        path=directory(id)  # Deletion during generation must not recreate a kit.
+        kit=json.loads((path/'kit.json').read_text());kit['application_answers']=result;store.write_kit(path,kit)
+    return result

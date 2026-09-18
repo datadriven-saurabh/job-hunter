@@ -47,10 +47,11 @@ def applications(include_deleted=False, _job_id=None):
     where=[]
     if not include_deleted:where.append('a.job_id NOT IN (SELECT job_id FROM deleted_opportunities)')
     if _job_id is not None:where.append('a.job_id=:id')
-    rows=query('SELECT a.*,d.payload,s.resume_id AS selected_resume_id,r.label AS selected_resume_label '
+    rows=query('SELECT a.*,d.payload,s.resume_id AS selected_resume_id,r.label AS selected_resume_label,sr.state AS studio_state,sr.error AS studio_error, '
+               '(SELECT sk.kit_id FROM studio_kits sk WHERE sk.job_id=a.job_id ORDER BY sk.created_at DESC,sk.rowid DESC LIMIT 1) AS studio_kit_id '
                'FROM application_records a LEFT JOIN job_details d ON d.job_id=a.job_id '
                'LEFT JOIN application_resume_selection s ON s.job_id=a.job_id '
-               'LEFT JOIN resumes r ON r.resume_id=s.resume_id '+
+               'LEFT JOIN resumes r ON r.resume_id=s.resume_id LEFT JOIN studio_runs sr ON sr.job_id=a.job_id '+
                ('WHERE '+' AND '.join(where) if where else '')+' ORDER BY a.match_score DESC', {'id':_job_id})
     from backend.services.job_matching import assess
     current_profile=profile();current_config=config()
@@ -67,7 +68,7 @@ def applications(include_deleted=False, _job_id=None):
             r['match_score']=r['fit_analysis']['score']/100
             from backend.services.job_intelligence import enrich, ranking
             enriched=enrich(r,r)
-            for key in ['source','source_url','posted_at','posted_at_precision','first_seen_at','requisition_id','visa_status','visa_evidence','visa_source','visa_confidence','visa_conflict','visa_note','language_requirements']:r[key]=enriched[key]
+            for key in ['source','source_url','posted_at','posted_at_precision','first_seen_at','requisition_id','visa_status','visa_evidence','visa_source','visa_confidence','visa_conflict','visa_note','language_requirements','posting_language']:r[key]=enriched[key]
             r['application_priority']=ranking(r,current_profile,r['fit_analysis']['score'],ai_settings)
     return sorted(rows,key=lambda r:r['match_score'],reverse=True)
 

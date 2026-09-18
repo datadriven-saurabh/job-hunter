@@ -69,7 +69,7 @@ class ModelRouter:
                 identity=self._identity(used_model)
                 key=digest([self.config['version'],prompt,used_model,identity,schema.model_json_schema()])
                 path=db.DATA/'ai-cache'/f'{key}.json'
-                if path.exists():
+                if getattr(self,'cache_enabled',True) and path.exists():
                     result=schema.model_validate(json.loads(path.read_text()))
                     if validator:validator(result)
                     event.update(cache_hit=True,latency_ms=0,prompt_version=prompt['version']);self._log(event);return result
@@ -78,7 +78,8 @@ class ModelRouter:
                 r=httpx.post(self._url()+'/api/generate',json=body,timeout=self.config['timeout_seconds'],trust_env=False);r.raise_for_status();raw=r.json()
                 result=schema.model_validate_json(raw['response'])
                 if validator:validator(result)
-                path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix('.'+uuid.uuid4().hex+'.tmp');tmp.write_text(result.model_dump_json());tmp.replace(path)
+                if getattr(self,'cache_enabled',True):
+                    path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix('.'+uuid.uuid4().hex+'.tmp');tmp.write_text(result.model_dump_json());tmp.replace(path)
                 event.update(input_tokens=raw.get('prompt_eval_count',0),output_tokens=raw.get('eval_count',0),prompt_version=prompt['version'],model_version=identity)
                 event['latency_ms']=round((time.monotonic()-started)*1000);self._log(event);return result
             except Exception as exc:

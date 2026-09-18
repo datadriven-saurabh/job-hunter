@@ -4,6 +4,16 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from backend.agents import job_sources as source
 from backend.services.job_intelligence import enrich
+from backend.services.posting_language import posting_language
+
+
+def test_posting_language_is_separate_and_conservative():
+    english='We are looking for an experienced analyst to work with our team and build reports for your stakeholders. The role will include requirements and responsibilities.'
+    german='Wir suchen einen Analysten für unser Team. Du arbeitest mit deinen Kenntnissen und deiner Erfahrung an den Aufgaben für die Stelle und das Unternehmen.'
+    assert posting_language(english)['label']=='English'
+    assert posting_language(german)['label']=='German'
+    assert posting_language('SQL Python')['label']=='Unknown'
+    assert posting_language('',explicit='de-DE')=={'label':'German','method':'Source supplied','confidence':'source'}
 
 URL='https://www.stepstone.de/stellenangebote--Data-Analyst-Berlin-Example--123456-inline.html'
 JOB={'@type':'JobPosting','title':'Data Analyst','hiringOrganization':{'name':'Example'},'description':'SQL analytics and dashboards for a product team. We provide visa sponsorship.','url':URL,'datePosted':'2025-09-01T10:30:00Z','identifier':{'value':'REQ-123'},'jobLocation':{'address':{'addressLocality':'Berlin'}}}

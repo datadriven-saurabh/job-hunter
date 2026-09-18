@@ -8,11 +8,13 @@
 - `backend/agents/`: discovery adapters, orchestration, local-model calls and optional submission.
 - `backend/services/`: profile matching, resume indexing, one-page rendering and outreach drafts.
 - `backend/studio_api.py`, `backend/model_api.py`: Application Studio and model comparison endpoints.
-- `extension/`: optional Chrome autofill extension.
+- `extension/`: optional Chrome autofill and user-initiated visible LinkedIn-post capture extension.
 - `tests/`: isolated backend workflow tests.
 - `scripts/local.py`: native service launcher.
 
 See [native setup](NATIVE_SETUP.md) for dependencies. For UI development use `npm --prefix frontend run dev` alongside the API, after stopping the production frontend on port 3000.
+
+See [project context](PROJECT_CONTEXT.md) before changing workflow states, persistence, generation rules, discovery access, or privacy boundaries.
 
 ## Check changes
 

@@ -40,6 +40,29 @@ def test_upload_recommend_choose_and_prepare():
         c.patch(f'/api/v1/applications/{id}',json={'status':'APPLIED'})
         assert c.post(f'/api/v1/applications/{id}/resume',json={'resume_id':aid}).status_code==409
 
+def test_resume_rename_delete_and_profile_draft_are_local_and_explicit():
+    text=b'''Taylor Morgan\ntaylor@example.org | +49 123 456 789 | Berlin, Germany\nWork authorization: EU citizen\nSUMMARY\nData analyst building reliable reporting products for operations teams.\nSKILLS\nSQL Python Tableau Excel statistics dashboards\nEXPERIENCE\nData Analyst | Example GmbH | January 2022 - Present\nBuilt SQL dashboards for weekly operations reviews.\nEDUCATION\nExample University | BSc | Economics | 2021\n'''
+    with TestClient(app) as c:
+        response=c.post('/api/v1/resumes/upload',files={'file':('candidate.txt',text,'text/plain')})
+        assert response.status_code==200,response.text
+        result=response.json();resume_id=result['resume_id'];draft=result['profile_draft']
+        assert draft['review_required'] and not draft['saved']
+        assert draft['profile']['personal_details']['full_name']=='Taylor Morgan'
+        assert draft['profile']['base_resume']['experience_history'][0]['role']=='Data Analyst'
+        assert draft['suggested_titles'][0]['title']=='Data Analyst'
+        assert c.patch(f'/api/v1/resumes/{resume_id}',json={'label':'  Europe analytics  '}).status_code==200
+        assert c.get(f'/api/v1/resumes/{resume_id}').json()['label']=='Europe analytics'
+        path=__import__('pathlib').Path(resumes.get(resume_id)['path']);assert path.exists()
+        assert c.delete(f'/api/v1/resumes/{resume_id}').status_code==200
+        assert not path.exists() and c.get(f'/api/v1/resumes/{resume_id}').status_code==404
+
+def test_profile_parser_leaves_ambiguous_dates_and_authorization_uninvented():
+    from backend.services.resume_intake import profile_draft
+    draft=profile_draft('Alex Candidate\nalex@example.org\nEXPERIENCE\nSome Company 2020 - 2022\nDid useful work.\nSKILLS\nPython SQL')
+    assert draft['profile']['personal_details']['work_authorization']==''
+    assert draft['profile']['base_resume']['experience_history']==[]
+    assert 'work authorization' in draft['missing_fields']
+
 def test_file_validation_and_docx_extraction():
     with TestClient(app) as c:
         assert c.post('/api/v1/resumes/upload',files={'file':('x.exe',b'not a resume')}).status_code==400
