@@ -33,3 +33,5 @@ ATS Resume format.txt
 # Sanitized, source-controlled visual reference only
 !assets/Resume template.pdf
 assets/job_hunter_ai_optimization_plan (1).md
+.vercel
+.env*

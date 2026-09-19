@@ -14,7 +14,7 @@ LOCAL_ORIGINS = {
     "http://localhost:3000", "http://127.0.0.1:3000",
     "http://localhost:8000", "http://127.0.0.1:8000",
 }
-PUBLIC_PATHS = {"/health"}
+PUBLIC_PATHS = {"/health", "/auth-config"}
 _token_cache = {}
 _cache_lock = Lock()
 
@@ -83,13 +83,14 @@ def _consume_limit(path: str, method: str):
     if not value:
         return True
     event, limit = value
+    user_id = db.current_user()
     count = db.query(
-        "SELECT COUNT(*) AS n FROM usage_events WHERE event_type=:event AND created_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'",
-        {"event": event},
+        "SELECT COUNT(*) AS n FROM usage_events WHERE user_id=:user_id AND event_type=:event AND created_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'",
+        {"user_id": user_id, "event": event},
     )[0]["n"]
     if count >= limit:
         return False
-    db.execute("INSERT INTO usage_events(user_id,event_type) VALUES (:user_id,:event)", {"user_id": db.current_user(), "event": event})
+    db.execute("INSERT INTO usage_events(user_id,event_type) VALUES (:user_id,:event)", {"user_id": user_id, "event": event})
     return True
 
 

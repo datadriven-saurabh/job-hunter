@@ -1,10 +1,10 @@
-import {accessToken} from './supabase';
+import {accessToken,hosted} from './supabase';
 export const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export async function authHeaders(json=true){const token=await accessToken();return {...(json?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})}}
 export async function api<T = any>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const revision=path==='/profile'&&method==='POST'&&body&&typeof body==='object'&&'_revision' in body?String((body as any)._revision):null;
   const response=await fetch(`${BASE}/api/v1${path}`,{method,headers:{...await authHeaders(),...(revision?{'If-Match':revision}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})});
-  if(response.status===401&&typeof window!=='undefined'&&process.env.NEXT_PUBLIC_SUPABASE_URL)window.location.assign('/login?expired=1');
+  if(response.status===401&&typeof window!=='undefined'&&hosted)window.location.assign('/login?expired=1');
   if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(typeof data.detail==='string'?data.detail:'Please check the form values and try again.')}return response.json();
 }
 export async function downloadPrivate(path:string,filename:string){const response=await fetch(`${BASE}/api/v1${path}`,{headers:await authHeaders(false)});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.detail||'Download failed.')}const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)}

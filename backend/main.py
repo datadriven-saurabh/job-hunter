@@ -81,6 +81,12 @@ def require_profile(id='local'):
 @app.get('/health')
 def health(): return {'status':'healthy','engine':'LangGraph','mode':'hosted' if db.HOSTED else 'local','generation':'Local Ollama model' if os.getenv('ENABLE_LOCAL_LLM')=='true' else 'Grounded templates and rubric-based coaching'}
 
+@app.get('/auth-config')
+def auth_config():
+    """Return only Supabase's browser-safe project configuration."""
+    if not db.HOSTED: return {'hosted':False}
+    return {'hosted':True,'url':os.environ['SUPABASE_URL'],'publishable_key':os.environ['SUPABASE_ANON_KEY']}
+
 def profile_ready(profile):
     if not profile: return False
     p=profile['personal_details']
