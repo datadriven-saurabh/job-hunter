@@ -1,0 +1,3 @@
+'use client';
+import {useEffect,useState} from 'react';import {useRouter} from 'next/navigation';import {hosted,supabase} from '@/lib/supabase';
+export default function AuthGate({children}:{children:React.ReactNode}){const router=useRouter(),[ready,setReady]=useState(!hosted);useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data})=>{if(data.session)setReady(true);else router.replace('/login')});const {data}=supabase.auth.onAuthStateChange((_e,session)=>{if(!session)router.replace('/login');else setReady(true)});return()=>data.subscription.unsubscribe()},[router]);if(!ready)return <main className="auth-shell"><section className="auth-card"><h1>Job Hunter</h1><p>Opening your private workspace…</p></section></main>;return <>{children}</>}

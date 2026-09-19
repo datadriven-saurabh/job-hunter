@@ -93,7 +93,7 @@ def workingnomads_jobs(keywords='',limit=20):
     if rows and time.time()-rows[0]['fetched_at']<21600:raw=json.loads(rows[0]['payload'])
     else:
         raw=public_get('https://www.workingnomads.com/api/exposed_jobs/').json()
-        db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
+        db.execute('INSERT INTO source_cache(cache_key,fetched_at,payload) VALUES (:key,:time,:payload) ON CONFLICT(cache_key) DO UPDATE SET fetched_at=excluded.fetched_at,payload=excluded.payload',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
     jobs=[]
     for item in raw[:1000]:
         url=item.get('url','');p=urlparse(url)

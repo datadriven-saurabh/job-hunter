@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, field_validator
 from backend import database as db
 from backend.services import resumes
@@ -54,6 +54,10 @@ def download(resume_id:str):
     try:r=resumes.get(resume_id)
     except ValueError as exc:raise HTTPException(404,str(exc))
     if not r.get('path'):raise HTTPException(400,'The profile resume is generated when you prepare an application.')
+    if db.HOSTED:
+        from backend import storage
+        content=storage.get(r['path'])
+        return Response(content,media_type={'pdf':'application/pdf','docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document','txt':'text/plain'}.get(r['file_type'],'application/octet-stream'),headers={'Content-Disposition':f'attachment; filename="{Path(r["original_name"]).name}"'})
     return FileResponse(r['path'],filename=r['original_name'])
 
 @router.get('/applications/{job_id}/resume-matches')
@@ -89,10 +93,14 @@ def delete_resume(resume_id:str):
         try:record=resumes.get(resume_id)
         except ValueError as exc:raise HTTPException(404,str(exc))
         if db.query("SELECT a.job_id FROM application_records a JOIN application_resume_selection s ON s.job_id=a.job_id WHERE s.resume_id=:id AND a.status='QUEUED'",{'id':resume_id}):raise HTTPException(409,'This resume is in use by a queued application. Wait for it to finish.')
-        path=Path(record['path']).resolve();root=(db.DATA/'resumes').resolve()
-        if root not in path.parents:raise HTTPException(409,'Resume storage path is invalid.')
-        path.unlink(missing_ok=True)
-        with db.engine.begin() as conn:
+        if db.HOSTED:
+            from backend import storage
+            storage.delete(record['path'])
+        else:
+            path=Path(record['path']).resolve();root=(db.DATA/'resumes').resolve()
+            if root not in path.parents:raise HTTPException(409,'Resume storage path is invalid.')
+            path.unlink(missing_ok=True)
+        with db.transaction() as conn:
             conn.execute(db.text('DELETE FROM application_resume_selection WHERE resume_id=:id'),{'id':resume_id})
             conn.execute(db.text('DELETE FROM resumes WHERE resume_id=:id'),{'id':resume_id})
     return {'deleted':resume_id,'message':'Resume and its extracted text deleted. Your saved profile and application kits are retained.'}

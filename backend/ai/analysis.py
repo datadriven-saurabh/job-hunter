@@ -58,7 +58,7 @@ def analyze_jobs(jobs,profile,criteria,router=None):
         result={'job_id':job.get('job_id'),'raw_fit_score':fit['score'],'visa':{k:job[k] for k in ['visa_status','visa_evidence','visa_source','visa_conflict']},'language_eligibility':language,'stages':['rules'],'scoring_version':cfg['version'],'status':'rules_only','cache_hit':False,'structured':None,'evaluation':None,'deep_review':None,'semantic_similarity':None}
         if language['eligible'] is False or fit['preference_conflicts']:
             result.update(status='hard_filter',decision='REJECTED',preference_conflicts=fit['preference_conflicts']);results.append(result);continue
-        key=analysis_key(job,profile,router);path=db.DATA/'job-analysis-cache'/f'{key}.json'
+        key=analysis_key(job,profile,router);path=db.user_data_path('job-analysis-cache',f'{key}.json')
         if path.exists():
             result.update(json.loads(path.read_text()));result.update(job_id=job.get('job_id'),cache_hit=True);results.append(result);continue
         prompt_job={k:job.get(k) for k in ['job_title','company_name','description','location']}

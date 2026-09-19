@@ -1,9 +1,12 @@
+import {accessToken} from './supabase';
 export const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export async function authHeaders(json=true){const token=await accessToken();return {...(json?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})}}
 export async function api<T = any>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const revision = path === '/profile' && method === 'POST' && body && typeof body === 'object' && '_revision' in body ? String(body._revision) : null;
-  const response = await fetch(`${BASE}/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json', ...(revision ? {'If-Match': revision} : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
-  if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(typeof data.detail === 'string' ? data.detail : 'Please check the form values and try again.'); }
-  return response.json();
+  const revision=path==='/profile'&&method==='POST'&&body&&typeof body==='object'&&'_revision' in body?String((body as any)._revision):null;
+  const response=await fetch(`${BASE}/api/v1${path}`,{method,headers:{...await authHeaders(),...(revision?{'If-Match':revision}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})});
+  if(response.status===401&&typeof window!=='undefined'&&process.env.NEXT_PUBLIC_SUPABASE_URL)window.location.assign('/login?expired=1');
+  if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(typeof data.detail==='string'?data.detail:'Please check the form values and try again.')}return response.json();
 }
+export async function downloadPrivate(path:string,filename:string){const response=await fetch(`${BASE}/api/v1${path}`,{headers:await authHeaders(false)});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.detail||'Download failed.')}const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)}
 export type FitAnalysis = {score:number;priority:string;confidence:string;components:{name:string;score:number;weight:number}[];matched_skills:string[];missing_skills:string[];requirements:{skill:string;importance:string;matched:boolean;job_evidence:string;profile_source:string|null;profile_evidence:string|null}[];warnings:string[];preference_conflicts:string[];method:string};
 export type Job = {studio_state?:string;studio_error?:string;studio_kit_id?:string;posting_language?:{label:string;method:string;confidence:string};requisition_id?:string;posted_at?:string;posted_at_precision?:string;application_priority?:any;fit_analysis?:FitAnalysis;job_id:string;selected_resume_id?:string;selected_resume_label?:string;source?:string;source_url?:string;description_incomplete?:boolean;company_name:string;job_title:string;job_url:string;match_score:number;classification:string;status:string;location?:string;salary_min?:number;salary_max?:number;skills?:string[];description?:string;team?:string;logo?:string;color?:string;demo?:boolean;tailored_resume_path?:string;tailored_cover_letter_path?:string;submission_logs:{action:string;result:string;timestamp:string;error_message?:string}[]};

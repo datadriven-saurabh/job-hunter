@@ -228,7 +228,7 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
                 batch=public_get('https://'+host+'/api/job-board-api',params={'page':page}).json().get('data',[])
                 raw.extend(batch)
                 if len(batch)<100:break
-            db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
+            db.execute('INSERT INTO source_cache(cache_key,fetched_at,payload) VALUES (:key,:time,:payload) ON CONFLICT(cache_key) DO UPDATE SET fetched_at=excluded.fetched_at,payload=excluded.payload',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
         result=[{'job_title':j['title'],'company_name':j['company_name'],'description':clean(j.get('description','')),'job_url':j['url'],'source_url':j['url'],'location':j.get('location','')+(' · Remote' if j.get('remote') else ''),'source':'Arbeitnow UK' if provider=='arbeitnow_uk' else 'Arbeitnow','posted_at':j.get('created_at'),'employment_type':'Not specified'} for j in raw]
         return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in keywords.lower().split())][:limit]
     if provider=='smartrecruiters':
@@ -257,7 +257,7 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
             else:
                 markup=public_get('https://weworkremotely.com/remote-jobs.rss').text
                 result=wwr_jobs(markup)
-            db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(result)})
+            db.execute('INSERT INTO source_cache(cache_key,fetched_at,payload) VALUES (:key,:time,:payload) ON CONFLICT(cache_key) DO UPDATE SET fetched_at=excluded.fetched_at,payload=excluded.payload',{'key':key,'time':time.time(),'payload':json.dumps(result)})
         words=keywords.lower().split()
         return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in words)][:limit]
     if provider in {'greenhouse','lever'}:
@@ -272,7 +272,7 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
         if rows and time.time()-rows[0]['fetched_at']<21600:raw=json.loads(rows[0]['payload'])
         else:
             raw=public_get('https://remotive.com/api/remote-jobs').json().get('jobs',[])
-            db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
+            db.execute('INSERT INTO source_cache(cache_key,fetched_at,payload) VALUES (:key,:time,:payload) ON CONFLICT(cache_key) DO UPDATE SET fetched_at=excluded.fetched_at,payload=excluded.payload',{'key':key,'time':time.time(),'payload':json.dumps(raw)})
         result=[{'company_name':j['company_name'],'job_title':j['title'],'job_url':j['url'],'description':clean(j.get('description','')),'location':j.get('candidate_required_location','Worldwide')+' · Remote','employment_type':employment(j.get('job_type')),'salary_text':j.get('salary',''),'source':'Remotive','posted_at':j.get('publication_date'),'requisition_id':str(j['id']) if j.get('id') else None,'source_url':j['url']} for j in raw]
         words=keywords.lower().split()
         return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in words)][:limit]
@@ -377,10 +377,10 @@ def discover(provider,**kwargs):
         payload={'error':str(exc)[:500]}
         if re.search(r'HTTP (401|403|429|999)\b',payload['error']):
             # Suppress every query for a blocked board, not just this keyword cache.
-            db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':'source-block:'+provider,'time':time.time(),'payload':json.dumps({'error':payload['error']+' Paused for one hour.'})})
-        db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(payload)})
+            db.execute('INSERT INTO source_cache(cache_key,fetched_at,payload) VALUES (:key,:time,:payload) ON CONFLICT(cache_key) DO UPDATE SET fetched_at=excluded.fetched_at,payload=excluded.payload',{'key':'source-block:'+provider,'time':time.time(),'payload':json.dumps({'error':payload['error']+' Paused for one hour.'})})
+        db.execute('INSERT INTO source_cache(cache_key,fetched_at,payload) VALUES (:key,:time,:payload) ON CONFLICT(cache_key) DO UPDATE SET fetched_at=excluded.fetched_at,payload=excluded.payload',{'key':key,'time':time.time(),'payload':json.dumps(payload)})
         raise SourceUnavailable(payload['error'])
-    db.execute('INSERT OR REPLACE INTO source_cache VALUES (:key,:time,:payload)',{'key':key,'time':time.time(),'payload':json.dumps(payload)})
+    db.execute('INSERT INTO source_cache(cache_key,fetched_at,payload) VALUES (:key,:time,:payload) ON CONFLICT(cache_key) DO UPDATE SET fetched_at=excluded.fetched_at,payload=excluded.payload',{'key':key,'time':time.time(),'payload':json.dumps(payload)})
     return _new_first(jobs,limit),False
 
 def _new_first(jobs,limit):

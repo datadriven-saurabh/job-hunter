@@ -4,7 +4,7 @@ import uuid
 import shutil
 from urllib.parse import urlparse
 from fastapi import APIRouter, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field
 from bs4 import BeautifulSoup
 from backend import database as db
@@ -66,6 +66,14 @@ def directory(id):
     if not re.fullmatch(r'[a-f0-9]{32}',id):raise HTTPException(404,'Draft not found.')
     if not db.query('SELECT kit_id FROM studio_kits WHERE kit_id=:id',{'id':id}):raise HTTPException(404,'Draft not found.')
     path=db.DATA/'kits'/id
+    if db.HOSTED and not (path/'kit.json').exists():
+        rows=db.query('SELECT payload FROM studio_kits WHERE kit_id=:id',{'id':id})
+        if not rows or not rows[0]['payload']:raise HTTPException(404,'Draft not found.')
+        path.mkdir(parents=True,exist_ok=True);(path/'kit.json').write_text(rows[0]['payload'])
+        from backend import storage
+        for name in ['resume.pdf','cover-letter.pdf']:
+            try:(path/name).write_bytes(storage.get(storage.uri('artifacts',f'{db.current_user()}/kits/{id}/{name}')))
+            except Exception:pass
     if not (path/'kit.json').exists():raise HTTPException(404,'Draft not found.')
     return path
 
@@ -148,7 +156,8 @@ def _generate_kit(body,profile,job,token=None):
                 raise HTTPException(409,'This opportunity was deleted or preparation was cancelled.')
             store.write_kit(path,kit)
             path.rename(db.DATA/'kits'/id)
-            db.execute('INSERT INTO studio_kits(kit_id,job_id) VALUES (:kit,:job)',{'kit':id,'job':linked})
+            if db.HOSTED:db.execute('INSERT INTO studio_kits(kit_id,user_id,job_id,payload) VALUES (:kit,:user_id,:job,:payload)',{'kit':id,'user_id':db.current_user(),'job':linked,'payload':json.dumps(kit)})
+            else:db.execute('INSERT INTO studio_kits(kit_id,job_id) VALUES (:kit,:job)',{'kit':id,'job':linked})
             if linked:store.finish(linked,token,store.kit_state(kit))
         return kit
     finally:
@@ -157,11 +166,13 @@ def _generate_kit(body,profile,job,token=None):
 @router.get('/kits')
 def list_kits(job_id:str|None=None):
     if job_id and not store.active(job_id):raise HTTPException(404,'Opportunity not found.')
-    rows=db.query('SELECT kit_id FROM studio_kits '+('WHERE job_id=:id ' if job_id else '')+'ORDER BY created_at DESC,rowid DESC',{'id':job_id})
+    rows=db.query('SELECT kit_id'+(',payload' if db.HOSTED else '')+' FROM studio_kits '+('WHERE job_id=:id ' if job_id else '')+'ORDER BY created_at DESC,rowid DESC',{'id':job_id})
     result=[]
     for row in rows:
-        path=db.DATA/'kits'/row['kit_id']/'kit.json'
-        if path.is_file():result.append(json.loads(path.read_text()))
+        if db.HOSTED and row.get('payload'):result.append(json.loads(row['payload']))
+        else:
+            path=db.DATA/'kits'/row['kit_id']/'kit.json'
+            if path.is_file():result.append(json.loads(path.read_text()))
     return result
 
 @router.get('/kits/{id}')

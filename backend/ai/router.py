@@ -45,7 +45,7 @@ class ModelRouter:
 
     def _log(self,event):
         self.events.append(event)
-        path=db.DATA/'ai-usage.jsonl'
+        path=db.user_data_path('ai-usage.jsonl');path.parent.mkdir(parents=True,exist_ok=True)
         with path.open('a') as stream:stream.write(json.dumps(dict(event,created_at=datetime.now(timezone.utc).isoformat()))+'\n')
 
     def _identity(self,model):
@@ -68,7 +68,7 @@ class ModelRouter:
             try:
                 identity=self._identity(used_model)
                 key=digest([self.config['version'],prompt,used_model,identity,schema.model_json_schema()])
-                path=db.DATA/'ai-cache'/f'{key}.json'
+                path=db.user_data_path('ai-cache',f'{key}.json')
                 if getattr(self,'cache_enabled',True) and path.exists():
                     result=schema.model_validate(json.loads(path.read_text()))
                     if validator:validator(result)
@@ -92,7 +92,7 @@ class ModelRouter:
     def embed(self,text):
         if os.getenv('ENABLE_LOCAL_LLM')!='true':raise ModelUnavailable('Local AI disabled.')
         route=self.get('embeddings');identity=self._identity(route['model'])
-        key=digest(['embedding-v1',text,identity]);path=db.DATA/'ai-cache'/f'{key}.json'
+        key=digest(['embedding-v1',text,identity]);path=db.user_data_path('ai-cache',f'{key}.json')
         started=time.monotonic();hit=path.exists()
         if hit:vector=json.loads(path.read_text())
         else:

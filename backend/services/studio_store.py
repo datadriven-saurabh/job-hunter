@@ -17,6 +17,14 @@ def active(job_id):
 def write_kit(path,kit):
     temporary=path/('kit-'+uuid.uuid4().hex+'.tmp')
     temporary.write_text(json.dumps(kit));temporary.replace(path/'kit.json')
+    if db.HOSTED:
+        from backend import storage
+        prefix=f"kits/{kit['id']}"
+        storage.put_user_file('artifacts',f'{prefix}/kit.json',(path/'kit.json').read_bytes(),'application/json')
+        for name in ['resume.pdf','cover-letter.pdf']:
+            asset=path/name
+            if asset.is_file():storage.put_user_file('artifacts',f'{prefix}/{name}',asset.read_bytes(),'application/pdf')
+        db.execute('UPDATE studio_kits SET payload=:payload WHERE kit_id=:id',{'payload':json.dumps(kit),'id':kit['id']})
 
 def migrate_kits():
     """Index old on-disk kits once, preserving edits and original IDs."""
@@ -26,12 +34,14 @@ def migrate_kits():
             kit=json.loads(path.read_text());job_id=kit.get('job',{}).get('job_id')
             if job_id and not active(job_id):
                 shutil.rmtree(path.parent);continue
-            db.execute('INSERT OR IGNORE INTO studio_kits(kit_id,job_id) VALUES (:kit,:job)',{'kit':path.parent.name,'job':job_id or None})
+            if db.HOSTED:db.execute('INSERT OR IGNORE INTO studio_kits(kit_id,user_id,job_id) VALUES (:kit,:user_id,:job)',{'kit':path.parent.name,'user_id':db.current_user(),'job':job_id or None})
+            else:db.execute('INSERT OR IGNORE INTO studio_kits(kit_id,job_id) VALUES (:kit,:job)',{'kit':path.parent.name,'job':job_id or None})
         except (ValueError,OSError):continue
 
 def latest(job_id):
-    rows=db.query('SELECT kit_id FROM studio_kits WHERE job_id=:id ORDER BY created_at DESC,rowid DESC',{'id':job_id})
+    rows=db.query('SELECT kit_id'+(',payload' if db.HOSTED else '')+' FROM studio_kits WHERE job_id=:id ORDER BY created_at DESC,rowid DESC',{'id':job_id})
     for row in rows:
+        if db.HOSTED and row.get('payload'):return json.loads(row['payload'])
         path=db.DATA/'kits'/row['kit_id']/'kit.json'
         if path.is_file():return json.loads(path.read_text())
     return None
@@ -46,7 +56,8 @@ def reserve(job_id,reuse=True):
         if rows and rows[0]['state'] in {'queued','running'}:return None
         if reuse and latest(job_id):return None
         token=uuid.uuid4().hex
-        db.execute("INSERT INTO studio_runs(job_id,token,state) VALUES (:id,:token,'queued') ON CONFLICT(job_id) DO UPDATE SET token=excluded.token,state='queued',error='',updated_at=CURRENT_TIMESTAMP",{'id':job_id,'token':token})
+        if db.HOSTED:db.execute("INSERT INTO studio_runs(user_id,job_id,token,state) VALUES (:user_id,:id,:token,'queued') ON CONFLICT(user_id,job_id) DO UPDATE SET token=excluded.token,state='queued',error='',updated_at=CURRENT_TIMESTAMP",{'user_id':db.current_user(),'id':job_id,'token':token})
+        else:db.execute("INSERT INTO studio_runs(job_id,token,state) VALUES (:id,:token,'queued') ON CONFLICT(job_id) DO UPDATE SET token=excluded.token,state='queued',error='',updated_at=CURRENT_TIMESTAMP",{'id':job_id,'token':token})
         return token
 
 def current(job_id,token):
@@ -64,6 +75,16 @@ def workspace(job_id):
 def remove_artifacts(job_id):
     """Caller owns queue_reservation; cancelled writers cannot publish afterwards."""
     rows=db.query('SELECT kit_id FROM studio_kits WHERE job_id=:id',{'id':job_id})
+    if db.HOSTED:
+        from backend import storage
+        for row in rows:
+            for name in ['kit.json','resume.pdf','cover-letter.pdf']:
+                try:storage.delete(storage.uri('artifacts',f"{db.current_user()}/kits/{row['kit_id']}/{name}"))
+                except Exception:pass
+        for name in ['resume.pdf','cover-letter.txt']:
+            try:storage.delete(storage.uri('artifacts',f"{db.current_user()}/documents/{job_id}/{name}"))
+            except Exception:pass
+        db.execute('DELETE FROM analysis_runs WHERE payload LIKE :needle',{'needle':'%"job_id": "'+job_id+'"%'})
     db.execute('DELETE FROM studio_runs WHERE job_id=:id',{'id':job_id})
     db.execute('DELETE FROM studio_kits WHERE job_id=:id',{'id':job_id})
     for row in rows:
@@ -79,6 +100,6 @@ def remove_artifacts(job_id):
             if job_id in result.get('job_ids',[]) or any(r.get('job_id')==job_id for r in result.get('results',[])):path.unlink(missing_ok=True)
         except (ValueError,OSError):continue
     from backend.agents.coach_agent import _sessions
-    _sessions.pop(job_id,None)
+    _sessions.pop((db.current_user(),job_id),None)
     db.execute('DELETE FROM application_resume_selection WHERE job_id=:id',{'id':job_id})
     db.execute("UPDATE application_records SET status='MATCHED',tailored_resume_path=NULL,tailored_cover_letter_path=NULL,extracted_form_fields=NULL,submission_logs_json='[]' WHERE job_id=:id",{'id':job_id})

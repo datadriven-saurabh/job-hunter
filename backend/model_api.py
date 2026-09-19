@@ -26,12 +26,15 @@ def tags():
     except Exception:raise HTTPException(503,'Local Ollama is unavailable.')
 
 @router.get('')
-def models():return {'models':[{'name':m['name'],'size_bytes':m.get('size',0)} for m in tags()],'active':db.config()['llm_provider_config']['reasoning_model'],'enabled':os.getenv('ENABLE_LOCAL_LLM')=='true','note':'Local downloads have no API usage fee. Memory and speed vary. Model licenses still apply.'}
+def models():
+    if db.HOSTED:raise HTTPException(409,'Local model management is available only in the desktop edition.')
+    return {'models':[{'name':m['name'],'size_bytes':m.get('size',0)} for m in tags()],'active':db.config()['llm_provider_config']['reasoning_model'],'enabled':os.getenv('ENABLE_LOCAL_LLM')=='true','note':'Local downloads have no API usage fee. Memory and speed vary. Model licenses still apply.'}
 
 class Active(BaseModel):name:str=Field(max_length=100)
 
 @router.post('/active')
 def activate(body:Active):
+    if db.HOSTED:raise HTTPException(409,'Local model management is available only in the desktop edition.')
     if body.name not in {m['name'] for m in tags()}:raise HTTPException(400,'Select an installed model.')
     settings=db.config()['llm_provider_config'];settings['reasoning_model']=body.name
     db.execute('UPDATE system_config SET llm_config_json=:value WHERE user_id=:id',{'value':json.dumps(settings),'id':'local'})
@@ -44,10 +47,13 @@ def save(state):
     path=state_path();tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(state));tmp.replace(path)
 
 @router.get('/comparison')
-def comparison():return json.loads(state_path().read_text()) if state_path().exists() else {'status':'idle','results':[]}
+def comparison():
+    if db.HOSTED:raise HTTPException(409,'Local model comparison is available only in the desktop edition.')
+    return json.loads(state_path().read_text()) if state_path().exists() else {'status':'idle','results':[]}
 
 @router.post('/compare')
 def compare(body:Compare,tasks:BackgroundTasks):
+    if db.HOSTED:raise HTTPException(409,'Local model comparison is available only in the desktop edition.')
     if os.getenv('ENABLE_LOCAL_LLM')!='true':raise HTTPException(409,'Enable local AI before benchmarking models. Disabled generation is not a model-quality result.')
     installed={m['name'] for m in tags()}
     if any(m not in installed for m in body.models):raise HTTPException(400,'Use installed models only.')

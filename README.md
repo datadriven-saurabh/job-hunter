@@ -2,9 +2,9 @@
 
 **Focus your search. Make your move.**
 
-Job Hunter brings job discovery, profile matching, tailored resumes and outreach into one focused workspace. Spend less time organizing your search and more time preparing for the right opportunities—all on **your own computer**.
+Job Hunter brings job discovery, profile matching, tailored resumes and outreach into one focused workspace. Spend less time organizing your search and more time preparing for the right opportunities.
 
-**Each person installs their own copy.** Profiles and resumes are saved locally and are not shared with other users or included in this repository. This is a single-person local app, not a hosted website with multiple user accounts.
+Use it as a private local desktop workspace, or deploy the authenticated private-beta edition for 3–4 independent users. The hosted edition uses Supabase Auth, database Row Level Security, and private object storage. Follow the [public deployment guide](docs/PUBLIC_DEPLOYMENT.md); never expose the local SQLite edition to the internet.
 
 ## What you can do
 
@@ -19,7 +19,7 @@ Job Hunter brings job discovery, profile matching, tailored resumes and outreach
 
 Drafting, PDF creation, matching and public discovery work **without paid API keys or an AI model**. An internet connection is needed to download the app and fetch live jobs. AI models are optional downloads.
 
-## Quick start — recommended for beginners
+## Local quick start — recommended for beginners
 
 Use Docker to avoid installing Python and Node.js separately. These steps work on Windows, macOS and Linux with Docker Compose.
 

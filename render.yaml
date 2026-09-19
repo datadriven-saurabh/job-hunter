@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: job-hunter-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.hosted
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: ENABLE_LIVE_SUBMISSION
+        value: "false"
+      - key: ENABLE_LOCAL_LLM
+        value: "false"

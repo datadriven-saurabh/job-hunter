@@ -16,7 +16,7 @@ from typing import List, Optional
 from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from backend.state import queue_reservation, profile_write
 from pydantic import BaseModel, Field
@@ -33,14 +33,15 @@ from backend.agents.job_sources import SOURCE_INFO, source_catalog, discover as 
 
 @asynccontextmanager
 async def lifespan(app):
-    db.init_db()
+    if not db.HOSTED: db.init_db()
     from backend.services import studio_store
     import shutil
-    studio_store.migrate_kits()
-    shutil.rmtree(db.DATA/'kits'/'.pending',ignore_errors=True)
-    db.execute("UPDATE studio_runs SET state='failed',error='Preparation was interrupted by a restart. Retry from Application Studio.' WHERE state IN ('queued','running')")
+    if not db.HOSTED:
+        studio_store.migrate_kits()
+        shutil.rmtree(db.DATA/'kits'/'.pending',ignore_errors=True)
+        db.execute("UPDATE studio_runs SET state='failed',error='Preparation was interrupted by a restart. Retry from Application Studio.' WHERE state IN ('queued','running')")
     # Keep reviewed documents and any unconfirmed submission log after a restart.
-    db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NOT NULL THEN 'TAILORED' WHEN job_id IN (SELECT job_id FROM studio_runs UNION SELECT job_id FROM studio_kits WHERE job_id IS NOT NULL) THEN 'REVIEWING' ELSE 'MATCHED' END WHERE status='QUEUED'")
+        db.execute("UPDATE application_records SET status=CASE WHEN tailored_resume_path IS NOT NULL THEN 'TAILORED' WHEN job_id IN (SELECT job_id FROM studio_runs UNION SELECT job_id FROM studio_kits WHERE job_id IS NOT NULL) THEN 'REVIEWING' ELSE 'MATCHED' END WHERE status='QUEUED'")
     app.state.chromium_path = ''
     async def probe_browser():
         from playwright.async_api import async_playwright
@@ -60,8 +61,9 @@ from backend.model_api import router as model_router
 app.include_router(model_router)
 from backend.career_api import router as career_router
 app.include_router(career_router)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost','127.0.0.1','testserver'])
-app.add_middleware(CORSMiddleware,allow_origins=['http://localhost:3000','http://127.0.0.1:3000'],allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT','DELETE'],allow_headers=['Content-Type','If-Match'])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=['*'] if db.HOSTED else ['localhost','127.0.0.1','testserver'])
+from backend.security import web_origins
+app.add_middleware(CORSMiddleware,allow_origins=sorted(web_origins()),allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT','DELETE'],allow_headers=['Authorization','Content-Type','If-Match'])
 
 from backend.security import LocalSecurityMiddleware
 app.add_middleware(LocalSecurityMiddleware)
@@ -77,7 +79,7 @@ def require_profile(id='local'):
     return value
 
 @app.get('/health')
-def health(): return {'status':'healthy','engine':'LangGraph','mode':'local','generation':'Local Ollama model' if os.getenv('ENABLE_LOCAL_LLM')=='true' else 'Grounded templates and rubric-based coaching'}
+def health(): return {'status':'healthy','engine':'LangGraph','mode':'hosted' if db.HOSTED else 'local','generation':'Local Ollama model' if os.getenv('ENABLE_LOCAL_LLM')=='true' else 'Grounded templates and rubric-based coaching'}
 
 def profile_ready(profile):
     if not profile: return False
@@ -108,16 +110,17 @@ def get_profile():
 
 @app.post('/api/v1/profile')
 def save_profile(profile: UserProfile, request: Request = None):
-    if profile.user_id!='local': raise HTTPException(400,'This local edition uses user_id "local".')
+    if not db.HOSTED and profile.user_id!='local': raise HTTPException(400,'This local edition uses user_id "local".')
     with profile_write:
         expected = request.headers.get('if-match') if request else None
         if expected and expected != db.profile_revision(db.profile()):
             raise HTTPException(409,'Your profile changed in another editor. Reopen My profile or reload candidate evidence, then reapply your edits to the latest version.')
-        p=profile.personal_details.model_dump();p.update(user_id=profile.user_id,base_resume_json=profile.base_resume.model_dump_json(),eeo_demographics_json=profile.eeo_demographics.model_dump_json() if profile.eeo_demographics else None)
+        user_id=db.current_user() if db.HOSTED else profile.user_id
+        p=profile.personal_details.model_dump();p.update(user_id=user_id,base_resume_json=profile.base_resume.model_dump_json(),eeo_demographics_json=profile.eeo_demographics.model_dump_json() if profile.eeo_demographics else None)
         cols=list(p)
         db.execute(f"INSERT INTO user_profiles ({','.join(cols)}) VALUES ({','.join(':'+k for k in cols)}) ON CONFLICT(user_id) DO UPDATE SET "+','.join(f'{k}=excluded.{k}' for k in cols if k!='user_id')+',updated_at=CURRENT_TIMESTAMP',p)
         if not db.config(): save_config(SystemVariables(**demo.CONFIG))
-        return {'status':'success','user_id':profile.user_id,'_revision':db.profile_revision(db.profile())}
+        return {'status':'success','user_id':user_id,'_revision':db.profile_revision(db.profile())}
 
 @app.get('/api/v1/config')
 def get_config(): return db.config() or demo.CONFIG
@@ -125,7 +128,8 @@ def get_config(): return db.config() or demo.CONFIG
 @app.post('/api/v1/config')
 def save_config(config: SystemVariables):
     require_profile()
-    db.execute('INSERT OR REPLACE INTO system_config (config_id,user_id,search_criteria_json,execution_preferences_json,llm_config_json) VALUES (:id,:id,:criteria,:prefs,:llm)',{'id':'local','criteria':config.job_search_criteria.model_dump_json(),'prefs':config.execution_preferences.model_dump_json(),'llm':config.llm_provider_config.model_dump_json()})
+    user_id=db.current_user()
+    db.execute('INSERT INTO system_config (config_id,user_id,search_criteria_json,execution_preferences_json,llm_config_json) VALUES (:id,:id,:criteria,:prefs,:llm) ON CONFLICT(config_id) DO UPDATE SET search_criteria_json=excluded.search_criteria_json,execution_preferences_json=excluded.execution_preferences_json,llm_config_json=excluded.llm_config_json,updated_at=CURRENT_TIMESTAMP',{'id':user_id,'criteria':config.job_search_criteria.model_dump_json(),'prefs':config.execution_preferences.model_dump_json(),'llm':config.llm_provider_config.model_dump_json()})
     return {'status':'success'}
 
 class ImportJob(BaseModel):
@@ -163,8 +167,8 @@ class SearchRequest(BaseModel):
 def job_sources(include_unavailable:bool=False): return source_catalog(include_unavailable)
 
 @app.post('/api/v1/jobs/search')
-def search(body:SearchRequest, user_id:str='local'):
-    p=require_profile(user_id);c=db.config(user_id)
+def search(body:SearchRequest):
+    p=require_profile();c=db.config()
     if body.provider=='demo' and not body.sources:
         incoming=demo.jobs()
         result=discovery_graph.invoke({'jobs':incoming,'profile':p,'criteria':c['job_search_criteria']})
@@ -235,8 +239,10 @@ def delete_opportunities(body:OpportunityIDs):
             rows=db.query('SELECT status FROM application_records WHERE job_id=:id',{'id':id})
             if not rows:raise HTTPException(404,'Opportunity not found.')
             if rows[0]['status']=='QUEUED':raise HTTPException(409,'Wait for preparation or submission to finish before deleting this opportunity.')
-        with db.engine.begin() as conn:
-            for id in ids:conn.execute(db.text('INSERT OR IGNORE INTO deleted_opportunities (job_id) VALUES (:id)'),{'id':id})
+        with db.transaction() as conn:
+            for id in ids:
+                sql='INSERT INTO deleted_opportunities (user_id,job_id) VALUES (:user_id,:id) ON CONFLICT(user_id,job_id) DO NOTHING' if db.HOSTED else 'INSERT OR IGNORE INTO deleted_opportunities (job_id) VALUES (:id)'
+                conn.execute(db.text(sql),{'user_id':db.current_user(),'id':id})
         from backend.services.studio_store import remove_artifacts
         for id in ids:remove_artifacts(id)
     return {'deleted':ids,'message':f'{len(ids)} opportunities deleted with their application kits and generated data. The job listing can be restored; documents must be regenerated.'}
@@ -246,7 +252,7 @@ def restore_opportunities(body:OpportunityIDs):
     with queue_reservation:
         for id in body.job_ids:
             if not db.query('SELECT job_id FROM application_records WHERE job_id=:id',{'id':id}):raise HTTPException(404,'Opportunity not found.')
-        with db.engine.begin() as conn:
+        with db.transaction() as conn:
             for id in set(body.job_ids):conn.execute(db.text('DELETE FROM deleted_opportunities WHERE job_id=:id'),{'id':id})
     return {'restored':list(dict.fromkeys(body.job_ids))}
 
@@ -311,6 +317,12 @@ def fill_context(job_id:str):
 def document(job_id:str,kind:str):
     if kind not in ['resume','cover-letter']: raise HTTPException(404,'Unknown document')
     job=require_job(job_id);path=job['tailored_resume_path' if kind=='resume' else 'tailored_cover_letter_path']
+    if db.HOSTED and path:
+        from backend import storage
+        try:content=storage.get(path)
+        except Exception:raise HTTPException(404,'Prepare this application to generate documents.')
+        media='application/pdf' if kind=='resume' else 'text/plain'
+        return Response(content,media_type=media,headers={'Content-Disposition':f'attachment; filename="{job["company_name"]}-{kind}.'+('pdf' if kind=='resume' else 'txt')+'"'})
     if not path or not Path(path).is_file(): raise HTTPException(404,'Prepare this application to generate documents.')
     return FileResponse(path,filename=f"{job['company_name']}-{kind}."+('pdf' if kind=='resume' else 'txt'))
 

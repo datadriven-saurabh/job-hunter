@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {Upload,FileText,Download,Check,Loader2,X,Trash2,Pencil,UserRound} from 'lucide-react';
-import {api,BASE} from '@/lib/api';
+import {api,authHeaders,downloadPrivate} from '@/lib/api';
 export type Resume={resume_id:string;label:string;file_type:string;original_name:string;keywords:string[];created_at:string|null};
 export default function ResumeLibrary({onProfileDraft}:{onProfileDraft:(draft:any)=>void}){
  const [items,setItems]=useState<Resume[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(''),[preview,setPreview]=useState<any>(null),[name,setName]=useState('');
@@ -15,7 +15,7 @@ export default function ResumeLibrary({onProfileDraft}:{onProfileDraft:(draft:an
    try{
     if(file.size>10*1024*1024)throw new Error('Maximum file size is 10 MB.');
     const form=new FormData();form.append('file',file);
-    const r=await fetch(`${BASE}/api/v1/resumes/upload`,{method:'POST',body:form});const data=await r.json();
+    const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL||'http://localhost:8000'}/api/v1/resumes/upload`,{method:'POST',headers:await authHeaders(false),body:form});const data=await r.json();
     if(!r.ok)throw new Error(data.detail||'Upload failed.');count++;draft=data.profile_draft;
    }catch(e){errors.push(`${file.name}: ${e instanceof Error?e.message:'Upload failed'}`)}
   }
@@ -33,7 +33,7 @@ export default function ResumeLibrary({onProfileDraft}:{onProfileDraft:(draft:an
    <div className="detail-actions"><button className="outline compact" disabled={busy} onClick={()=>review(r)}>Review text & keywords</button>{r.resume_id!=='profile'&&<>
     <button className="outline compact" aria-label={`Rename ${r.label}`} disabled={busy} onClick={()=>review(r)}><Pencil size={13}/> Rename</button>
     <button className="outline compact" aria-label={`Use ${r.label} for profile`} disabled={busy} onClick={()=>perform(async()=>onProfileDraft(await api(`/resumes/${r.resume_id}/profile-draft`,'POST')))}><UserRound size={13}/> Build profile</button>
-    <a className="text-link" href={`${BASE}/api/v1/resumes/${r.resume_id}/download`}><Download size={13}/> Original</a>
+    <button className="text-link" onClick={()=>perform(async()=>downloadPrivate(`/resumes/${r.resume_id}/download`,r.original_name))}><Download size={13}/> Original</button>
     <button className="text-link danger" aria-label={`Delete resume ${r.label}`} disabled={busy} onClick={()=>{if(window.confirm(`Delete ${r.label} and its original file and extracted text? Your saved profile and job kits stay unchanged.`))perform(async()=>{await api(`/resumes/${r.resume_id}`,'DELETE');if(preview?.resume_id===r.resume_id)setPreview(null);await refresh();setMessage('Resume deleted. Your saved profile and application kits are unchanged.')})}}><Trash2 size={13}/> Delete</button>
    </>}</div>
   </article>)}</div>

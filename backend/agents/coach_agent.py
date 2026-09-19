@@ -2,6 +2,7 @@ import re
 import json
 from backend.agents.llm import generate_json
 from backend.database import config
+from backend import database as db
 from schemas import InterviewQuestion, UserAnswerFeedback
 
 QUESTION_SCHEMA={"type":"object","properties":{"questions":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"object","properties":{"category":{"type":"string","enum":["Behavioral","Technical","System Design"]},"question":{"type":"string"},"evaluation_criteria":{"type":"array","items":{"type":"string"},"minItems":1}},"required":["category","question","evaluation_criteria"],"additionalProperties":False}}},"required":["questions"],"additionalProperties":False}
@@ -9,9 +10,10 @@ QUESTION_SCHEMA={"type":"object","properties":{"questions":{"type":"array","minI
 _sessions={}
 
 def questions(job):
-    if job['job_id'] in _sessions: return _sessions[job['job_id']]
+    key=(db.current_user(),job['job_id'])
+    if key in _sessions: return _sessions[key]
     result=_questions(job)
-    _sessions[job['job_id']]=result
+    _sessions[key]=result
     return result
 
 def _questions(job):

@@ -73,20 +73,30 @@ def analysis_path(id):
     return db.DATA/'analysis-runs'/f'{id}.json'
 
 def run_analysis(id,jobs,profile,criteria):
-    path=analysis_path(id)
     try:result={'status':'complete',**analyze_jobs(jobs,profile,criteria)}
     except Exception:result={'status':'failed','message':'Analysis failed. Review model configuration; raw job facts were preserved.'}
+    if db.HOSTED:
+        db.execute('UPDATE analysis_runs SET payload=:payload,updated_at=CURRENT_TIMESTAMP WHERE id=:id',{'id':id,'payload':json.dumps(result)})
+        return
+    path=analysis_path(id)
     tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(result));tmp.replace(path)
 
 @router.post('/analyze')
 def analyze(body:AnalyzeRequest,tasks:BackgroundTasks):
     jobs=[db.get_job(id) for id in dict.fromkeys(body.job_ids)]
     if any(j is None for j in jobs):raise HTTPException(404,'Job not found.')
-    profile=get_profile();id=uuid.uuid4().hex;path=analysis_path(id);path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps({'status':'running'}))
+    profile=get_profile();id=uuid.uuid4().hex
+    if db.HOSTED:db.execute('INSERT INTO analysis_runs(id,user_id,payload) VALUES (:id,:user_id,:payload)',{'id':id,'user_id':db.current_user(),'payload':json.dumps({'status':'running'})})
+    else:
+        path=analysis_path(id);path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps({'status':'running'}))
     tasks.add_task(run_analysis,id,jobs,profile,db.config()['job_search_criteria']);return {'id':id,'status':'running'}
 
 @router.get('/analyze/{id}')
 def read_analysis(id:str):
+    if db.HOSTED:
+        rows=db.query('SELECT payload FROM analysis_runs WHERE id=:id',{'id':id})
+        if not rows:raise HTTPException(404,'Analysis not found.')
+        return json.loads(rows[0]['payload'])
     path=analysis_path(id)
     if not path.exists():raise HTTPException(404,'Analysis not found.')
     return json.loads(path.read_text())

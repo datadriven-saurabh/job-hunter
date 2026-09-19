@@ -86,12 +86,17 @@ def upload(content, filename, label):
     existing=db.query('SELECT resume_id FROM resumes WHERE sha256=:hash AND archived=0',{'hash':digest})
     if existing:return get(existing[0]['resume_id']),False
     resume_id=uuid.uuid4().hex
-    directory=db.DATA/'resumes';directory.mkdir(parents=True,exist_ok=True)
     filename=Path(filename.replace('\\','/')).name
-    path=directory/(resume_id+Path(filename).suffix.lower())
-    path.write_bytes(content)
-    payload={'resume_id':resume_id,'label':label.strip() or Path(filename).stem,'original_name':filename,'file_type':Path(filename).suffix.lower()[1:],'path':str(path),'text':text,'keywords_json':json.dumps(corpus(text)),'sha256':digest,'created_at':datetime.now(timezone.utc).isoformat()}
-    db.execute('INSERT INTO resumes (resume_id,label,original_name,file_type,path,text,keywords_json,sha256,created_at) VALUES (:resume_id,:label,:original_name,:file_type,:path,:text,:keywords_json,:sha256,:created_at)',payload)
+    if db.HOSTED:
+        from backend import storage
+        path=storage.put_user_file('resumes',resume_id+Path(filename).suffix.lower(),content)
+    else:
+        directory=db.DATA/'resumes';directory.mkdir(parents=True,exist_ok=True)
+        path=directory/(resume_id+Path(filename).suffix.lower())
+        path.write_bytes(content)
+    payload={'resume_id':resume_id,'user_id':db.current_user(),'label':label.strip() or Path(filename).stem,'original_name':filename,'file_type':Path(filename).suffix.lower()[1:],'path':str(path),'text':text,'keywords_json':json.dumps(corpus(text)),'sha256':digest,'created_at':datetime.now(timezone.utc).isoformat()}
+    columns='resume_id,user_id,label,original_name,file_type,path,text,keywords_json,sha256,created_at' if db.HOSTED else 'resume_id,label,original_name,file_type,path,text,keywords_json,sha256,created_at'
+    db.execute(f"INSERT INTO resumes ({columns}) VALUES ("+','.join(':'+x for x in columns.split(','))+')',payload)
     return get(resume_id),True
 
 def recommendations(job):
@@ -119,7 +124,10 @@ def selected(job_id):
 
 def select(job_id,resume_id):
     get(resume_id)
-    db.execute('INSERT INTO application_resume_selection (job_id,resume_id) VALUES (:id,:resume) ON CONFLICT(job_id) DO UPDATE SET resume_id=excluded.resume_id',{'id':job_id,'resume':resume_id})
+    if db.HOSTED:
+        db.execute('INSERT INTO application_resume_selection (user_id,job_id,resume_id) VALUES (:user_id,:id,:resume) ON CONFLICT(user_id,job_id) DO UPDATE SET resume_id=excluded.resume_id',{'user_id':db.current_user(),'id':job_id,'resume':resume_id})
+    else:
+        db.execute('INSERT INTO application_resume_selection (job_id,resume_id) VALUES (:id,:resume) ON CONFLICT(job_id) DO UPDATE SET resume_id=excluded.resume_id',{'id':job_id,'resume':resume_id})
 
 def select_best(job):
     current=selected(job['job_id'])

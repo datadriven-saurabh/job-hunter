@@ -5,6 +5,7 @@ from langgraph.graph import StateGraph, START, END
 from backend.agents.scout_agent import score, job_id
 from backend.agents.classifier import classify
 from backend.database import execute, query
+from backend import database as db
 from backend.services.job_intelligence import enrich
 from backend.state import queue_reservation
 from backend.services.job_dedup import fingerprint
@@ -70,9 +71,12 @@ def _persist(state):
         existing.append(j)
         execute('INSERT OR IGNORE INTO application_records (job_id,user_id,company_name,job_title,job_url,match_score,classification,status) VALUES (:job_id,:user_id,:company_name,:job_title,:job_url,:match_score,:classification,\'MATCHED\')',dict(j,user_id=state['profile']['user_id']))
         execute('UPDATE application_records SET match_score=:score WHERE job_id=:id',{'id':j['job_id'],'score':j['match_score']})
-        execute('INSERT OR REPLACE INTO job_details VALUES (:id,:payload)',{'id':j['job_id'],'payload':json.dumps({k:v for k,v in j.items() if k not in ['job_id','match_score','classification','company_name','job_title','job_url']})})
+        execute('INSERT INTO job_details(job_id,payload) VALUES (:id,:payload) ON CONFLICT(job_id) DO UPDATE SET payload=excluded.payload',{'id':j['job_id'],'payload':json.dumps({k:v for k,v in j.items() if k not in ['job_id','match_score','classification','company_name','job_title','job_url']})})
     for row in state.get('seen',[]):
-        execute('INSERT OR REPLACE INTO discovery_seen(job_key,content_hash,criteria_hash) VALUES (:key,:content,:criteria)',row)
+        if db.HOSTED:
+            execute('INSERT INTO discovery_seen(user_id,job_key,content_hash,criteria_hash) VALUES (:user_id,:key,:content,:criteria) ON CONFLICT(user_id,job_key) DO UPDATE SET content_hash=excluded.content_hash,criteria_hash=excluded.criteria_hash,seen_at=CURRENT_TIMESTAMP',dict(row,user_id=state['profile']['user_id']))
+        else:
+            execute('INSERT INTO discovery_seen(job_key,content_hash,criteria_hash) VALUES (:key,:content,:criteria) ON CONFLICT(job_key) DO UPDATE SET content_hash=excluded.content_hash,criteria_hash=excluded.criteria_hash,seen_at=CURRENT_TIMESTAMP',row)
     return {'count':len(saved_ids),'skipped':state.get('skipped',0)+len(state['matched'])-len(saved_ids)}
 
 builder=StateGraph(DiscoveryState)
