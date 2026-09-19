@@ -24,6 +24,8 @@ SOURCE_INFO=[
  {'id':'linkedin_posts','name':'LinkedIn team hiring posts','kind':'browser-assisted','url':'https://www.linkedin.com/search/results/content/?keywords=hiring','note':'Open relevant posts in your own signed-in browser and use the extension to capture the visible post for review.'},
  {'id':'hiringcafe','name':'HiringCafe','kind':'public-page','note':'Reads public page data. A 403, CAPTCHA, or sign-in wall is reported, not bypassed.'},
  {'id':'remotive','name':'Remotive','kind':'public-search','note':'Remote jobs from Remotive; listings are delayed by 24 hours. Cached for six hours.'},
+ {'id':'vanhack','name':'VanHack','kind':'public-search','url':'https://app.vanhack.com/jobs/join-vanhack','note':'Public VanHack job cards and up to 10 readable details. Account-only jobs are not accessed.'},
+ {'id':'jobbatical','name':'Jobbatical careers','kind':'public-search','url':'https://www.jobbatical.com/jobs-and-careers','note':'Current openings at Jobbatical from its public BambooHR careers board; descriptions may be previews.'},
  {'id':'greenhouse','name':'Greenhouse','kind':'company-board','note':'Public company board API.'},
  {'id':'lever','name':'Lever','kind':'company-board','note':'Public company board API.'},
  {'id':'ashby','name':'Ashby','kind':'company-board','note':'Public company board API.'},
@@ -38,6 +40,11 @@ SOURCE_INFO.extend([
  {'id':'startupjobs','name':'Startup.jobs Germany','kind':'public-page','url':'https://startup.jobs/locations/germany'},
  {'id':'indexventures','name':'Index Ventures','kind':'public-page','url':'https://www.indexventures.com/startup-jobs/'},
  {'id':'hyrise','name':'Hyrise','kind':'public-page','url':'https://www.hyrise.com/'},
+ {'id':'landingjobs','name':'Landing.Jobs','kind':'public-page','url':'https://landing.jobs/'},
+ {'id':'eures','name':'EURES','kind':'public-page','url':'https://europa.eu/eures/portal/jv-se/home?lang=en'},
+ {'id':'workinfinland','name':'Work in Finland','kind':'public-page','url':'https://www.workinfinland.com/en/wif/open-jobs/'},
+ {'id':'makeitingermany','name':'Make it in Germany','kind':'public-page','url':'https://www.make-it-in-germany.com/en/working-in-germany/job-listings'},
+ {'id':'honeypot','name':'Honeypot','kind':'public-page','url':'https://www.honeypot.io/'},
 ])
 # Kept in the manual directory, removed from automatic searches after live checks.
 MANUAL_ONLY={
@@ -53,6 +60,11 @@ MANUAL_ONLY={
  'otta':'Job search redirects to a sign-in page.',
  'indexventures':'The current jobs page requires a JavaScript search integration; no public HTML postings.',
  'hyrise':'Talent-community recruitment site; no public job listing feed found.',
+ 'landingjobs':'The current public site promotes its matching service but exposes no readable public vacancy list. Open it and import an employer posting.',
+ 'eures':'EURES terms prohibit extracting vacancy data except for recognised EURES partners. Use its official search and import the employer posting.',
+ 'workinfinland':'The public job search is rendered by a client-side integration without a stable supported feed. Open it and import the employer posting.',
+ 'makeitingermany':'Automated access returned a browser verification page. Open the official exchange and import the employer posting.',
+ 'honeypot':'The former talent marketplace is no longer reachable in the live source check.',
 }
 for source in SOURCE_INFO:
     source.setdefault('url',{
@@ -65,6 +77,7 @@ for source in SOURCE_INFO:
     }.get(source['id'],''))
 ALLOWED={'www.linkedin.com','in.linkedin.com','uk.linkedin.com','de.linkedin.com','linkedin.com','hiringcafe.com','www.hiringcafe.com','hiring.cafe','remotive.com','api.ashbyhq.com','boards-api.greenhouse.io','api.lever.co'}
 ALLOWED.update({'www.stepstone.de','stepstone.de','de.linkedin.com','fr.linkedin.com','nl.linkedin.com','ie.linkedin.com','ca.linkedin.com','au.linkedin.com','sg.linkedin.com','www.arbeitnow.com','www.arbeitnow.co.uk','api.smartrecruiters.com','remoteok.com','weworkremotely.com','www.weworkremotely.com'})
+ALLOWED.update({'app.vanhack.com','jobbatical.bamboohr.com'})
 ALLOWED.update(HOSTS)
 
 class SourceUnavailable(ValueError):pass
@@ -202,6 +215,8 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
     if provider in BOARDS:return public_page_jobs(provider,keywords,location,limit)
     if provider=='hackernews':return hackernews_jobs(keywords,limit)
     if provider=='workingnomads':return workingnomads_jobs(keywords,limit)
+    if provider=='vanhack':return vanhack_jobs(keywords,limit)
+    if provider=='jobbatical':return jobbatical_jobs(keywords,limit)
     if provider=='stepstone':return stepstone_jobs(keywords,location,limit)
     if provider in {'arbeitnow','arbeitnow_uk'}:
         host='www.arbeitnow.co.uk' if provider=='arbeitnow_uk' else 'www.arbeitnow.com'
@@ -273,6 +288,50 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
         words=keywords.lower().split()
         return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in words)][:limit]
     raise ValueError('Unknown job source.')
+
+def vanhack_jobs(keywords='',limit=20):
+    base='https://app.vanhack.com/jobs/join-vanhack'
+    soup=BeautifulSoup(public_get(base).text,'html.parser')
+    links=[]
+    for anchor in soup.select('a[href^="/job/"]'):
+        target=urljoin(base,anchor.get('href','')).split('?')[0]
+        if re.fullmatch(r'https://app\.vanhack\.com/job/\d+',target) and target not in links:links.append(target)
+    if not links:raise SourceUnavailable('VanHack returned no readable public job cards. Open the board and import a posting manually.')
+    def detail(url):
+        page=BeautifulSoup(public_get(url).text,'html.parser')
+        title=page.select_one('.vh-jd-hero h1, h1')
+        description=page.select_one('.vh-jd-main, .vh-jd-description')
+        facts=page.select_one('.vh-jd-facts')
+        candidate_location=page.select_one('.vh-jd-candidate-location')
+        if not title or not description:return None
+        fact_text=clean(facts.get_text(' ',strip=True) if facts else '')
+        location='Anywhere · Remote' if re.search(r'fully remote|anywhere',fact_text,re.I) else ''
+        if candidate_location:location=(location+' · '+clean(candidate_location.get_text(' ',strip=True))).strip(' ·')
+        return {'job_title':clean(title.get_text(' ',strip=True)),'company_name':'VanHack','job_url':url,'source_url':url,
+                'description':clean(description.get_text(' ',strip=True)),'location':location,'employment_type':'Not specified',
+                'source':'VanHack','requisition_id':url.rsplit('/',1)[-1],'posted_at':None}
+    with ThreadPoolExecutor(max_workers=2) as pool:rows=[job for job in pool.map(detail,links[:min(limit,10)]) if job]
+    terms=keywords.casefold().split()
+    return [job for job in rows if all(term in (job['job_title']+' '+job['description']).casefold() for term in terms)][:limit]
+
+def jobbatical_jobs(keywords='',limit=20):
+    base='https://jobbatical.bamboohr.com/careers'
+    cards=public_get(base+'/list').json().get('result',[])
+    cards=cards[:min(limit,10)]
+    def detail(card):
+        identifier=str(card.get('id',''))
+        if not identifier.isdigit():return None
+        url=base+'/'+identifier;page=BeautifulSoup(public_get(url).text,'html.parser')
+        meta=page.select_one('meta[property="og:description"]')
+        description=clean(meta.get('content','') if meta else '')
+        loc=card.get('atsLocation') or card.get('location') or {}
+        location=', '.join(str(loc.get(key)) for key in ('city','state','province','country') if loc.get(key))
+        return {'job_title':card.get('jobOpeningName',''),'company_name':'Jobbatical','job_url':url,'source_url':url,
+                'description':description,'location':location,'employment_type':employment(card.get('employmentStatusLabel')),
+                'source':'Jobbatical','requisition_id':identifier,'posted_at':None,'description_incomplete':True}
+    with ThreadPoolExecutor(max_workers=2) as pool:rows=[job for job in pool.map(detail,cards) if job]
+    terms=keywords.casefold().split()
+    return [job for job in rows if all(term in (job['job_title']+' '+job['description']).casefold() for term in terms)][:limit]
 
 def wwr_jobs(markup):
     if '<!DOCTYPE' in markup.upper() or '<!ENTITY' in markup.upper():raise SourceUnavailable('Unsupported RSS document declarations.')

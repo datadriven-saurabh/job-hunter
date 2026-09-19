@@ -82,6 +82,40 @@ def test_linkedin_team_posts_are_browser_assisted_only():
     assert source['url'].startswith('https://www.linkedin.com/search/results/content/')
 
 
+def test_requested_relocation_sources_are_listed_with_accurate_access_modes():
+    catalog={source['id']:source for source in job_sources.source_catalog(True)}
+    assert catalog['relocate']['available']
+    assert catalog['vanhack']['available'] and catalog['jobbatical']['available']
+    for provider in ['landingjobs','eures','workinfinland','makeitingermany','honeypot']:
+        assert provider in catalog and not catalog[provider]['available']
+        assert catalog[provider]['url'].startswith('https://')
+
+
+def test_vanhack_reads_bounded_public_cards_and_details(monkeypatch):
+    class Response:
+        def __init__(self,text):self.text=text
+    listing='<a class="vh-card-link" href="/job/42">Data Analyst</a><a href="https://evil.example/job/9">Bad</a>'
+    detail='''<section class="vh-jd-hero"><h1>Data Analyst</h1><div class="vh-jd-facts">Anywhere Fully remote</div></section>
+    <div class="vh-jd-candidate-location">Required Candidate location: Europe</div>
+    <div class="vh-jd-main">Analyze SQL data and build reliable dashboards for business teams.</div>'''
+    monkeypatch.setattr(job_sources,'public_get',lambda url:Response(detail if url.endswith('/42') else listing))
+    jobs=job_sources.vanhack_jobs('Data Analyst')
+    assert len(jobs)==1 and jobs[0]['job_url']=='https://app.vanhack.com/job/42'
+    assert jobs[0]['location']=='Anywhere · Remote · Required Candidate location: Europe'
+    assert jobs[0]['requisition_id']=='42' and jobs[0]['posted_at'] is None
+
+
+def test_jobbatical_reads_public_bamboohr_careers(monkeypatch):
+    class Response:
+        text='<meta property="og:description" content="Use SQL to analyze product performance and create dashboards.">'
+        def json(self):return {'result':[{'id':'64','jobOpeningName':'Product Data Analyst','employmentStatusLabel':'Full-Time','atsLocation':{'city':'Tallinn','country':'Estonia'}}]}
+    monkeypatch.setattr(job_sources,'public_get',lambda url:Response())
+    jobs=job_sources.jobbatical_jobs('SQL')
+    assert len(jobs)==1 and jobs[0]['company_name']=='Jobbatical'
+    assert jobs[0]['location']=='Tallinn, Estonia' and jobs[0]['employment_type']=='Full-time'
+    assert jobs[0]['description_incomplete'] and jobs[0]['requisition_id']=='64'
+
+
 def test_literal_newlines_in_public_jsonld_do_not_drop_job():
     jobs=job_sources.jsonld_jobs('<script type="application/ld+json">{"@type":"JobPosting","title":"Data Analyst","description":"SQL\nanalytics","hiringOrganization":{"name":"Example"}}</script>')
     assert len(jobs)==1 and 'SQL' in jobs[0]['description']

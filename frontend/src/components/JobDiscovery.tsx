@@ -7,9 +7,9 @@ export type Source={id:string;name:string;kind:string;note:string;url?:string;av
 const companyIds=['greenhouse','lever','ashby','smartrecruiters'];
 export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;hasProfile:boolean;onComplete:()=>void}){
  const [catalog,setCatalog]=useState<Source[]>([]),[provider,setProvider]=useState('multi'),[sources,setSources]=useState(['linkedin','remotive','remoteok','wwr']);
- const [keywords,setKeywords]=useState(config?.job_search_criteria.target_roles[0]||''),[location,setLocation]=useState(config?.job_search_criteria.target_locations[0]||''),[boards,setBoards]=useState<Record<string,string>>({}),[pageUrl,setPageUrl]=useState(''),[limit,setLimit]=useState(20);
+ const [keywords,setKeywords]=useState(config?.job_search_criteria.target_roles[0]||''),[location,setLocation]=useState(config?.job_search_criteria.target_locations[0]||''),[boards,setBoards]=useState<Record<string,string>>({}),[pageUrl,setPageUrl]=useState(''),[limit,setLimit]=useState(20),[maxAge,setMaxAge]=useState(config?.job_search_criteria.max_posting_age_days?.toString()||'');
  const [busy,setBusy]=useState(false),[report,setReport]=useState<any>(null),[error,setError]=useState('');
- const [manual,setManual]=useState({company_name:'',job_title:'',job_url:'',description:'',location:''});
+ const [manual,setManual]=useState({company_name:'',job_title:'',job_url:'',description:'',location:'',posted_at:''});
  async function refreshSources(){const rows=await api<Source[]>('/jobs/sources?include_unavailable=true');setCatalog(rows);setSources(current=>current.filter(id=>rows.some(s=>s.id===id&&s.available)));return rows;}
  useEffect(()=>{refreshSources().catch(e=>setError(e.message))},[]);
  const activeCatalog=catalog.filter(s=>s.available);
@@ -22,7 +22,7 @@ export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;
    let result;
    if(provider==='demo'&&!hasProfile)result=await api('/demo','POST');
    else if(provider==='manual')result=await api('/jobs/import','POST',manual);
-   else result=await api('/jobs/search','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],boards,keywords,location,limit,page_url:pageUrl});
+   else result=await api('/jobs/search','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],boards,keywords,location,limit,page_url:pageUrl,max_posting_age_days:maxAge?Number(maxAge):null,override_posting_age:true});
    setReport(result);
    const rows=await refreshSources();
    if(!['multi','demo','manual'].includes(provider)&&!rows.some(s=>s.id===provider&&s.available))setProvider('multi');
@@ -45,11 +45,11 @@ export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;
    {companySources.map(id=><label key={id}>{catalog.find(s=>s.id===id)?.name||id} company board slug<input value={boards[id]||''} maxLength={80} onChange={e=>setBoards({...boards,[id]:e.target.value})} placeholder="Company identifier from its careers URL"/><small>These platforms host separate employer boards. Add a company identifier to search it.</small></label>)}
    {!['demo','manual'].includes(provider)&&<>
     <label>Job title or keywords<input value={keywords} maxLength={200} onChange={e=>setKeywords(e.target.value)} placeholder="e.g. Data Analyst"/></label>
-    <div className="form-grid"><label>Search location<input value={location} maxLength={200} onChange={e=>setLocation(e.target.value)} placeholder="e.g. India or Remote"/><small>Overrides your saved location filter for this search.</small></label><label>Results per source<select aria-label="Results per source" value={limit} onChange={e=>setLimit(Number(e.target.value))}>{[10,20,25,50,100].map(n=><option value={n} key={n}>{n}</option>)}</select></label></div>
+    <div className="form-grid"><label>Search location<input value={location} maxLength={200} onChange={e=>setLocation(e.target.value)} placeholder="e.g. India or Remote"/><small>Overrides your saved location filter for this search.</small></label><label>Maximum posting age<select aria-label="Maximum posting age" value={maxAge} onChange={e=>setMaxAge(e.target.value)}><option value="">Any age</option>{[[1,'Past 24 hours'],[3,'Past 3 days'],[7,'Past week'],[14,'Past 2 weeks'],[30,'Past month'],[60,'Past 2 months'],[90,'Past 3 months']].map(([days,label])=><option value={days} key={days}>{label}</option>)}</select><small>Listings without a source date are excluded when this filter is active.</small></label><label>Results per source<select aria-label="Results per source" value={limit} onChange={e=>setLimit(Number(e.target.value))}>{[10,20,25,50,100].map(n=><option value={n} key={n}>{n}</option>)}</select></label></div>
     {catalog.find(s=>s.id===provider)?.note&&<p className="muted">{catalog.find(s=>s.id===provider)?.note}</p>}
    </>}
    {selectedSources.includes('hiringcafe')&&<label>HiringCafe page URL · optional<input type="url" value={pageUrl} maxLength={2000} onChange={e=>setPageUrl(e.target.value)} placeholder="https://hiringcafe.com/"/></label>}
-   {provider==='manual'&&<>{[['company_name','Company'],['job_title','Job title'],['job_url','Application URL'],['location','Location']].map(([key,label])=><label key={key}>{label}<input value={manual[key as keyof typeof manual]} onChange={e=>setManual({...manual,[key]:e.target.value})}/></label>)}<label>Full job description<textarea rows={6} value={manual.description} onChange={e=>setManual({...manual,description:e.target.value})}/></label></>}
+   {provider==='manual'&&<>{[['company_name','Company','text'],['job_title','Job title','text'],['job_url','Application URL','url'],['location','Location','text'],['posted_at','Posting date · optional','date']].map(([key,label,type])=><label key={key}>{label}<input type={type} value={manual[key as keyof typeof manual]} onChange={e=>setManual({...manual,[key]:e.target.value})}/>{key==='posted_at'&&<small>Required if your saved maximum posting-age filter is active.</small>}</label>)}<label>Full job description<textarea rows={6} value={manual.description} onChange={e=>setManual({...manual,description:e.target.value})}/></label></>}
   </fieldset>
   <div className="demo-note">{provider==='demo'?'Sample roles only. Demo applications are never submitted.':'Public access only. Each source has a bounded snapshot; this is not a search of every job on every website. Public-page adapters read up to 10 new details; LinkedIn reads up to 25 cards. Feeds are cached and no account cookies are used. Blocked sources are removed from automatic search and remain in the manual directory. New access blocks pause a board for one hour.'}</div>
   {error&&<div className="error-banner" role="alert">{error}</div>}

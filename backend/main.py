@@ -156,6 +156,8 @@ class SearchRequest(BaseModel):
     sources: List[str]=Field(default_factory=list,max_length=40)
     boards: dict[str,str]=Field(default_factory=dict,max_length=4)
     page_url: str=Field(default='',max_length=2000)
+    max_posting_age_days: int | None = Field(default=None,ge=1,le=365)
+    override_posting_age: bool = False
 
 @app.get('/api/v1/jobs/sources')
 def job_sources(include_unavailable:bool=False): return source_catalog(include_unavailable)
@@ -171,6 +173,7 @@ def search(body:SearchRequest, user_id:str='local'):
     if any(x not in {r['id'] for r in SOURCE_INFO} for x in providers): raise HTTPException(400,'Unknown discovery source.')
     criteria=dict(c['job_search_criteria'])
     if body.location.strip():criteria['target_locations']=[body.location.strip()]
+    if body.override_posting_age:criteria['max_posting_age_days']=body.max_posting_age_days
     from collections import Counter
     from backend.services.job_matching import exclusions
     reports=[];total=0

@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 SOURCE_HOSTS={'stepstone.de':'StepStone','linkedin.com':'LinkedIn','remoteok.com':'Remote OK','weworkremotely.com':'We Work Remotely','remotive.com':'Remotive','arbeitnow.com':'Arbeitnow','arbeitnow.co.uk':'Arbeitnow UK','greenhouse.io':'Greenhouse','lever.co':'Lever','ashbyhq.com':'Ashby','smartrecruiters.com':'SmartRecruiters','workable.com':'Workable','hiringcafe.com':'HiringCafe','hiring.cafe':'HiringCafe'}
 SOURCE_HOSTS.update({'relocate.me':'Relocate.me','berlinstartupjobs.com':'Berlin Startup Jobs','eu-startups.com':'EU-Startups','jobfluent.com':'JobFluent','jobs.hvcapital.com':'HV Capital','jobs.earlybird.com':'Earlybird VC','jobs.pointnine.com':'Point Nine Capital','workingnomads.com':'Working Nomads','wellfound.com':'Wellfound','builtin.com':'Built In','ycombinator.com':'Y Combinator','news.ycombinator.com':'Hacker News'})
+SOURCE_HOSTS.update({'app.vanhack.com':'VanHack','jobbatical.bamboohr.com':'Jobbatical','landing.jobs':'Landing.Jobs','eures.europa.eu':'EURES','europa.eu':'EURES','workinfinland.com':'Work in Finland','make-it-in-germany.com':'Make it in Germany','honeypot.io':'Honeypot'})
 
 
 def source_name(url):

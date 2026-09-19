@@ -10,19 +10,19 @@ The demo contains Alex Morgan and fictitious opportunities. It is for learning t
 
 ## 2. Choose preferences
 
-Set your target roles and locations. Start broadly, such as `Data Analyst` and `Remote`, then narrow the results. Remote work may still be limited to particular countries or time zones. Set your actual work authorization in My profile; the app cannot verify visa eligibility.
+Set your target roles and locations. Start broadly, such as `Data Analyst` and `Remote`, then narrow the results. Choose a default maximum posting age if you only want recent, source-dated listings. Remote work may still be limited to particular countries or time zones. Set your actual work authorization in My profile; the app cannot verify visa eligibility.
 
 Required search keywords are strict filters. Requiring several tools can exclude useful openings. Unknown employment types remain available for review.
 
 ## 3. Find jobs
 
-Click Find opportunities. Choose a public feed or a company board, enter keywords, then Find openings.
+Click Find opportunities. Choose a public feed or a company board, enter keywords, choose the maximum posting age for this search, then Find openings. **Any age** retains jobs with unknown dates. A specific window excludes listings that are too old and listings whose source did not provide a usable posting date. The filter affects newly discovered results; it does not remove saved or reviewing opportunities.
 
 A **company board identifier** is the employer's part of its career URL. For example, in `https://jobs.lever.co/example-company`, the identifier is `example-company`. This is a format example, not a real board to use. Greenhouse, Lever, Ashby and SmartRecruiters need a real employer identifier.
 
 Source reports distinguish new jobs, previously seen or duplicate postings, keyword candidates and preference conflicts. Searches skip saved jobs, including deleted entries; changing filters can reconsider previously excluded candidates. They do not report the total size of a website's job database. Results may be cached to avoid excessive requests. A zero can mean no keyword matches; HTTP 403/429 means the site blocked or limited a request. Do not repeatedly retry a blocked source.
 
-If a job isn't available through discovery, use Application Studio to paste its URL and full description. That creates a draft kit without adding it to the application tracker. To track it, choose **Import a posting manually** in Find opportunities; tracker imports still use your preference filters.
+If a job isn't available through discovery, use Application Studio to paste its URL and full description. That creates a draft kit without adding it to the application tracker. To track it, choose **Import a posting manually** in Find opportunities; tracker imports still use your preference filters. Enter the source posting date when known. It is required for an import to pass an active maximum-age preference.
 
 ## 4. Understand your scores
 
@@ -99,7 +99,7 @@ In native setup, edit `.env` and restart. Docker uses its Compose environment; n
 
 ## Search all supported sources
 
-In Find opportunities, choose **Select all public boards** to check the currently available public sources (19 at release). To include Greenhouse, Lever, Ashby or SmartRecruiters, check each one and enter a real employer board slug. Public-page adapters inspect at most 10 new posting pages per check, so results are a limited snapshot. Known blocked sources are removed from the picker and kept in **Job board directory** for manual import. Newly blocked boards report Unavailable and are paused for one hour across searches. A working browser login does not grant the app API access. [Current source checks](PRODUCT_REVIEW.md#public-source-checks)
+In Find opportunities, choose **Select all public boards** to check the currently available public sources (21 at release). To include Greenhouse, Lever, Ashby or SmartRecruiters, check each one and enter a real employer board slug. Public-page adapters inspect at most 10 new posting pages per check, so results are a limited snapshot. Known blocked sources are removed from the picker and kept in **Job board directory** for manual import. Newly blocked boards report Unavailable and are paused for one hour across searches. A working browser login does not grant the app API access. [Current source checks](PRODUCT_REVIEW.md#public-source-checks)
 
 Discover jobs shows 100 opportunities per page; use Next page and Previous page to reach the rest. Select all selects only the visible page.
 

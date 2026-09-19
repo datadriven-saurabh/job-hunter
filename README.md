@@ -84,7 +84,7 @@ To update a Git installation: stop the app, back up `data`, run `git pull --ff-o
 ## What to enter first
 
 1. **My profile:** contact details, work authorization, professional summary, skills, experience and education. This is the factual source for Application Studio.
-2. **Preferences:** job titles and locations you want, employment type, and any required search terms. Start with broad filters.
+2. **Preferences:** job titles and locations you want, employment type, maximum posting age, and any required search terms. Start with broad filters.
 3. **My documents:** optionally upload alternative resumes. Supported: text-readable PDF, DOCX and UTF-8 TXT, up to 10 MB per file. Each upload creates a local, editable profile draft and suggested job titles; nothing is saved to your profile until you review it. Scanned PDFs need OCR first.
 4. **Find opportunities:** choose a source and enter a role. Employer platforms such as Greenhouse require a company board identifier.
 5. **Application studio:** choose a job and create a one-page resume plus editable outreach drafts. Read them before sharing.
@@ -117,7 +117,7 @@ Use a separate folder and OS account for each person on a shared computer. The a
 
 ## Current scope
 
-Automatic discovery includes 23 sources: public feeds and pages plus four company-board APIs. New adapters cover Berlin Startup Jobs, EU-Startups, Relocate.me, JobFluent, Working Nomads and the HV Capital, Earlybird and Point Nine job boards. Wellfound, Built In, Y Combinator and Workable also expose public postings. The directory lists 35 sources, including blocked/sign-in sites and LinkedIn team posts for browser-assisted import. Known HTTP 403 sources are excluded from automatic search; new access blocks pause a source for one hour across all keyword searches. Availability varies, and each source provides a limited snapshot. [Source checks and limitations](docs/PRODUCT_REVIEW.md#public-source-checks).
+Automatic discovery includes 25 sources: public feeds and pages plus four company-board APIs. It includes Relocate.me, VanHack public jobs, Jobbatical's public company careers, Working Nomads and other bounded adapters. The directory lists 42 sources, including EURES, Work in Finland, Make it in Germany, Landing.Jobs, the retired Honeypot endpoint, blocked/sign-in sites and LinkedIn team posts. Sources without supported automated access stay available for manual import with an explanation. Known HTTP 403 sources are excluded from automatic search; new access blocks pause a source for one hour across all keyword searches. Availability varies, and each source provides a limited snapshot. [Source checks and limitations](docs/PRODUCT_REVIEW.md#public-source-checks).
 
 Contact suggestions are names found in job text or search leads, not a verified LinkedIn connection graph. Resume generation uses supplied facts and checks the PDF is one page; it does not guarantee acceptance by every ATS. Local matching has a finite skills vocabulary and requires human review of eligibility and qualifications.
 

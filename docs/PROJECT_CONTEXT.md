@@ -68,6 +68,8 @@ Deduplication uses canonical job URLs and content/company/title fingerprints. Di
 
 Posting language describes the advertisement text and is separate from required-language eligibility. Short or uncertain text must show `Unknown`. Posting time must distinguish source-provided time from Job Hunter's first-seen time. Visa sponsorship is evidence-based and may remain unknown.
 
+`max_posting_age_days` is an optional saved preference and per-search override. When active, discovery accepts only postings with a valid source date inside the selected window; unknown dates are excluded with an explicit report reason. It never deletes or moves an existing saved/reviewing opportunity. Do not substitute first-seen time for an unknown source posting date.
+
 ## Local AI and external services
 
 The base product works without a paid model key. Ollama is optional. Model output is treated as a draft and passes the same deterministic validators. ChatGPT subscriptions do not provide OpenAI API access. OpenRouter or other cloud providers require an explicit future integration, separate user credentials, clear data-sharing disclosure, and opt-in configuration.

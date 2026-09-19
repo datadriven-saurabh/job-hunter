@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from backend.main import app
 from backend.demo import PROFILE, CONFIG
@@ -29,6 +30,16 @@ def test_priority_uses_job_coverage_and_evidence():
     assert assess(job('Frontend Engineer'),p,criteria())['score']<50
     assert not exclusions(job(),criteria())
     assert exclusions(dict(job(),employment_type='Contract'),criteria())==['Employment type']
+
+
+def test_posting_age_filter_uses_source_date_and_rejects_unknown_dates():
+    rules=dict(criteria(),max_posting_age_days=7)
+    recent=(datetime.now(timezone.utc)-timedelta(days=2)).isoformat()
+    old=(datetime.now(timezone.utc)-timedelta(days=8)).isoformat()
+    assert not exclusions(dict(job(),posted_at=recent),rules)
+    assert exclusions(dict(job(),posted_at=old),rules)==['Posted more than 7 days ago']
+    assert exclusions(job(),rules)==['Posting date unknown (age filter active)']
+    assert not exclusions(job(),dict(rules,max_posting_age_days=None))
 
 
 def test_missing_evidence_cannot_be_top_priority():

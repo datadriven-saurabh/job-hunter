@@ -147,6 +147,7 @@ class JobSearchCriteria(BaseModel):
     target_locations: List[str]
     employment_types: List[str] = ["Full-time"]
     min_salary_threshold: Optional[int] = None
+    max_posting_age_days: Optional[int] = Field(default=None, ge=1, le=365)
     dealbreaker_keywords: List[str] = []
     required_stack_keywords: List[str] = []
 

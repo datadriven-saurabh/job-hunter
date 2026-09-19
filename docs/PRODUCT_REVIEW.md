@@ -59,6 +59,13 @@ Public requests were made without cookies or account credentials. Results can ch
 | Berlin Startup Jobs | Three full public JobPosting records extracted, with dates and source attribution. |
 | EU-Startups | Current board is `/startup-jobs/`. Three full JobPosting records extracted. Source-supplied employer facts are retained; the app does not verify advertiser identities. |
 | Relocate.me | Three full JobPosting records extracted from `/international-jobs`. Some postings are older; their actual dates are preserved. Paid curated-list advertisements are excluded. |
+| VanHack | Public cards and full job-detail text were readable. The observed page did not provide an exact posting timestamp, so these jobs are excluded when a posting-age filter is active. Sign-up-only content is not accessed. |
+| Jobbatical | Its public BambooHR endpoint returned Jobbatical's own current openings. Public detail metadata supplies a description preview; results are marked incomplete and have no source posting date. This is no longer a general relocation-job marketplace. |
+| Landing.Jobs | Current public site promotes its matching service but exposes no readable public vacancy list; manual import only. |
+| EURES | Official terms prohibit vacancy extraction and reserve API access for recognized EURES partners. The official search remains linked for manual use. |
+| Work in Finland | Official search is client-rendered and did not expose a stable supported public feed. It remains a manual source. |
+| Make it in Germany | Direct automated access returned a browser-verification page. It remains a manual source. |
+| Honeypot | The former marketplace endpoint was unreachable in the live check and remains listed as unavailable. |
 | JobFluent | Three full public microdata postings extracted from the remote-job snapshot. Login-limited descriptions remain marked incomplete. |
 | Working Nomads | Its linked public API worked; 50 records in the observed feed. Feed cached for six hours. |
 | HV Capital / Earlybird / Point Nine | Three full public JobPosting records extracted from each board. Only observed public job-detail links are followed; external employer links are not blindly crawled. |
@@ -68,7 +75,7 @@ Public requests were made without cookies or account credentials. Results can ch
 | Index Ventures | `/careers/` returned 404. Current `/startup-jobs/` uses JavaScript search without embedded public postings; manual only. |
 | Hyrise | Talent-community recruitment site. No public listing feed found; manual only. |
 
-The directory contains 35 entries; the automatic picker includes 23 (19 public sources plus four employer boards). The additional LinkedIn team-post entry is browser-assisted: users open a visible post and review the extracted fields before import. Greenhouse, Lever, Ashby and SmartRecruiters require an employer identifier. Known blocked sources and sites without readable listings remain in the manual directory. New HTTP 401/403/429/999 responses pause the entire source for one hour, remove it from the active picker and prevent immediate retries under different keywords. Saved opportunities are retained.
+The directory contains 42 entries; the automatic picker includes 25 (21 public sources plus four employer boards). The additional LinkedIn team-post entry is browser-assisted: users open a visible post and review the extracted fields before import. Greenhouse, Lever, Ashby and SmartRecruiters require an employer identifier. Known blocked sources and sites without readable listings remain in the manual directory. New HTTP 401/403/429/999 responses pause the entire source for one hour, remove it from the active picker and prevent immediate retries under different keywords. Saved opportunities are retained.
 
 Requests use four source workers and at most two detail workers per public-page adapter, with bounded response sizes, host-checked redirects and caches. Public detail links are prioritized by keyword relevance before the ten-page limit. Search pages/feeds still need checking for new jobs; previously saved detail pages are reused. This does not enumerate every posting on a website.
 
@@ -87,7 +94,7 @@ See [OpenRouter limits](https://openrouter.ai/docs/faq) and [data-collection pol
 
 ## Release verification
 
-- 96 Python tests passed, including the three opt-in Chromium tests (full profile/upload/preparation/Studio/coaching journey, dashboard pagination, and local application form).
+- 107 Python tests passed, including the three opt-in Chromium tests (full profile/upload/preparation/Studio/coaching journey, dashboard pagination, and local application form).
 - Six Node tests passed for sorting and extension requisition identity.
 - Production Next.js build and TypeScript checks passed.
 - Python installed-environment audit and frontend production-dependency audit reported no known advisories at review time.

@@ -3,7 +3,7 @@
 Not an interview probability, semantic model, or verification of eligibility.
 """
 import re
-from datetime import date
+from datetime import date, datetime, timezone
 
 SKILLS={
  'Databricks':['databricks'], 'Microsoft Fabric':['microsoft fabric'], 'Data governance':['data governance','data catalogues','data catalogs'],
@@ -105,6 +105,12 @@ def exclusions(job, criteria):
     if not all(contains(content,x) for x in criteria.get('required_stack_keywords',[])):reasons.append('Required search keyword')
     kind=job.get('employment_type','')
     if kind.lower() not in {'','not specified','unknown','unspecified'} and criteria.get('employment_types') and kind not in criteria['employment_types']:reasons.append('Employment type')
+    max_age=criteria.get('max_posting_age_days')
+    if max_age:
+        from backend.services.job_intelligence import posting_time
+        posted,_=posting_time(job.get('posted_at'))
+        if not posted:reasons.append('Posting date unknown (age filter active)')
+        elif (datetime.now(timezone.utc)-datetime.fromisoformat(posted)).total_seconds()>max_age*86400:reasons.append(f'Posted more than {max_age} days ago')
     return reasons
 
 def assess(job, profile, criteria):
