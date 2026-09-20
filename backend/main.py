@@ -69,6 +69,19 @@ app.add_middleware(LocalSecurityMiddleware)
 # expired or missing session, instead of reporting a misleading network error.
 app.add_middleware(CORSMiddleware,allow_origins=sorted(web_origins()),allow_origin_regex=r'^chrome-extension://[a-p]{32}$',allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT','DELETE'],allow_headers=['Authorization','Content-Type','If-Match'])
 
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    # ServerErrorMiddleware sits outside CORS. Include the permitted origin on
+    # unexpected failures so clients receive an actionable error, not FetchError.
+    import logging
+    logging.getLogger(__name__).error('Unhandled API error: %s on %s', type(exc).__name__, request.url.path)
+    origin = request.headers.get('origin', '')
+    headers = {'Cache-Control': 'no-store'}
+    if origin in web_origins():
+        headers.update({'Access-Control-Allow-Origin': origin, 'Vary': 'Origin'})
+    return JSONResponse(status_code=500, headers=headers, content={'detail': 'The server could not complete this request. Please retry; if it persists, report the action that failed.'})
+
+
 def require_job(id):
     job=db.get_job(id)
     if not job: raise HTTPException(404,'Application not found')
@@ -175,7 +188,7 @@ def job_sources(include_unavailable:bool=False): return source_catalog(include_u
 
 @app.post('/api/v1/jobs/search')
 def search(body:SearchRequest):
-    p=require_profile();c=db.config()
+    p=require_profile();c=db.config() or demo.CONFIG
     if body.provider=='demo' and not body.sources:
         incoming=demo.jobs()
         result=discovery_graph.invoke({'jobs':incoming,'profile':p,'criteria':c['job_search_criteria']})
@@ -188,13 +201,12 @@ def search(body:SearchRequest):
     from collections import Counter
     from backend.services.job_matching import exclusions
     reports=[];total=0
-    from concurrent.futures import ThreadPoolExecutor
+    from backend.services.discovery_fetch import fetch_sources
     def fetch_source(provider):
         try:
             return discover_source(provider,board=body.boards.get(provider,body.board),keywords=body.keywords.strip(),location=body.location.strip(),limit=body.limit,page_url=body.page_url)
         except Exception as exc:return exc
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        fetched=list(pool.map(fetch_source,providers))
+    fetched=fetch_sources(providers,fetch_source)
     for provider,source_result in zip(providers,fetched):
         try:
             if isinstance(source_result,Exception):raise source_result
