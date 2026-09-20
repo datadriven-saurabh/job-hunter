@@ -62,11 +62,12 @@ app.include_router(model_router)
 from backend.career_api import router as career_router
 app.include_router(career_router)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=['*'] if db.HOSTED else ['localhost','127.0.0.1','testserver'])
-from backend.security import web_origins
-app.add_middleware(CORSMiddleware,allow_origins=sorted(web_origins()),allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT','DELETE'],allow_headers=['Authorization','Content-Type','If-Match'])
-
-from backend.security import LocalSecurityMiddleware
+from backend.security import LocalSecurityMiddleware, web_origins
 app.add_middleware(LocalSecurityMiddleware)
+# Middleware is wrapped in reverse registration order. Keep CORS outermost so
+# browser clients also receive CORS headers when the security layer rejects an
+# expired or missing session, instead of reporting a misleading network error.
+app.add_middleware(CORSMiddleware,allow_origins=sorted(web_origins()),allow_origin_regex=r'^chrome-extension://[a-p]{32}$',allow_credentials=False,allow_methods=['GET','POST','PATCH','PUT','DELETE'],allow_headers=['Authorization','Content-Type','If-Match'])
 
 def require_job(id):
     job=db.get_job(id)
