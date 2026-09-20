@@ -139,7 +139,10 @@ def config(user_id=None):
 
 
 def profile_revision(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+    # PostgreSQL drivers return UUID values as ``uuid.UUID`` objects.  They
+    # are valid profile identifiers but are not JSON-native, so normalise
+    # them before deriving the optimistic-concurrency revision.
+    return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()
 
 
 def applications(include_deleted=False, _job_id=None):
