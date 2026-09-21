@@ -24,7 +24,7 @@ export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;
    else if(provider==='manual')result=await api('/jobs/import','POST',manual);
    else result=await api('/jobs/search','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],boards,keywords,location,limit,page_url:pageUrl,max_posting_age_days:maxAge?Number(maxAge):null,override_posting_age:true});
    setReport(result);
-   const rows=await refreshSources();
+   const rows=await refreshSources().catch(()=>catalog);
    if(!['multi','demo','manual'].includes(provider)&&!rows.some(s=>s.id===provider&&s.available))setProvider('multi');
   }catch(e){setError(e instanceof Error?e.message:'Discovery failed')}
   finally{setBusy(false)}
