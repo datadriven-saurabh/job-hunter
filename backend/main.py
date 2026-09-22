@@ -183,6 +183,12 @@ class SearchRequest(BaseModel):
     max_posting_age_days: int | None = Field(default=None,ge=1,le=365)
     override_posting_age: bool = False
 
+@app.get('/api/v1/jobs/skill-trends')
+def skill_trends(role: str = '', days: int = 30):
+    if days not in {0,7,30,90}: raise HTTPException(400,'Choose 7, 30, 90 days or all dates.')
+    from backend.services.skill_trends import summarize
+    return summarize(db.applications(), role=role, days=days)
+
 @app.get('/api/v1/jobs/sources')
 def job_sources(include_unavailable:bool=False): return source_catalog(include_unavailable)
 
