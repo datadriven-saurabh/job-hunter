@@ -190,10 +190,28 @@ def skill_trends(role: str = '', days: int = 30):
     return summarize(db.applications(), role=role, days=days)
 
 @app.get('/api/v1/jobs/sources')
-def job_sources(include_unavailable:bool=False): return source_catalog(include_unavailable)
+def job_sources(include_unavailable:bool=False):
+    from backend.services.search_runs import catalog
+    return catalog(source_catalog(include_unavailable))
+
+@app.post('/api/v1/jobs/search-runs',status_code=202)
+def start_search(body:SearchRequest):
+    require_profile()
+    from backend.services.search_runs import start
+    return start(body,execute_search,source_catalog(True))
+
+@app.get('/api/v1/jobs/search-runs/{run_id}')
+def search_status(run_id:str):
+    from backend.services.search_runs import status
+    return status(run_id)
 
 @app.post('/api/v1/jobs/search')
 def search(body:SearchRequest):
+    if body.provider!='demo' or body.sources:
+        return start_search(body)
+    return execute_search(body)
+
+def execute_search(body:SearchRequest):
     p=require_profile();c=db.config() or demo.CONFIG
     if body.provider=='demo' and not body.sources:
         incoming=demo.jobs()

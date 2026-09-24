@@ -86,7 +86,7 @@ def source_catalog(include_unavailable=False):
     suspended={r['cache_key'].removeprefix('source-block:'):json.loads(r['payload']) for r in db.query("SELECT * FROM source_cache WHERE cache_key LIKE 'source-block:%' AND fetched_at>:cutoff",{'cutoff':time.time()-3600})}
     result=[]
     for source in SOURCE_INFO:
-        reason=MANUAL_ONLY.get(source['id']) or suspended.get(source['id'],{}).get('error','')
+        reason=('Company-specific board; use the employer posting URL to import a job.' if source['kind']=='company-board' else '') or MANUAL_ONLY.get(source['id']) or suspended.get(source['id'],{}).get('error','')
         entry={**source,'available':not bool(reason),'note':reason or source.get('note','Public job listings.')}
         if include_unavailable or entry['available']:result.append(entry)
     return result

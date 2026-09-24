@@ -3,15 +3,21 @@ import {useEffect,useState} from 'react';
 import {Search,Loader2,ExternalLink,Check} from 'lucide-react';
 import {api} from '@/lib/api';
 import JobBoardDirectory from './JobBoardDirectory';
-export type Source={id:string;name:string;kind:string;note:string;url?:string;available:boolean};
+export type Source={id:string;name:string;kind:string;note:string;url?:string;available:boolean;cooldown_seconds?:number;estimated_seconds?:number;timing_samples?:number};
 const companyIds=['greenhouse','lever','ashby','smartrecruiters'];
 export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;hasProfile:boolean;onComplete:()=>void}){
- const [catalog,setCatalog]=useState<Source[]>([]),[provider,setProvider]=useState('multi'),[sources,setSources]=useState(['linkedin','remotive','remoteok','wwr']);
+ const [catalog,setCatalog]=useState<Source[]>([]),[provider,setProvider]=useState('multi'),[sources,setSources]=useState(['remoteok','wwr']);
  const [keywords,setKeywords]=useState(config?.job_search_criteria.target_roles[0]||''),[location,setLocation]=useState(config?.job_search_criteria.target_locations[0]||''),[boards,setBoards]=useState<Record<string,string>>({}),[pageUrl,setPageUrl]=useState(''),[limit,setLimit]=useState(20),[maxAge,setMaxAge]=useState(config?.job_search_criteria.max_posting_age_days?.toString()||'');
+ const [runId,setRunId]=useState(''),[progress,setProgress]=useState<any>(null),[toast,setToast]=useState('');
  const [busy,setBusy]=useState(false),[report,setReport]=useState<any>(null),[error,setError]=useState('');
  const [manual,setManual]=useState({company_name:'',job_title:'',job_url:'',description:'',location:'',posted_at:''});
- async function refreshSources(){const rows=await api<Source[]>('/jobs/sources?include_unavailable=true');setCatalog(rows);setSources(current=>current.filter(id=>rows.some(s=>s.id===id&&s.available)));return rows;}
- useEffect(()=>{refreshSources().catch(e=>setError(e.message))},[]);
+ async function refreshSources(){const rows=await api<Source[]>('/jobs/sources?include_unavailable=true');setCatalog(rows);setSources(current=>current.filter(id=>rows.some(s=>s.id===id&&s.available&&!s.cooldown_seconds)));return rows;}
+ useEffect(()=>{refreshSources().catch(e=>setError(e.message));const saved=sessionStorage.getItem('job-search-run');if(saved){setRunId(saved);setBusy(true)}},[]);
+ useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),4000);return()=>clearTimeout(t)},[toast]);
+ useEffect(()=>{if(!runId)return;let stopped=false;let timer:ReturnType<typeof setTimeout>;
+ const poll=async()=>{try{const value=await api(`/jobs/search-runs/${runId}`);if(stopped)return;setProgress(value);setError('');if(['complete','failed','interrupted'].includes(value.state)){setReport(value);setBusy(false);setRunId('');sessionStorage.removeItem('job-search-run');refreshSources().catch(()=>{});return;}}catch(e){if(!stopped)setError('Progress is temporarily unavailable. Search may still be running; reconnecting…')}
+ if(!stopped)timer=setTimeout(poll,3000)};poll();return()=>{stopped=true;clearTimeout(timer)}},[runId]);
+ const choose=(id:string)=>{if(sources.includes(id)){setSources(sources.filter(x=>x!==id));return}const row=catalog.find(s=>s.id===id);if(row?.cooldown_seconds){setToast(`Cooling down: retry ${row.name} in ${Math.ceil(row.cooldown_seconds/60)} min.`);return}if(sources.length>=3){setToast('Choose at most 3 boards per search.');return}if([...sources,id].reduce((n,x)=>n+(catalog.find(s=>s.id===x)?.estimated_seconds||20),0)>60){setToast('This selection is estimated to take over one minute. Choose fewer or faster boards.');return}setSources([...sources,id])};
  const activeCatalog=catalog.filter(s=>s.available);
  const selectedSources=provider==='multi'?sources:[provider];
  const companySources=selectedSources.filter(s=>companyIds.includes(s));
@@ -22,25 +28,28 @@ export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;
    let result;
    if(provider==='demo'&&!hasProfile)result=await api('/demo','POST');
    else if(provider==='manual')result=await api('/jobs/import','POST',manual);
-   else result=await api('/jobs/search','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],boards,keywords,location,limit,page_url:pageUrl,max_posting_age_days:maxAge?Number(maxAge):null,override_posting_age:true});
+   else {const run=await api('/jobs/search-runs','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],boards,keywords,location,limit,page_url:pageUrl,max_posting_age_days:maxAge?Number(maxAge):null,override_posting_age:true});setRunId(run.run_id);sessionStorage.setItem('job-search-run',run.run_id);return;}
    setReport(result);
    const rows=await refreshSources().catch(()=>catalog);
    if(!['multi','demo','manual'].includes(provider)&&!rows.some(s=>s.id===provider&&s.available))setProvider('multi');
   }catch(e){setError(e instanceof Error?e.message:'Discovery failed')}
-  finally{setBusy(false)}
+  finally{if(!sessionStorage.getItem('job-search-run'))setBusy(false)}
  }
  return <>
   <JobBoardDirectory sources={catalog}/>
+  {toast&&<div className="toast" role="status">{toast}</div>}
+  <p>Maximum 3 boards · combined estimate must be at most 60 seconds. Successful sources cool down for 10 minutes. Estimates include fetching and matching, and are not guaranteed deadlines.</p>
+  {busy&&<p role="status"><Loader2 className="spin" size={16}/> {progress?.message||'Starting search…'} · {progress?.completed||0}/{progress?.total||selectedSources.length} boards finished. Results are saved as each board completes. You can close and reopen this dialog to check progress.</p>}
   <h2>Search beyond a single board.</h2>
   <p>Check for new openings. Previously saved jobs, including deleted opportunities, are skipped. Public feeds must still be checked to discover new postings.</p>
   <fieldset disabled={busy} className="discovery-controls">
-   <label>Job source<select aria-label="Job source" value={provider} onChange={e=>{setProvider(e.target.value);setReport(null)}}>
+   <label>Job source<select aria-label="Job source" value={provider} onChange={e=>{const row=catalog.find(s=>s.id===e.target.value);if(row?.cooldown_seconds){setToast(`Cooling down: retry in ${Math.ceil(row.cooldown_seconds/60)} minutes.`);return}setProvider(e.target.value);setReport(null)}}>
     <option value="multi">Search multiple boards</option>
     {activeCatalog.map(s=><option key={s.id} value={s.id}>{s.name}{s.kind==='company-board'?' · company board':''}</option>)}
     <option value="manual">Import a posting manually</option><option value="demo">Demo opportunities</option>
    </select></label>
-   {provider==='multi'&&<><div className="detail-actions"><button className="outline compact" onClick={()=>setSources(activeCatalog.filter(s=>s.kind!=='company-board').map(s=>s.id))}>Select all public boards</button><button className="outline compact" onClick={()=>setSources([])}>Clear sources</button></div><div className="source-checkboxes">
-    {activeCatalog.map(s=><label className="check-label" key={s.id}><input type="checkbox" checked={sources.includes(s.id)} onChange={e=>setSources(e.target.checked?[...sources,s.id]:sources.filter(x=>x!==s.id))}/>{s.name}</label>)}
+   {provider==='multi'&&<><div className="detail-actions"><button className="outline compact" onClick={()=>setSources(activeCatalog.filter(s=>!s.cooldown_seconds).slice(0,1).map(s=>s.id))}>Select fastest available</button><button className="outline compact" onClick={()=>setSources([])}>Clear sources</button></div><div className="source-checkboxes">
+    {activeCatalog.map(s=><label className="check-label" key={s.id}><input type="checkbox" checked={sources.includes(s.id)} aria-disabled={!!s.cooldown_seconds} onChange={()=>choose(s.id)}/>{s.name} · ~{Math.ceil(s.estimated_seconds||20)}s{s.cooldown_seconds?` · cooldown ${Math.ceil(s.cooldown_seconds/60)}m`:''}</label>)}
    </div></>}
    {companySources.map(id=><label key={id}>{catalog.find(s=>s.id===id)?.name||id} company board slug<input value={boards[id]||''} maxLength={80} onChange={e=>setBoards({...boards,[id]:e.target.value})} placeholder="Company identifier from its careers URL"/><small>These platforms host separate employer boards. Add a company identifier to search it.</small></label>)}
    {!['demo','manual'].includes(provider)&&<>

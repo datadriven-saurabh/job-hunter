@@ -69,7 +69,7 @@ def _verify_supabase_token(token: str):
 
 
 def _rate_event(path: str, method: str):
-    if method == "POST" and path == "/api/v1/jobs/search":
+    if method == "POST" and path in {"/api/v1/jobs/search", "/api/v1/jobs/search-runs"}:
         return "JOB_SEARCH", int(os.getenv("MAX_SEARCHES_PER_USER_PER_DAY", "10"))
     if method == "POST" and path == "/api/v1/resumes/upload":
         return "RESUME_PARSE", int(os.getenv("MAX_RESUME_PARSES_PER_USER_PER_DAY", "5"))
