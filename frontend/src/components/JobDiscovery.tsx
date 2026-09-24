@@ -13,9 +13,10 @@ export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;
  const [manual,setManual]=useState({company_name:'',job_title:'',job_url:'',description:'',location:'',posted_at:''});
  async function refreshSources(){const rows=await api<Source[]>('/jobs/sources?include_unavailable=true');setCatalog(rows);setSources(current=>current.filter(id=>rows.some(s=>s.id===id&&s.available&&!s.cooldown_seconds)));return rows;}
  useEffect(()=>{refreshSources().catch(e=>setError(e.message));const saved=sessionStorage.getItem('job-search-run');if(saved){setRunId(saved);setBusy(true)}},[]);
+ useEffect(()=>{const timer=setInterval(()=>setCatalog(rows=>rows.map(row=>({...row,cooldown_seconds:Math.max(0,(row.cooldown_seconds||0)-1)}))),1000);return()=>clearInterval(timer)},[]);
  useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),4000);return()=>clearTimeout(t)},[toast]);
  useEffect(()=>{if(!runId)return;let stopped=false;let timer:ReturnType<typeof setTimeout>;
- const poll=async()=>{try{const value=await api(`/jobs/search-runs/${runId}`);if(stopped)return;setProgress(value);setError('');if(['complete','failed','interrupted'].includes(value.state)){setReport(value);setBusy(false);setRunId('');sessionStorage.removeItem('job-search-run');refreshSources().catch(()=>{});return;}}catch(e){if(!stopped)setError('Progress is temporarily unavailable. Search may still be running; reconnecting…')}
+ const poll=async()=>{try{const value=await api(`/jobs/search-runs/${runId}`);if(stopped)return;setProgress(value);setError('');if(['complete','failed','interrupted'].includes(value.state)){setReport(value);setBusy(false);setRunId('');sessionStorage.removeItem('job-search-run');refreshSources().catch(()=>{});return;}}catch(e){if(!stopped){if(e instanceof Error&&e.message.includes('Search not found')){setError('This search is no longer available. You can start a new search.');setBusy(false);setRunId('');sessionStorage.removeItem('job-search-run');return;}setError('Progress is temporarily unavailable. Search may still be running; reconnecting…')}}
  if(!stopped)timer=setTimeout(poll,3000)};poll();return()=>{stopped=true;clearTimeout(timer)}},[runId]);
  const choose=(id:string)=>{if(sources.includes(id)){setSources(sources.filter(x=>x!==id));return}const row=catalog.find(s=>s.id===id);if(row?.cooldown_seconds){setToast(`Cooling down: retry ${row.name} in ${Math.ceil(row.cooldown_seconds/60)} min.`);return}if(sources.length>=3){setToast('Choose at most 3 boards per search.');return}if([...sources,id].reduce((n,x)=>n+(catalog.find(s=>s.id===x)?.estimated_seconds||20),0)>60){setToast('This selection is estimated to take over one minute. Choose fewer or faster boards.');return}setSources([...sources,id])};
  const activeCatalog=catalog.filter(s=>s.available);
@@ -27,6 +28,7 @@ export default function JobDiscovery({config,hasProfile,onComplete}:{config:any;
   try{
    let result;
    if(provider==='demo'&&!hasProfile)result=await api('/demo','POST');
+   else if(provider==='demo')result=await api('/jobs/search','POST',{provider:'demo'});
    else if(provider==='manual')result=await api('/jobs/import','POST',manual);
    else {const run=await api('/jobs/search-runs','POST',{provider:provider==='multi'?'linkedin':provider,sources:provider==='multi'?sources:[],boards,keywords,location,limit,page_url:pageUrl,max_posting_age_days:maxAge?Number(maxAge):null,override_posting_age:true});setRunId(run.run_id);sessionStorage.setItem('job-search-run',run.run_id);return;}
    setReport(result);

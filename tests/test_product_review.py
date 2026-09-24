@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
-from backend.main import app
+from backend.main import app, execute_search, SearchRequest
 from backend import database as db
 from backend.demo import PROFILE, CONFIG, jobs as demo_jobs
 from backend.agents import job_sources, orchestrator, apply_agent
@@ -91,10 +91,10 @@ def test_repeated_search_skips_seen_and_deleted_jobs(monkeypatch):
     monkeypatch.setattr(job_sources,'retrieve',lambda *a,**k:[posting])
     with TestClient(app) as c:
         c.post('/api/v1/profile',json=PROFILE)
-        first=c.post('/api/v1/jobs/search',json={'provider':'remoteok'}).json()
+        first=execute_search(SearchRequest(**{'provider':'remoteok'}))
         assert first['count']==1
         c.post('/api/v1/applications/delete',json={'job_ids':[job_id(posting['job_url'])]})
-        second=c.post('/api/v1/jobs/search',json={'provider':'remoteok'}).json()
+        second=execute_search(SearchRequest(**{'provider':'remoteok'}))
         assert second['count']==0 and second['sources'][0]['already_seen']==1
         assert c.get('/api/v1/applications').json()==[]
 
@@ -105,10 +105,10 @@ def test_candidate_limit_prefers_unseen_jobs_in_cached_pool(monkeypatch):
     with TestClient(app) as c:
         c.post('/api/v1/profile',json=PROFILE)
         for i in range(3):
-            r=c.post('/api/v1/jobs/search',json={'provider':'remoteok','limit':1}).json()
+            r=execute_search(SearchRequest(**{'provider':'remoteok','limit':1}))
             assert r['count']==1,r
         assert len(c.get('/api/v1/applications').json())==3
-        assert c.post('/api/v1/jobs/search',json={'provider':'remoteok','limit':1}).json()['count']==0
+        assert execute_search(SearchRequest(**{'provider':'remoteok','limit':1}))['count']==0
 
 
 def test_new_filters_can_reconsider_previously_excluded_job():

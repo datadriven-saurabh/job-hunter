@@ -23,9 +23,11 @@ def write(key,value):
 def metric_key(source):return 'search-metric:'+db.current_user()+':'+source
 
 def catalog(rows):
+    prefix='search-metric:'+db.current_user()+':'
+    metrics={r['cache_key']:json.loads(r['payload']) for r in db.query("SELECT cache_key,payload FROM source_cache WHERE cache_key LIKE :prefix",{'prefix':prefix+'%'})}
     result=[]
     for row in rows:
-        m=read(metric_key(row['id'])) or {}
+        m=metrics.get(metric_key(row['id']),{})
         remaining=max(0,int(m.get('last_success',0)+600-time.time()))
         result.append({**row,'cooldown_seconds':remaining,'estimated_seconds':round(m.get('estimate',20),1), 'timing_samples':m.get('samples',0)})
     return sorted(result,key=lambda row:(not row['available'],row['estimated_seconds']))

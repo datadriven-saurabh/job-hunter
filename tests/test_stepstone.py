@@ -1,7 +1,7 @@
 import json
 import pytest
 from fastapi.testclient import TestClient
-from backend.main import app
+from backend.main import app, execute_search, SearchRequest
 from backend.agents import job_sources as source
 from backend.services.job_intelligence import enrich
 from backend.services.posting_language import posting_language
@@ -48,7 +48,7 @@ def test_stepstone_blocks_reported_not_empty_success(monkeypatch):
     monkeypatch.setattr(source,'public_get',denied)
     with TestClient(app) as c:
         c.post('/api/v1/demo')
-        response=c.post('/api/v1/jobs/search',json={'provider':'stepstone','keywords':'Data Analyst','location':'Berlin'}).json()
+        response=execute_search(SearchRequest(**{'provider':'stepstone','keywords':'Data Analyst','location':'Berlin'}))
         assert response['sources'][0]['status']=='unavailable'
         assert '403' in response['sources'][0]['message']
         assert not any(s['id']=='stepstone' for s in c.get('/api/v1/jobs/sources').json())

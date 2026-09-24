@@ -2,7 +2,7 @@ import io
 import json
 import zipfile
 from fastapi.testclient import TestClient
-from backend.main import app
+from backend.main import app, execute_search, SearchRequest
 from backend import database as db
 from backend.demo import PROFILE
 from backend.services import resumes
@@ -108,14 +108,13 @@ def test_multisource_partial_failure_and_cache(monkeypatch):
     monkeypatch.setattr(job_sources,'retrieve',retrieve)
     with TestClient(app) as c:
         c.post('/api/v1/demo')
-        r=c.post('/api/v1/jobs/search',json={'sources':['linkedin','hiringcafe'],'location':'Remote','keywords':'Software Engineer'})
-        assert r.status_code==200
-        result=r.json()
+        r=execute_search(SearchRequest(sources=['linkedin','hiringcafe'],location='Remote',keywords='Software Engineer'))
+        result=r
         assert result['count']==1
         assert result['sources'][1]['status']=='unavailable'
         assert '403' in result['sources'][1]['message']
-        r=c.post('/api/v1/jobs/search',json={'sources':['linkedin','hiringcafe'],'location':'Remote','keywords':'Software Engineer'})
-        assert r.json()['sources'][0]['cached']
+        r=execute_search(SearchRequest(sources=['linkedin','hiringcafe'],location='Remote',keywords='Software Engineer'))
+        assert r['sources'][0]['cached']
 
 def test_public_feeds_preserve_attribution_and_cache(monkeypatch):
     db.init_db()
