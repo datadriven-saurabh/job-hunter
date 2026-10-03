@@ -6,7 +6,10 @@ from contextvars import copy_context
 _pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix='job-source')
 
 
-def fetch_sources(providers, fetch, timeout=35):
+SOURCE_TIMEOUT_SECONDS = 300
+
+
+def fetch_sources(providers, fetch, timeout=SOURCE_TIMEOUT_SECONDS):
     futures = [_pool.submit(copy_context().run, fetch, provider) for provider in providers]
     done, pending = wait(futures, timeout=timeout)
     for future in pending:

@@ -1,5 +1,5 @@
 {
-  "version": "career-pipeline-v3",
+  "version": "career-pipeline-v4-openrouter-privacy",
   "tiers": {
     "small": "qwen2.5:1.5b",
     "medium": null,

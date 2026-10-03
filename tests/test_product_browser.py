@@ -41,7 +41,8 @@ def browser_app(tmp_path,monkeypatch):
         with socket.socket() as sock:sock.bind(('127.0.0.1',0));api_port=sock.getsockname()[1]
         api_origin=f'http://127.0.0.1:{api_port}'
         # Only this isolated fixture accepts its random frontend origin.
-        monkeypatch.setattr(security,'WEB_ORIGINS',security.WEB_ORIGINS|{origin})
+        allowed_origins = security.web_origins() | {origin}
+        monkeypatch.setattr(security, 'web_origins', lambda: allowed_origins)
         test_app=CORSMiddleware(app,allow_origins=[origin],allow_methods=['*'],allow_headers=['*'])
         server=uvicorn.Server(uvicorn.Config(test_app,host='127.0.0.1',port=api_port,log_level='error',access_log=False))
         thread=threading.Thread(target=server.run,daemon=True);thread.start()
@@ -75,6 +76,28 @@ def browser_app(tmp_path,monkeypatch):
         try:process.wait(timeout=10)
         except subprocess.TimeoutExpired:process.kill();process.wait()
         log.close()
+
+
+def test_studio_saved_job_search_and_option_details(browser_app):
+    page,client,errors=browser_app
+    page.get_by_role('button',name='Explore demo workspace').click()
+    expect(page.locator('tbody tr')).to_have_count(6)
+    job=client.get('/api/v1/applications').json()[0]
+    page.get_by_role('button',name='Application studio',exact=True).click()
+    option=page.get_by_label('Saved job',exact=True).locator(f'option[value="{job["job_id"]}"]')
+    expect(option).to_have_count(1)
+    label=option.inner_text()
+    assert job['company_name'] in label and job['job_title'] in label
+    assert (job.get('location') or 'Location unknown') in label
+    assert (job.get('source') or 'Manual import') in label
+    assert 'Posted ' in label or 'Posting date unknown' in label
+    search=page.get_by_label('Search saved jobs')
+    search.fill(job['company_name'])
+    expect(option).to_have_count(1)
+    page.get_by_label('Saved job',exact=True).select_option(job['job_id'])
+    search.fill('no matching saved opportunity')
+    expect(option).to_have_count(1)
+    assert not errors
 
 
 def test_core_user_journey(browser_app,tmp_path):
@@ -124,10 +147,9 @@ def test_core_user_journey(browser_app,tmp_path):
     expect(page.get_by_role('heading',name='Tell me about a time you improved a process.',exact=True)).to_be_visible()
     page.get_by_role('button',name='Interview coach',exact=True).click()
     page.get_by_label('Practice for',exact=True).select_option(job['job_id'])
-    page.get_by_role('button',name='Start practice',exact=True).click()
     page.get_by_label('Your answer',exact=True).fill('At the time my task was to improve speed. I built a cache and reduced latency by 30%.')
     page.get_by_role('button',name='Get feedback',exact=False).click()
-    expect(page.get_by_text('Rubric coverage',exact=False)).to_be_visible()
+    expect(page.get_by_role('heading',name='Keyword coverage',exact=False)).to_be_visible()
     page.get_by_role('button',name='Reviewing',exact=True).click()
     page.once('dialog',lambda dialog:dialog.accept())
     page.get_by_role('button',name='Delete '+job['company_name']+' opportunity',exact=True).click()
@@ -138,10 +160,12 @@ def test_core_user_journey(browser_app,tmp_path):
     page.get_by_label('Sort direction').select_option('asc')
     expect(page.locator('tbody tr')).to_have_count(8)
     page.get_by_role('button',name='Find opportunities',exact=False).first.click()
-    page.get_by_role('button',name='Select all public boards',exact=True).click()
-    from backend.agents.job_sources import source_catalog
-    expect(page.locator('.source-checkboxes input:checked')).to_have_count(sum(s['kind']!='company-board' for s in source_catalog()))
-    expect(page.locator('.source-checkboxes')).not_to_contain_text('StepStone')
+    expect(page.get_by_label('Search category')).to_have_value('general')
+    expect(page.locator('.source-checkboxes')).to_have_count(0)
+    page.get_by_label('Search category').select_option('remote')
+    expect(page.get_by_label('Search category')).to_have_value('remote')
+    expect(page.get_by_text('This search:',exact=False)).to_contain_text('Remote OK')
+    expect(page.get_by_text('This search:',exact=False)).not_to_contain_text('LinkedIn')
     page.get_by_role('button',name='Close dialog',exact=True).click()
     page.get_by_role('button',name='Model lab',exact=True).click()
     expect(page.get_by_role('button',name='Run evidence benchmark',exact=True)).to_be_disabled()
@@ -167,3 +191,30 @@ def test_more_than_one_hundred_opportunities_accessible(browser_app):
     page.get_by_role('button',name='Previous page',exact=True).click()
     expect(page.locator('tbody tr')).to_have_count(100)
     assert errors==[]
+
+
+def test_interview_library(browser_app, tmp_path):
+    page, client, errors = browser_app
+    page.get_by_role('button', name='Interview coach', exact=True).click()
+    expect(page.get_by_text('68 matching questions', exact=False)).to_be_visible()
+    answer = page.get_by_label('Your answer', exact=True)
+    answer.fill('At the time my task was clear. I built a cache and reduced latency.')
+    page.get_by_role('button', name='Next question', exact=True).click()
+    expect(answer).to_have_value('')
+    page.get_by_role('button', name='Previous', exact=True).click()
+    expect(answer).to_have_value('At the time my task was clear. I built a cache and reduced latency.')
+    page.get_by_role('button', name='Get feedback', exact=True).click()
+    expect(page.get_by_role('heading', name='Keyword coverage', exact=False)).to_be_visible()
+    page.get_by_label('Search questions', exact=True).fill('SQL')
+    expect(page.locator('.interview-question-list button')).to_have_count(10)
+    page.get_by_label('Category', exact=True).select_option('Technical')
+    page.get_by_label('Search questions', exact=True).fill('not-a-real-question')
+    expect(page.get_by_text('No questions match these filters.')).to_be_visible()
+    page.get_by_role('button', name='Clear filters', exact=True).click()
+    expect(page.locator('.interview-question-list button')).to_have_count(68)
+    page.set_viewport_size({'width':390,'height':844})
+    expect(answer).to_be_visible()
+    expect(page.get_by_label('Practice for', exact=True)).to_be_visible()
+    expect(page.get_by_label('Search questions', exact=True)).to_be_visible()
+    page.screenshot(path=str(tmp_path/'interview-mobile.png'),full_page=True)
+    assert not errors

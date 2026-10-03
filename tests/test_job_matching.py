@@ -68,7 +68,7 @@ def test_saved_jobs_rescore_on_profile_and_preference_change():
         after=c.get('/api/v1/applications').json()[0]
         assert after['match_score']<before['match_score'] and after['status']==before['status']
         conf['job_search_criteria']['target_locations']=['India'];c.post('/api/v1/config',json=conf)
-        assert c.get('/api/v1/applications').json()[0]['fit_analysis']['preference_conflicts']==['Location preference']
+        assert c.get('/api/v1/applications').json()[0]['fit_analysis']['preference_conflicts']==['Location conflict']
 
 
 def test_language_and_remote_restrictions_need_review():

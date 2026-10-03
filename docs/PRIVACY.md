@@ -15,6 +15,9 @@ These files are not encrypted by this app. Use your operating system's account p
 - LinkedIn search links open in your browser, where your browser session applies.
 - The interface uses system fonts; it does not request Google Fonts. Cloud tracing is disabled by the application and local model requests ignore environment proxy settings.
 - Local AI sends prompts to local Ollama. Downloading dependencies and models contacts their respective registries.
+- When the administrator explicitly enables OpenRouter, the backend sends only redacted career evidence and public job text over HTTPS. It strips account IDs, name, email, phone, location, profile URLs, work authorization, demographics, and matching occurrences from free-text fields before transmission. Cloud profile extraction and cloud embeddings stay disabled because those workflows would require broader personal data.
+- OpenRouter credentials exist only in the backend host environment. They are never returned by an API, stored in the database, added to logs, or compiled into frontend JavaScript. OpenRouter and its inference providers still process the redacted prompt under their own terms; use local Ollama if no third-party processing is acceptable.
+- Hosted AI is restricted in code to reviewed `:free` model IDs. Before each uncached generation window, the backend verifies that OpenRouter reports zero input and output pricing. The project stops cloud generation if pricing cannot be verified or any response reports a nonzero cost.
 - Document preparation and outreach drafting do not send applications or messages.
 - Optional live submission sends reviewed application details to the employer when explicitly enabled and confirmed. Keep it disabled unless you intend to use it.
 

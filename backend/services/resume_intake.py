@@ -3,7 +3,7 @@ import copy
 import re
 from datetime import datetime
 from backend import database as db
-from backend.services.job_matching import affirmed_skills
+from backend.services.resume_skills import extract_skills, merge_skills
 
 MONTHS={name:i for i,name in enumerate(['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'],1)}
 DATE=r'(?:\d{4}-(?:0[1-9]|1[0-2])|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{4})'
@@ -53,8 +53,8 @@ def profile_draft(raw,existing=None,resume_id=''):
         match=re.search(r'(?:https?://)?(?:www\.)?'+re.escape(host)+r'[^\s|,]+',header,re.I)
         if match:personal[field]=match[0] if match[0].startswith('http') else 'https://'+match[0]
     if sections.get('summary'):base['raw_text']=' '.join(sections['summary'])
-    skills=sorted(affirmed_skills(raw))
-    if skills:base['structured_skills']=skills
+    skills=extract_skills(raw)
+    base['structured_skills']=merge_skills(skills,base.get('structured_skills',[]))
     experiences=[];pending=[];current=None;ambiguous=False
     for line in sections.get('experience',[]):
         match=RANGE.search(line)
@@ -90,4 +90,4 @@ def profile_draft(raw,existing=None,resume_id=''):
     elif ambiguous:warnings.append('At least one work-history entry was ambiguous and was left out. Review roles, companies, and dates manually.')
     if sections.get('education') and not education:warnings.append('Review education manually; the parser could not separate institution, degree and year.')
     if not base.get('raw_text'):missing.append('professional summary')
-    return {'profile':profile,'resume_id':resume_id,'suggested_titles':suggest_titles(profile),'missing_fields':missing,'warnings':warnings,'review_required':True,'saved':False,'method':'Local text and section parsing; no external model or upload.'}
+    return {'profile':profile,'extracted_skills':skills,'resume_id':resume_id,'suggested_titles':suggest_titles(profile),'missing_fields':missing,'warnings':warnings,'review_required':True,'saved':False,'method':'Local text and section parsing; no external model or upload.'}

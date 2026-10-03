@@ -54,6 +54,18 @@ Do not add a service-role key. This application does not need one for normal req
 
 Only the Supabase publishable/anon key is present in browser code. `DATABASE_URL` and optional LLM keys stay in Render or GitHub secrets.
 
+Optional OpenRouter generation uses backend-only environment variables:
+
+```text
+ENABLE_OPENROUTER=true
+OPENROUTER_API_KEY=<secret set in Render only>
+OPENROUTER_FREE_MODELS=deepseek/deepseek-v4-flash-0731:free,qwen/qwen3.8-27b:free
+MAX_OPENROUTER_REQUESTS_PER_DAY=40
+MAX_OPENROUTER_REQUESTS_PER_USER_PER_DAY=8
+```
+
+The model allowlist rejects paid IDs, pricing is checked before an uncached request, and the account-wide cap remains below the published free allowance. If verification, quota, or inference fails, the product uses deterministic evidence-based generation. Direct identifiers and demographics are removed before an OpenRouter prompt is sent. Cloud profile parsing and embeddings remain disabled; local Ollama can provide those without third-party processing.
+
 ## 4. Configure the six-hour refresh
 
 In GitHub, open **Settings → Secrets and variables → Actions** and add:

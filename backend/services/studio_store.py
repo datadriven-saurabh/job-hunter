@@ -99,7 +99,5 @@ def remove_artifacts(job_id):
             result=json.loads(path.read_text())
             if job_id in result.get('job_ids',[]) or any(r.get('job_id')==job_id for r in result.get('results',[])):path.unlink(missing_ok=True)
         except (ValueError,OSError):continue
-    from backend.agents.coach_agent import _sessions
-    _sessions.pop((db.current_user(),job_id),None)
     db.execute('DELETE FROM application_resume_selection WHERE job_id=:id',{'id':job_id})
     db.execute("UPDATE application_records SET status='MATCHED',tailored_resume_path=NULL,tailored_cover_letter_path=NULL,extracted_form_fields=NULL,submission_logs_json='[]' WHERE job_id=:id",{'id':job_id})

@@ -18,3 +18,13 @@ services:
         value: "false"
       - key: ENABLE_LOCAL_LLM
         value: "false"
+      - key: ENABLE_OPENROUTER
+        value: "false"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_FREE_MODELS
+        value: "deepseek/deepseek-v4-flash-0731:free,qwen/qwen3.8-27b:free"
+      - key: MAX_OPENROUTER_REQUESTS_PER_DAY
+        value: "40"
+      - key: MAX_OPENROUTER_REQUESTS_PER_USER_PER_DAY
+        value: "8"

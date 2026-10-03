@@ -101,6 +101,14 @@ def test_public_parsers():
     assert jobs[0]['employment_type']=='Full-time'
     assert job_id('https://in.linkedin.com/jobs/view/some-title-123?refId=x')==job_id('https://www.linkedin.com/jobs/view/123')
 
+def test_missing_employment_type_is_not_assumed_full_time():
+    markup='''<div class="base-search-card"><a class="base-card__full-link" href="https://www.linkedin.com/jobs/view/123"></a><h3 class="base-search-card__title">Analyst</h3></div>'''
+    card=job_sources.linkedin_cards(markup)[0]
+    assert card['employment_type']=='Not specified'
+    assert job_sources.employment(None)=='Not specified'
+    assert job_sources.employment('  ')=='Not specified'
+    assert job_sources.employment('FULL_TIME')=='Full-time'
+
 def test_multisource_partial_failure_and_cache(monkeypatch):
     def retrieve(provider,**kwargs):
         if provider=='hiringcafe':raise job_sources.SourceUnavailable('Public access unavailable (HTTP 403).')

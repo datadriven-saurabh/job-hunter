@@ -147,4 +147,4 @@ See [project context](docs/PROJECT_CONTEXT.md) for the durable architecture, sta
 
 ### Latest product review
 
-See the [product review](docs/PRODUCT_REVIEW.md) for tested workflows, source-by-source live results, fixes and remaining limitations. Searches skip previously saved jobs, and the multi-source picker covers all directory entries. Blocked websites are reported explicitly. ChatGPT subscription access to Codex does not provide app API credits; optional OpenRouter models require a separate integration and are not enabled by default.
+See the [product review](docs/PRODUCT_REVIEW.md) for tested workflows, source-by-source live results, fixes and remaining limitations. Searches skip previously saved jobs, and the multi-source picker covers all directory entries. Blocked websites are reported explicitly. ChatGPT subscription access to Codex does not provide app API credits. Optional OpenRouter generation is disabled by default; when enabled, it is restricted to reviewed free models, backend-only credentials, redacted prompts, zero-price verification, and daily request caps. See [public deployment](docs/PUBLIC_DEPLOYMENT.md) and [privacy](docs/PRIVACY.md).

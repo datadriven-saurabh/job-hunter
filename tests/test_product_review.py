@@ -111,15 +111,14 @@ def test_candidate_limit_prefers_unseen_jobs_in_cached_pool(monkeypatch):
         assert execute_search(SearchRequest(**{'provider':'remoteok','limit':1}))['count']==0
 
 
-def test_new_filters_can_reconsider_previously_excluded_job():
+def test_location_conflict_is_saved_for_review():
     posting=dict(demo_jobs()[0],location='Berlin')
     state={'jobs':[posting],'profile':PROFILE,'criteria':dict(CONFIG['job_search_criteria'],target_locations=['India']),'skip_seen':True}
-    assert orchestrator.discovery_graph.invoke(state)['count']==0
-    assert orchestrator.discovery_graph.invoke(state)['skipped']==1
-    state['criteria']['target_locations']=['Berlin']
-    # Direct graph tests must create the owning profile before persistence.
     with TestClient(app) as c:c.post('/api/v1/profile',json=PROFILE)
     assert orchestrator.discovery_graph.invoke(state)['count']==1
+    saved=db.get_job(job_id(posting['job_url']))
+    assert saved['fit_analysis']['location_conflict'] is True
+    assert orchestrator.discovery_graph.invoke(state)['skipped']==1
 
 
 def test_job_identity_preserves_requisition_query():

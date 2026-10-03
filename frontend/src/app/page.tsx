@@ -1,2 +1,6 @@
-'use client';import {useEffect} from 'react';import {useRouter} from 'next/navigation';import {getSupabase,hosted} from '@/lib/supabase';
-export default function Home(){const router=useRouter();useEffect(()=>{if(!hosted){router.replace('/dashboard');return}(async()=>{try{const supabase=await getSupabase();if(!supabase){router.replace('/login?unavailable=1');return}const {data}=await supabase.auth.getSession();router.replace(data.session?'/dashboard':'/login')}catch{router.replace('/login?unavailable=1')}})()},[router]);return <main className="auth-shell"><section className="auth-card"><h1>Job Hunter</h1><p>Preparing your workspace…</p></section></main>}
+'use client';
+import AuthGate from '@/components/AuthGate';
+import {useEffect} from 'react';
+import {useRouter} from 'next/navigation';
+function OpenDashboard(){const router=useRouter();useEffect(()=>{router.replace('/dashboard')},[router]);return <main className="auth-shell"><section className="auth-card"><h1>Job Hunter</h1><p>Opening your workspace…</p></section></main>}
+export default function Home(){return <AuthGate><OpenDashboard/></AuthGate>}

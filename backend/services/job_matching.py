@@ -26,19 +26,27 @@ SKILLS={
  'Java':['java'], 'Go':['golang','go programming'], 'Rust':['rust'], 'Kubernetes':['kubernetes','k8s'],
  'Node.js':['node.js','nodejs'], 'PostgreSQL':['postgresql','postgres'],
  'CSS':['css'], 'HTML':['html'], 'Figma':['figma'], 'Salesforce':['salesforce'],
+ 'Digital marketing':['digital marketing'], 'SEO':['seo','search engine optimization'],
+ 'SEM':['sem','search engine marketing'], 'Google Ads':['google ads','google adwords'],
+ 'Google Analytics':['google analytics','ga4'], 'Meta Ads':['meta ads','facebook ads'],
+ 'Content marketing':['content marketing'], 'Email marketing':['email marketing'],
+ 'HubSpot':['hubspot'], 'CRM':['crm','customer relationship management'],
+ 'Growth marketing':['growth marketing'], 'Product marketing':['product marketing'],
+ 'Go-to-market':['go-to-market','go to market','gtm'], 'Marketing automation':['marketing automation'],
+ 'Conversion optimization':['conversion rate optimization','cro'],
  'SAP':['sap'], 'Financial analysis':['financial analysis','financial modelling','financial modeling'],
 }
 
 def contains(text, term):
     return bool(re.search(r'(?<!\w)'+re.escape(term.lower())+r'(?!\w)',text.lower()))
 
-def detected(text):
-    return {skill for skill,aliases in SKILLS.items() if any(contains(text,a) for a in aliases)}
+def detected(text, extra=()):
+    return {skill for skill,aliases in SKILLS.items() if any(contains(text,a) for a in aliases)} | {skill for skill in extra if skill.strip() and contains(text,skill)}
 
-def affirmed_skills(text):
+def affirmed_skills(text, extra=()):
     """Conservatively omit negated/aspirational clauses from candidate evidence."""
     clauses=re.split(r'\n|(?<=[.!?])\s+|\bbut\b|;',text,flags=re.I)
-    return set().union(*(detected(c) for c in clauses if not re.search(r"\b(?:not(?! only)|never|no experience|without experience|haven.t|have not|want to learn|plan to learn|interested in learning|currently learning|am learning|beginner in|no knowledge|lack of experience)\b",c,re.I)))
+    return set().union(*(detected(c,extra) for c in clauses if not re.search(r"\b(?:not(?! only)|never|no experience|without experience|haven.t|have not|want to learn|plan to learn|interested in learning|currently learning|am learning|beginner in|no knowledge|lack of experience)\b",c,re.I)))
 
 
 def family(title):
@@ -97,10 +105,14 @@ def location_matches(location,target):
     countries=EU_COUNTRIES if target in {'eu','european union'} else EU_COUNTRIES+('united kingdom','norway','switzerland','iceland','albania','serbia','ukraine','moldova','montenegro','north macedonia','bosnia and herzegovina') if target=='europe' else (canonical,)
     return any(contains(location,alias) for country in countries for alias in COUNTRY_ALIASES.get(country,(country,)))
 
+def location_conflict(job, criteria):
+    location=job.get('location','')
+    targets=criteria.get('target_locations',[])
+    return bool(location and targets and not any(location_matches(location,target) for target in targets))
+
 def exclusions(job, criteria):
     content=job['job_title']+' '+job.get('description','');loc=job.get('location','');reasons=[]
     if any(contains(content,x) for x in criteria.get('dealbreaker_keywords',[])):reasons.append('Excluded keyword')
-    if loc and criteria.get('target_locations') and not any(location_matches(loc,x) for x in criteria['target_locations']):reasons.append('Location preference')
     if criteria.get('min_salary_threshold') and job.get('salary_max') and job['salary_max']<criteria['min_salary_threshold']:reasons.append('Salary preference')
     if not all(contains(content,x) for x in criteria.get('required_stack_keywords',[])):reasons.append('Required search keyword')
     kind=job.get('employment_type','')
@@ -115,12 +127,13 @@ def exclusions(job, criteria):
 
 def assess(job, profile, criteria):
     jd=job.get('description','');title=job['job_title'];evidence=profile_evidence(profile)
+    custom=[s for s in profile['base_resume'].get('structured_skills',[]) if s.strip() and not detected(s)]
     # Description drives requirements; title alone cannot establish skill coverage.
     def required_mentions(line):
-        return {skill for skill in detected(line) if not any(re.search(r'(?<!\w)'+re.escape(alias)+r'(?!\w)\s+(?:is\s+)?not (?:required|needed|necessary)',line,re.I) for alias in SKILLS[skill])}
+        return {skill for skill in detected(line,custom) if not any(re.search(r'(?<!\w)'+re.escape(alias)+r'(?!\w)\s+(?:is\s+)?not (?:required|needed|necessary)',line,re.I) for alias in SKILLS.get(skill,[skill]))}
     lines_with_skills=[(line,required_mentions(line)) for line in re.split(r"\n|(?<=[.!?])\s+|;|\bbut\b",jd)]
-    requirements=set().union(*(skills for _,skills in lines_with_skills));available=affirmed_skills('\n'.join(t for _,t in evidence))
-    evidence_with_skills=[(source,text,affirmed_skills(text)) for source,text in evidence]
+    requirements=set().union(*(skills for _,skills in lines_with_skills));available=affirmed_skills('\n'.join(t for _,t in evidence),custom)
+    evidence_with_skills=[(source,text,affirmed_skills(text,custom)) for source,text in evidence]
     rows=[]
     for skill in sorted(requirements):
         lines=[line for line,skills in lines_with_skills if skill in skills]
@@ -162,6 +175,8 @@ def assess(job, profile, criteria):
     if 'remote' in job.get('location','').lower():warnings.append('Remote does not establish worldwide eligibility. Check permitted countries, time zone and work authorization.')
     warnings.append('Work authorization, sponsorship and mandatory credentials are not verified.')
     conflicts=exclusions(job,criteria)
+    has_location_conflict=location_conflict(job,criteria)
+    if has_location_conflict:conflicts.append('Location conflict')
     # Fixed dimensions keep adding unrelated profile skills from depressing the score.
     total=round(.65*coverage+.25*role+.10*seniority)
     if role<=10:total=min(total,49)
@@ -179,5 +194,5 @@ def assess(job, profile, criteria):
     return {'version':'evidence-v1','score':total,'priority':priority,'confidence':'Limited' if limited else 'Moderate',
             'components':[{'name':'Job skill coverage','score':round(coverage),'weight':65},{'name':'Target role alignment','score':role,'weight':25},{'name':'General experience','score':round(seniority),'weight':10}],
             'matched_skills':[r['skill'] for r in rows if r['matched']], 'missing_skills':[r['skill'] for r in rows if not r['matched']],
-            'requirements':rows,'warnings':warnings,'preference_conflicts':conflicts,'profile_years':years,
+            'location_conflict':has_location_conflict,'requirements':rows,'warnings':warnings,'preference_conflicts':conflicts,'profile_years':years,
             'method':'Local rule-based priority index: 65% recognized job skill coverage, 25% target role alignment, 10% general experience. Unknown experience receives 50/100; missing requirements receive no coverage credit. Gaps mean not evidenced in your profile. Not a hiring probability.'}

@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -20,3 +21,7 @@ def test_hosted_secrets_are_server_only():
     assert 'DATABASE_URL' not in frontend
     assert 'OPENROUTER_API_KEY' not in frontend
     assert 'NEXT_PUBLIC_SUPABASE_ANON_KEY' in frontend
+    render=(ROOT/'render.yaml').read_text()
+    assert 'OPENROUTER_API_KEY' in render and 'sync: false' in render
+    source='\n'.join(p.read_text(errors='ignore') for p in ROOT.rglob('*') if p.is_file() and '.git' not in p.parts and 'node_modules' not in p.parts and '.next' not in p.parts)
+    assert not re.search(r'sk-or-v1-[0-9a-f]{64}',source)

@@ -72,7 +72,7 @@ Posting language describes the advertisement text and is separate from required-
 
 ## Local AI and external services
 
-The base product works without a paid model key. Ollama is optional. Model output is treated as a draft and passes the same deterministic validators. ChatGPT subscriptions do not provide OpenAI API access. OpenRouter or other cloud providers require an explicit future integration, separate user credentials, clear data-sharing disclosure, and opt-in configuration.
+The base product works without a paid model key. Ollama is optional. Model output is treated as a draft and passes the same deterministic validators. ChatGPT subscriptions do not provide OpenAI API access. The optional hosted OpenRouter integration is backend-only and opt-in. It accepts only the reviewed DeepSeek and Qwen `:free` IDs, verifies zero pricing, applies daily account and per-user caps, redacts direct identifiers, disables cloud profile parsing and embeddings, and falls back to deterministic generation.
 
 Do not add a model merely because it is advertised as free. Confirm its current license, API terms, privacy behavior, context limits, structured-output reliability, and rate limits before exposing it. Never put provider keys in source control.
 
@@ -99,3 +99,16 @@ Then review `git diff --check`, `git status --short`, the staged diff, dependenc
 ## Distribution rule
 
 Publish source-controlled files only. A tester release must not be created by zipping the developer's working folder. A clean clone must start without a profile, credentials, resume, application history, or generated kit. Keep the localhost deployment and one-installation-per-person guidance prominent unless authentication, tenant isolation, storage encryption, CSRF strategy, and hosted operations are deliberately designed and reviewed.
+
+## Tracked discovery (September 24, 2026)
+Automatic searches use POST /api/v1/jobs/search-runs and poll the owner-scoped
+GET /api/v1/jobs/search-runs/{id}. The legacy search route also starts a run.
+Maximum three public boards and estimated combined duration <=60s are enforced
+server-side. Company-board adapters remain in the manual directory. Successful
+sources cool down for 600s per user. Timing measures fetching plus matching and
+saving; it is an estimate, not a completion guarantee. Run records and timing are
+stored in source_cache with owner-qualified keys. Execution uses two background
+threads on the current server, with one active run per user. A server restart may
+interrupt a run; stale progress is marked interrupted after five minutes. This is
+not a distributed durable worker queue. The browser remembers the run in session
+storage and resumes polling when the discovery dialog is reopened.

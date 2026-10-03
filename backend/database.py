@@ -122,7 +122,8 @@ def profile(user_id=None):
         return None
     r = rows[0]
     return {
-        "user_id": r["user_id"],
+        # PostgreSQL returns UUID objects; application schemas use string IDs.
+        "user_id": str(r["user_id"]),
         "personal_details": {k: r[k] for k in ["full_name", "email", "phone", "location", "linkedin_url", "github_url", "portfolio_url", "work_authorization"]},
         "base_resume": _json(r["base_resume_json"]),
         "eeo_demographics": _json(r["eeo_demographics_json"]) if r["eeo_demographics_json"] else None,

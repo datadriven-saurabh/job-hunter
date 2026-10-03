@@ -213,9 +213,20 @@ class ApplicationRecord(BaseModel):
 
 class InterviewQuestion(BaseModel):
     id: str
-    category: str  # Behavioral, Technical, System Design
+    category: str
     question: str
     evaluation_criteria: List[str]
+    role_families: List[str] = Field(default_factory=list)
+    stage: str = ''
+    difficulty: str = 'Core'
+    topics: List[str] = Field(default_factory=list)
+    answer_guidance: str = ''
+    follow_ups: List[str] = Field(default_factory=list)
+    sources: List[dict] = Field(default_factory=list)
+    provenance: str = ''
+    reviewed_at: str = ''
+    matched_topics: List[str] = Field(default_factory=list)
+    match_reason: str = ''
 
 class UserAnswerFeedback(BaseModel):
     question_id: str

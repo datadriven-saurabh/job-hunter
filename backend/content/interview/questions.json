@@ -1,0 +1,1927 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "linkedin",
+      "title": "LinkedIn \u00b7 Interviewing candidates",
+      "url": "https://business.linkedin.com/hire/resources/interviewing-talent/interview-questions-for-candidates",
+      "status": "Public guide reviewed; thematic reference"
+    },
+    {
+      "id": "glassdoor",
+      "title": "Glassdoor \u00b7 Interview question types",
+      "url": "https://www.glassdoor.com/blog/guide/types-of-interview-questions/",
+      "status": "Public guide reviewed; thematic reference"
+    },
+    {
+      "id": "reddit-sql",
+      "title": "Reddit \u00b7 SQL interview experiences",
+      "url": "https://www.reddit.com/r/SQL/comments/1d8q9x1/here_are_the_most_common_data_analystscience_sql/",
+      "status": "Community report reviewed; anecdotal, not employer verified"
+    },
+    {
+      "id": "ambitionbox",
+      "title": "AmbitionBox \u00b7 Data analyst interviews",
+      "url": "https://www.ambitionbox.com/profiles/data-analyst/interview-questions?page=1",
+      "status": "Research link only; full page unavailable during review"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q001",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Describe a project that prepares you for {role} at {company}. What did you personally change?",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Use a real example: context, responsibility, your actions and a supported result.",
+      "follow_ups": [
+        "What would you change if you repeated it?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q002",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Recall a disagreement that changed how your team worked.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Explain both perspectives and how you reached a decision.",
+      "follow_ups": [
+        "What remained unresolved?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q003",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Describe a commitment you could not meet.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Explain early signals, your communication and the recovery.",
+      "follow_ups": [
+        "How did you rebuild trust?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q004",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Tell me how you handled an unclear request.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Show the questions you asked before committing to a solution.",
+      "follow_ups": [
+        "How did you confirm shared understanding?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q005",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Describe feedback that changed your approach.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Give a specific adjustment and evidence of what changed.",
+      "follow_ups": [
+        "How did you check whether the adjustment helped?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q006",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Recall a mistake you uncovered in your own work.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Explain ownership, correction and prevention without blaming others.",
+      "follow_ups": [
+        "Who needed to know first?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q007",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Describe competing deadlines you had to resolve.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Explain consequences, dependencies and how you negotiated scope.",
+      "follow_ups": [
+        "What did you deliberately postpone?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q008",
+      "role_families": [
+        "General"
+      ],
+      "category": "Behavioral",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "communication",
+        "ownership"
+      ],
+      "question": "Tell me about learning something quickly to deliver a result.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Distinguish what you already knew from what you learned.",
+      "follow_ups": [
+        "How did you verify your new understanding?"
+      ],
+      "source_ids": [
+        "linkedin"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q009",
+      "role_families": [
+        "General"
+      ],
+      "category": "Recruiter screen",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "motivation",
+        "career"
+      ],
+      "question": "Connect your recent experience to this {role} opportunity.",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Choose two relevant facts from your background and explain the connection.",
+      "follow_ups": [
+        "Which requirement will stretch you most?"
+      ],
+      "source_ids": [
+        "glassdoor"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q010",
+      "role_families": [
+        "General"
+      ],
+      "category": "Recruiter screen",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "motivation",
+        "career"
+      ],
+      "question": "What would make {company} a good next step for you?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Separate verified company information from assumptions.",
+      "follow_ups": [
+        "What would you still like to learn about the team?"
+      ],
+      "source_ids": [
+        "glassdoor"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q011",
+      "role_families": [
+        "General"
+      ],
+      "category": "Recruiter screen",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "motivation",
+        "career"
+      ],
+      "question": "How do you explain your reason for considering a move?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Keep the explanation factual and focus on your next role.",
+      "follow_ups": [
+        "What would make you stay in a role?"
+      ],
+      "source_ids": [
+        "glassdoor"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q012",
+      "role_families": [
+        "General"
+      ],
+      "category": "Recruiter screen",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "motivation",
+        "career"
+      ],
+      "question": "How would you discuss a career gap or change in direction?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Share only what you are comfortable sharing and relevant preparation.",
+      "follow_ups": [
+        "What demonstrates your readiness now?"
+      ],
+      "source_ids": [
+        "glassdoor"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q013",
+      "role_families": [
+        "General"
+      ],
+      "category": "Recruiter screen",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "motivation",
+        "career"
+      ],
+      "question": "Which strength would help you deliver in your first months?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Use a supported example rather than an adjective.",
+      "follow_ups": [
+        "Where is that strength less useful?"
+      ],
+      "source_ids": [
+        "glassdoor"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q014",
+      "role_families": [
+        "General"
+      ],
+      "category": "Recruiter screen",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "motivation",
+        "career"
+      ],
+      "question": "What skill are you actively improving?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Explain your concrete practice and current limitations.",
+      "follow_ups": [
+        "How do you measure progress?"
+      ],
+      "source_ids": [
+        "glassdoor"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q015",
+      "role_families": [
+        "General"
+      ],
+      "category": "Job search",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "job search",
+        "logistics"
+      ],
+      "question": "How would you clarify compensation expectations with a recruiter?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Ask about the budget, scope and total package; avoid inventing market figures.",
+      "follow_ups": [
+        "Which parts of the package matter most to you?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q016",
+      "role_families": [
+        "General"
+      ],
+      "category": "Job search",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "job search",
+        "logistics"
+      ],
+      "question": "How would you communicate your realistic start date?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Account for actual commitments and state uncertainty clearly.",
+      "follow_ups": [
+        "What could change that date?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q017",
+      "role_families": [
+        "General"
+      ],
+      "category": "Job search",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "job search",
+        "logistics"
+      ],
+      "question": "How would you clarify location, travel and working-hour expectations?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "List your constraints and ask specific questions about the working pattern.",
+      "follow_ups": [
+        "Which arrangements are essential?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q018",
+      "role_families": [
+        "General"
+      ],
+      "category": "Job search",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "job search",
+        "logistics"
+      ],
+      "question": "How would you ask about sponsorship or work authorization requirements?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "State only your verified status and ask what the employer supports.",
+      "follow_ups": [
+        "What information do you need before proceeding?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q019",
+      "role_families": [
+        "General"
+      ],
+      "category": "Job search",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "job search",
+        "logistics"
+      ],
+      "question": "How would you explain why you shortlisted this vacancy?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Map requirements to evidence and identify important unknowns.",
+      "follow_ups": [
+        "Which requirement needs clarification?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q020",
+      "role_families": [
+        "General"
+      ],
+      "category": "Job search",
+      "stage": "Recruiter",
+      "difficulty": "Core",
+      "topics": [
+        "job search",
+        "logistics"
+      ],
+      "question": "How would you ask a professional contact for a referral?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Draft a brief request with the role link and evidence of fit; give them room to decline.",
+      "follow_ups": [
+        "What would you send if they asked for more context?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q021",
+      "role_families": [
+        "General"
+      ],
+      "category": "Ask the interviewer",
+      "stage": "Closing",
+      "difficulty": "Core",
+      "topics": [
+        "team",
+        "expectations"
+      ],
+      "question": "What would you ask to understand success in the first three months?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Prepare a question about outcomes and how they are assessed.",
+      "follow_ups": [
+        "Who agrees on these priorities?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q022",
+      "role_families": [
+        "General"
+      ],
+      "category": "Ask the interviewer",
+      "stage": "Closing",
+      "difficulty": "Core",
+      "topics": [
+        "team",
+        "expectations"
+      ],
+      "question": "What would you ask about the team's biggest current challenge?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Connect the question to the role without assuming an internal problem.",
+      "follow_ups": [
+        "What has already been tried?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q023",
+      "role_families": [
+        "General"
+      ],
+      "category": "Ask the interviewer",
+      "stage": "Closing",
+      "difficulty": "Core",
+      "topics": [
+        "team",
+        "expectations"
+      ],
+      "question": "How would you explore feedback and development in this team?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Ask for a concrete example of how feedback leads to growth.",
+      "follow_ups": [
+        "How often do these conversations happen?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q024",
+      "role_families": [
+        "General"
+      ],
+      "category": "Ask the interviewer",
+      "stage": "Closing",
+      "difficulty": "Core",
+      "topics": [
+        "team",
+        "expectations"
+      ],
+      "question": "What would you ask about the remaining hiring process?",
+      "evaluation_criteria": [
+        "Clarity",
+        "Evidence",
+        "Relevance"
+      ],
+      "answer_guidance": "Clarify stages, preparation, accessibility needs and expected timing.",
+      "follow_ups": [
+        "Who should you contact for an update?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q025",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "sql",
+        "data quality"
+      ],
+      "question": "A customer join doubles your revenue total. How would you investigate?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Check table grain, key uniqueness, join cardinality and reconciliation.",
+      "follow_ups": [
+        "How would you prevent recurrence?"
+      ],
+      "source_ids": [
+        "reddit-sql"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q026",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "sql",
+        "data quality"
+      ],
+      "question": "How would you return the latest order per customer when timestamps tie?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Specify a deterministic tie-breaker and consider window functions.",
+      "follow_ups": [
+        "How should customers with no orders appear?"
+      ],
+      "source_ids": [
+        "reddit-sql"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q027",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "sql",
+        "data quality"
+      ],
+      "question": "How would you compute monthly retention from event data?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Define cohorts, active events, time zones and the denominator first.",
+      "follow_ups": [
+        "How would late events affect past months?"
+      ],
+      "source_ids": [
+        "reddit-sql"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q028",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "sql",
+        "data quality"
+      ],
+      "question": "When would a window calculation be preferable to grouped aggregation?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Explain row preservation and test with a small example.",
+      "follow_ups": [
+        "How would nulls affect your result?"
+      ],
+      "source_ids": [
+        "reddit-sql"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q029",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "sql",
+        "data quality"
+      ],
+      "question": "How would you find customers active in one month but absent the next?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "State boundary dates and choose a join or anti-join approach.",
+      "follow_ups": [
+        "What if identifiers change between months?"
+      ],
+      "source_ids": [
+        "reddit-sql"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q030",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "sql",
+        "data quality"
+      ],
+      "question": "A query is suddenly slow. How would you diagnose it?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Inspect the execution plan, data volume, joins and indexes before changing it.",
+      "follow_ups": [
+        "How would you compare correctness before and after?"
+      ],
+      "source_ids": [
+        "reddit-sql"
+      ],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q031",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "metrics",
+        "experimentation",
+        "statistics"
+      ],
+      "question": "A conversion metric fell after a release. What would you check first?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Separate instrumentation changes, traffic mix and real behavior; propose discriminating checks.",
+      "follow_ups": [
+        "What would you tell stakeholders before the cause is known?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q032",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "metrics",
+        "experimentation",
+        "statistics"
+      ],
+      "question": "How would you design a dashboard for a weekly operating review?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Start with decisions, metric definitions, audience and freshness.",
+      "follow_ups": [
+        "How would you learn whether anyone uses it?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q033",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "metrics",
+        "experimentation",
+        "statistics"
+      ],
+      "question": "An experiment improves clicks but reduces purchases. What do you recommend?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Discuss primary outcomes, guardrails, uncertainty and segments.",
+      "follow_ups": [
+        "When would you stop or extend the experiment?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q034",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "metrics",
+        "experimentation",
+        "statistics"
+      ],
+      "question": "How would you handle missing values in a business analysis?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Investigate why values are missing and compare sensitivity to assumptions.",
+      "follow_ups": [
+        "What would you document for the reader?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q035",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "metrics",
+        "experimentation",
+        "statistics"
+      ],
+      "question": "Two dashboards disagree on active users. How would you reconcile them?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Compare definitions, sources, filters, freshness and time boundaries.",
+      "follow_ups": [
+        "Who should own the agreed definition?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q036",
+      "role_families": [
+        "Data & analytics"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "metrics",
+        "experimentation",
+        "statistics"
+      ],
+      "question": "Explain a statistical result to someone who will make a business decision.",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "State effect size, uncertainty and limits without overstating causality.",
+      "follow_ups": [
+        "What evidence would change your recommendation?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q037",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "python",
+        "react",
+        "testing",
+        "debugging"
+      ],
+      "question": "How would you debug an intermittent failure in an API?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Form hypotheses, reproduce safely, inspect traces and verify a fix.",
+      "follow_ups": [
+        "What if you cannot reproduce it locally?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q038",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "python",
+        "react",
+        "testing",
+        "debugging"
+      ],
+      "question": "A user submits a payment request twice. How should the API behave?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Explain idempotency, storage boundaries and concurrent requests.",
+      "follow_ups": [
+        "What happens after a timeout with an unknown outcome?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q039",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "python",
+        "react",
+        "testing",
+        "debugging"
+      ],
+      "question": "How would you test a feature that depends on an unreliable external service?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Separate contract, failure and integration checks with controlled fixtures.",
+      "follow_ups": [
+        "Which behavior should be tested against the real service?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q040",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "python",
+        "react",
+        "testing",
+        "debugging"
+      ],
+      "question": "A React page displays results from an earlier search. How would you fix it?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Discuss request ordering, cancellation and state ownership.",
+      "follow_ups": [
+        "What happens when the component unmounts?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q041",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "python",
+        "react",
+        "testing",
+        "debugging"
+      ],
+      "question": "How would you reduce memory use in a large Python data-processing task?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Measure allocation and consider streaming, batching and data representation.",
+      "follow_ups": [
+        "How would you prove the output is unchanged?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q042",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "python",
+        "react",
+        "testing",
+        "debugging"
+      ],
+      "question": "How would you review unfamiliar code before modifying it?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Trace inputs, invariants and callers; identify the smallest useful checks.",
+      "follow_ups": [
+        "What would make you pause the change?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q043",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "System Design",
+      "stage": "Technical",
+      "difficulty": "Advanced",
+      "topics": [
+        "distributed systems",
+        "architecture"
+      ],
+      "question": "Design a notification service that tolerates provider failures.",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Clarify delivery guarantees, queues, retries and deduplication.",
+      "follow_ups": [
+        "How would you handle a poison message?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q044",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "System Design",
+      "stage": "Technical",
+      "difficulty": "Advanced",
+      "topics": [
+        "distributed systems",
+        "architecture"
+      ],
+      "question": "Design a search feature for a growing catalog.",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Discuss indexing, freshness, relevance and access control.",
+      "follow_ups": [
+        "How would you safely rebuild an index?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q045",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "System Design",
+      "stage": "Technical",
+      "difficulty": "Advanced",
+      "topics": [
+        "distributed systems",
+        "architecture"
+      ],
+      "question": "Design a shared document service with private workspaces.",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Explain authorization at every data boundary and concurrent edits.",
+      "follow_ups": [
+        "How would you test isolation between customers?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q046",
+      "role_families": [
+        "Software engineering"
+      ],
+      "category": "System Design",
+      "stage": "Technical",
+      "difficulty": "Advanced",
+      "topics": [
+        "distributed systems",
+        "architecture"
+      ],
+      "question": "How would you migrate a heavily used database without a long outage?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Explain compatibility, backfill, verification and rollback.",
+      "follow_ups": [
+        "What makes rollback unsafe?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q047",
+      "role_families": [
+        "Data engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "etl",
+        "pipelines",
+        "sql"
+      ],
+      "question": "How would you make a daily ingestion pipeline safe to rerun?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Define stable keys, checkpoints and idempotent writes.",
+      "follow_ups": [
+        "How would you recover from a partial write?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q048",
+      "role_families": [
+        "Data engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "etl",
+        "pipelines",
+        "sql"
+      ],
+      "question": "How would you handle schema changes from an upstream source?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Discuss compatibility, validation, alerts and quarantine.",
+      "follow_ups": [
+        "What if the upstream team provides no notice?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q049",
+      "role_families": [
+        "Data engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "etl",
+        "pipelines",
+        "sql"
+      ],
+      "question": "How would you process events arriving days late?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Define event time, watermarks and correction policy.",
+      "follow_ups": [
+        "How do downstream consumers see corrected totals?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q050",
+      "role_families": [
+        "Data engineering"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "etl",
+        "pipelines",
+        "sql"
+      ],
+      "question": "How would you investigate a mismatch between source and warehouse counts?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Reconcile partitions, filters, duplicates and load checkpoints.",
+      "follow_ups": [
+        "Which checks belong in the pipeline?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q051",
+      "role_families": [
+        "Machine learning"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "machine learning",
+        "python",
+        "evaluation"
+      ],
+      "question": "How would you detect data leakage before trusting a model?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Check time boundaries, feature availability and split strategy.",
+      "follow_ups": [
+        "Could preprocessing leak information?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q052",
+      "role_families": [
+        "Machine learning"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "machine learning",
+        "python",
+        "evaluation"
+      ],
+      "question": "How would you choose an evaluation metric for a rare-event classifier?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Connect false positives and false negatives to costs and capacity.",
+      "follow_ups": [
+        "How would you choose a decision threshold?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q053",
+      "role_families": [
+        "Machine learning"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "machine learning",
+        "python",
+        "evaluation"
+      ],
+      "question": "A model performs worse after launch. How would you investigate?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Separate data quality, distribution shift and changed labels.",
+      "follow_ups": [
+        "How would you establish a safe fallback?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q054",
+      "role_families": [
+        "Machine learning"
+      ],
+      "category": "Technical",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "machine learning",
+        "python",
+        "evaluation"
+      ],
+      "question": "How would you evaluate a retrieval-based assistant for a business workflow?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Use representative tasks, groundedness checks and failure analysis.",
+      "follow_ups": [
+        "How would you test confidential-data boundaries?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q055",
+      "role_families": [
+        "Product & business"
+      ],
+      "category": "Case study",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "product",
+        "stakeholders",
+        "prioritization"
+      ],
+      "question": "How would you prioritize three requests with different stakeholders?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Clarify outcomes, evidence, effort and constraints before ranking.",
+      "follow_ups": [
+        "What if the loudest stakeholder disagrees?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q056",
+      "role_families": [
+        "Product & business"
+      ],
+      "category": "Case study",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "product",
+        "stakeholders",
+        "prioritization"
+      ],
+      "question": "A feature has low adoption. How would you decide what to do?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Examine awareness, usability, value and the intended audience.",
+      "follow_ups": [
+        "What evidence would justify retiring it?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q057",
+      "role_families": [
+        "Product & business"
+      ],
+      "category": "Case study",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "product",
+        "stakeholders",
+        "prioritization"
+      ],
+      "question": "How would you turn a vague business request into acceptance criteria?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Use examples, edge cases and shared definitions of done.",
+      "follow_ups": [
+        "How would you manage a new requirement halfway through?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q058",
+      "role_families": [
+        "Product & business"
+      ],
+      "category": "Case study",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "product",
+        "stakeholders",
+        "prioritization"
+      ],
+      "question": "How would you validate demand before committing a team to a build?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Choose a small test with a decision rule and acknowledge its limits.",
+      "follow_ups": [
+        "What would count as evidence against the idea?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q059",
+      "role_families": [
+        "Design"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "design",
+        "ux",
+        "research"
+      ],
+      "question": "How would you investigate a confusing onboarding experience?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Combine observation, funnel evidence and accessibility checks.",
+      "follow_ups": [
+        "Which change would you test first?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q060",
+      "role_families": [
+        "Design"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "design",
+        "ux",
+        "research"
+      ],
+      "question": "Walk through a design decision you changed after research.",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Separate your initial assumption from observed evidence.",
+      "follow_ups": [
+        "How did you handle contradictory feedback?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q061",
+      "role_families": [
+        "Design"
+      ],
+      "category": "Case study",
+      "stage": "Technical",
+      "difficulty": "Core",
+      "topics": [
+        "design",
+        "ux",
+        "research"
+      ],
+      "question": "How would you balance accessibility with a tight release schedule?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Identify barriers, scope fixes and agree verification criteria.",
+      "follow_ups": [
+        "What should block release?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q062",
+      "role_families": [
+        "Operations & commercial"
+      ],
+      "category": "Case study",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "sales",
+        "operations",
+        "customers"
+      ],
+      "question": "How would you diagnose a growing backlog in an operational process?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Map arrivals, capacity, handoffs and rework before adding resources.",
+      "follow_ups": [
+        "How would you identify the true bottleneck?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q063",
+      "role_families": [
+        "Operations & commercial"
+      ],
+      "category": "Case study",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "sales",
+        "operations",
+        "customers"
+      ],
+      "question": "A customer is unhappy with an unmet promise. How would you respond?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Clarify the impact, own next steps and agree realistic expectations.",
+      "follow_ups": [
+        "When would you escalate?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q064",
+      "role_families": [
+        "Operations & commercial"
+      ],
+      "category": "Case study",
+      "stage": "Hiring manager",
+      "difficulty": "Core",
+      "topics": [
+        "sales",
+        "operations",
+        "customers"
+      ],
+      "question": "How would you qualify an opportunity before investing sales effort?",
+      "evaluation_criteria": [
+        "Requirements",
+        "Approach",
+        "Trade-offs",
+        "Validation"
+      ],
+      "answer_guidance": "Clarify the need, decision process, timing and fit.",
+      "follow_ups": [
+        "What would make you walk away?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q065",
+      "role_families": [
+        "Leadership"
+      ],
+      "category": "Leadership",
+      "stage": "Hiring manager",
+      "difficulty": "Advanced",
+      "topics": [
+        "leadership",
+        "management"
+      ],
+      "question": "Describe a time you delegated an important decision.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Explain context, boundaries, support and accountability.",
+      "follow_ups": [
+        "When did you choose to intervene?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q066",
+      "role_families": [
+        "Leadership"
+      ],
+      "category": "Leadership",
+      "stage": "Hiring manager",
+      "difficulty": "Advanced",
+      "topics": [
+        "leadership",
+        "management"
+      ],
+      "question": "How have you helped someone address a performance gap?",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Use a real, anonymized example with clear expectations and support.",
+      "follow_ups": [
+        "How did you assess progress fairly?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q067",
+      "role_families": [
+        "Leadership"
+      ],
+      "category": "Leadership",
+      "stage": "Hiring manager",
+      "difficulty": "Advanced",
+      "topics": [
+        "leadership",
+        "management"
+      ],
+      "question": "Describe a decision you made with incomplete information.",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Explain reversibility, risks and what would trigger reconsideration.",
+      "follow_ups": [
+        "What did you learn after acting?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    },
+    {
+      "id": "q068",
+      "role_families": [
+        "Leadership"
+      ],
+      "category": "Leadership",
+      "stage": "Hiring manager",
+      "difficulty": "Advanced",
+      "topics": [
+        "leadership",
+        "management"
+      ],
+      "question": "How did you resolve a conflict over team priorities?",
+      "evaluation_criteria": [
+        "Situation",
+        "Task",
+        "Action",
+        "Result"
+      ],
+      "answer_guidance": "Explain the shared objective, trade-offs and final ownership.",
+      "follow_ups": [
+        "How did you communicate what would not be done?"
+      ],
+      "source_ids": [],
+      "provenance": "Original practice question; references provide topic context, not proof this was asked.",
+      "reviewed_at": "2026-09-24"
+    }
+  ]
+}

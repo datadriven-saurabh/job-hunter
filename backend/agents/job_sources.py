@@ -6,6 +6,7 @@ import re
 import time
 from xml.etree import ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 from urllib.parse import urlencode, urljoin, urlparse, quote
 import httpx
 from bs4 import BeautifulSoup
@@ -14,13 +15,14 @@ from backend.agents.scout_agent import fetch_feed
 from backend.agents.public_boards import BOARDS, HOSTS, public_page_jobs, hackernews_jobs, workingnomads_jobs
 
 SOURCE_INFO=[
+ {'id':'ja_solar','name':'JA Solar Europe careers','kind':'public-search','url':'https://ja-solar.jobs.personio.de/','note':'Single employer public Personio XML feed; up to 200 positions, no detail requests. Creation timestamps are not treated as posting dates.'},
  {'id':'stepstone','name':'StepStone Germany','kind':'public-search','note':'Public German search pages and up to 10 structured postings. Access may return HTTP 403; browser/manual import remains available.'},
  {'id':'arbeitnow','name':'Arbeitnow Europe','kind':'public-search','note':'Free public European jobs API; attribution retained.'},
  {'id':'arbeitnow_uk','name':'Arbeitnow UK','kind':'public-search','note':'Free public UK jobs API; attribution retained.'},
  {'id':'smartrecruiters','name':'SmartRecruiters','kind':'company-board','note':'Public company postings; up to 200 cards and 25 descriptions per search.'},
  {'id':'remoteok','name':'Remote OK','kind':'public-search','note':'Public JSON feed; original Remote OK links retained.'},
  {'id':'wwr','name':'We Work Remotely','kind':'public-search','note':'Public RSS feed; original listing links retained.'},
- {'id':'linkedin','name':'LinkedIn','kind':'public-search','note':'Public guest listings; no sign-in. Availability varies by region.'},
+ {'id':'linkedin','name':'LinkedIn','kind':'public-search','note':'Public guest listings; checks up to 30 cards across three pages, without sign-in. Availability varies by region.'},
  {'id':'linkedin_posts','name':'LinkedIn team hiring posts','kind':'browser-assisted','url':'https://www.linkedin.com/search/results/content/?keywords=hiring','note':'Open relevant posts in your own signed-in browser and use the extension to capture the visible post for review.'},
  {'id':'hiringcafe','name':'HiringCafe','kind':'public-page','note':'Reads public page data. A 403, CAPTCHA, or sign-in wall is reported, not bypassed.'},
  {'id':'remotive','name':'Remotive','kind':'public-search','note':'Remote jobs from Remotive; listings are delayed by 24 hours. Cached for six hours.'},
@@ -79,8 +81,12 @@ ALLOWED={'www.linkedin.com','in.linkedin.com','uk.linkedin.com','de.linkedin.com
 ALLOWED.update({'www.stepstone.de','stepstone.de','de.linkedin.com','fr.linkedin.com','nl.linkedin.com','ie.linkedin.com','ca.linkedin.com','au.linkedin.com','sg.linkedin.com','www.arbeitnow.com','www.arbeitnow.co.uk','api.smartrecruiters.com','remoteok.com','weworkremotely.com','www.weworkremotely.com'})
 ALLOWED.update({'app.vanhack.com','jobbatical.bamboohr.com'})
 ALLOWED.update(HOSTS)
+ALLOWED.add('ja-solar.jobs.personio.de')
 
 class SourceUnavailable(ValueError):pass
+
+LINKEDIN_PAGE_LIMIT=3
+LINKEDIN_CARD_LIMIT=30
 
 def source_catalog(include_unavailable=False):
     suspended={r['cache_key'].removeprefix('source-block:'):json.loads(r['payload']) for r in db.query("SELECT * FROM source_cache WHERE cache_key LIKE 'source-block:%' AND fetched_at>:cutoff",{'cutoff':time.time()-3600})}
@@ -118,7 +124,8 @@ def clean(value):return BeautifulSoup(html.unescape(str(value or '')),'html.pars
 
 def employment(value):
     if isinstance(value,list):return ', '.join(employment(item) for item in value) or 'Not specified'
-    return {'full_time':'Full-time','fulltime':'Full-time','full-time':'Full-time','part_time':'Part-time','parttime':'Part-time','contract':'Contract','internship':'Internship','freelance':'Freelance'}.get(str(value).lower().replace(' ',''),str(value or 'Full-time'))
+    if not value or not str(value).strip():return 'Not specified'
+    return {'full_time':'Full-time','fulltime':'Full-time','full-time':'Full-time','part_time':'Part-time','parttime':'Part-time','contract':'Contract','internship':'Internship','freelance':'Freelance'}.get(str(value).lower().replace(' ',''),str(value))
 
 def linkedin_cards(markup):
     soup=BeautifulSoup(markup,'html.parser');jobs=[]
@@ -127,12 +134,12 @@ def linkedin_cards(markup):
         if not title or not link:continue
         url=link.get('href','').split('?')[0]
         if urlparse(url).hostname not in ALLOWED:continue
-        jobs.append({'job_title':title.get_text(' ',strip=True),'company_name':company.get_text(' ',strip=True) if company else 'Company not listed','job_url':url,'location':loc.get_text(' ',strip=True) if loc else '', 'description':'','source':'LinkedIn','source_url':url,'posted_at':card.select_one('time').get('datetime') if card.select_one('time') else None,'requisition_id':re.search(r'(\d+)$',url).group(1) if re.search(r'(\d+)$',url) else None,'employment_type':'Full-time','description_incomplete':True})
+        jobs.append({'job_title':title.get_text(' ',strip=True),'company_name':company.get_text(' ',strip=True) if company else 'Company not listed','job_url':url,'location':loc.get_text(' ',strip=True) if loc else '', 'description':'','source':'LinkedIn','source_url':url,'posted_at':card.select_one('time').get('datetime') if card.select_one('time') else None,'requisition_id':re.search(r'(\d+)$',url).group(1) if re.search(r'(\d+)$',url) else None,'employment_type':'Not specified','description_incomplete':True})
     return list({j['job_url']:j for j in jobs}.values())
 
-def linkedin_detail(job):
+def linkedin_detail(job,known=None):
     from backend.agents.scout_agent import job_id
-    saved=saved_postings().get(job_id(job['job_url']))
+    saved=(saved_postings() if known is None else known).get(job_id(job['job_url']))
     if saved:return saved
     try:
         response=public_get(job['job_url']);soup=BeautifulSoup(response.text,'html.parser')
@@ -212,6 +219,9 @@ def stepstone_jobs(keywords='',location='',limit=20):
     return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in keywords.lower().split())][:min(limit,10)]
 
 def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
+    if provider=='ja_solar':
+        from backend.agents.personio_feed import parse_ja_solar
+        return parse_ja_solar(public_get('https://ja-solar.jobs.personio.de/xml?language=en').text,keywords,limit)
     if provider in BOARDS:return public_page_jobs(provider,keywords,location,limit)
     if provider=='hackernews':return hackernews_jobs(keywords,limit)
     if provider=='workingnomads':return workingnomads_jobs(keywords,limit)
@@ -277,9 +287,29 @@ def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
         words=keywords.lower().split()
         return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in words)][:limit]
     if provider=='linkedin':
-        cards=linkedin_cards(public_get('https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search',params={'keywords':keywords,'location':location,'start':0}).text)[:min(limit,25)]
-        if not cards:raise SourceUnavailable('No public LinkedIn cards were returned. The search may be empty or require browser access.')
-        with ThreadPoolExecutor(max_workers=2) as pool:return list(pool.map(linkedin_detail,cards))
+        cards=[];seen=set();pages_scanned=0;partial=False
+        for _ in range(LINKEDIN_PAGE_LIMIT):
+            try:
+                page=linkedin_cards(public_get('https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search',params={'keywords':keywords,'location':location,'start':len(cards)}).text)
+            except Exception:
+                if not cards:raise
+                partial=True;break
+            pages_scanned+=1
+            fresh=[card for card in page if card['job_url'] not in seen]
+            if not fresh:break
+            for card in fresh:
+                seen.add(card['job_url']);cards.append(card)
+                if len(cards)>=min(limit,LINKEDIN_CARD_LIMIT):break
+            if len(cards)>=min(limit,LINKEDIN_CARD_LIMIT):break
+        if not cards:return []
+        coverage={'cards_examined':len(cards),'pages_scanned':pages_scanned,'limited':partial or pages_scanned>=LINKEDIN_PAGE_LIMIT or len(cards)>=min(limit,LINKEDIN_CARD_LIMIT)}
+        known=saved_postings()
+        # Each nested worker needs its own copy of the authenticated context.
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures=[pool.submit(copy_context().run,linkedin_detail,card,known) for card in cards]
+            jobs=[future.result() for future in futures]
+        for job in jobs:job['_search_coverage']=coverage
+        return jobs
     if provider=='hiringcafe':
         url=page_url.strip() or 'https://hiringcafe.com/'
         if urlparse(url).hostname not in {'hiring.cafe','hiringcafe.com','www.hiringcafe.com'}:raise ValueError('Use a HiringCafe public page URL.')
@@ -317,6 +347,10 @@ def vanhack_jobs(keywords='',limit=20):
 def jobbatical_jobs(keywords='',limit=20):
     base='https://jobbatical.bamboohr.com/careers'
     cards=public_get(base+'/list').json().get('result',[])
+    terms=keywords.casefold().split()
+    # Fetch at most ten detail pages, but inspect titles across the whole feed
+    # first so a relevant opening after the first ten cards is not hidden.
+    cards.sort(key=lambda card:-sum(term in (card.get('jobOpeningName') or '').casefold() for term in terms))
     cards=cards[:min(limit,10)]
     def detail(card):
         identifier=str(card.get('id',''))
@@ -330,7 +364,6 @@ def jobbatical_jobs(keywords='',limit=20):
                 'description':description,'location':location,'employment_type':employment(card.get('employmentStatusLabel')),
                 'source':'Jobbatical','requisition_id':identifier,'posted_at':None,'description_incomplete':True}
     with ThreadPoolExecutor(max_workers=2) as pool:rows=[job for job in pool.map(detail,cards) if job]
-    terms=keywords.casefold().split()
     return [job for job in rows if all(term in (job['job_title']+' '+job['description']).casefold() for term in terms)][:limit]
 
 def wwr_jobs(markup):
@@ -360,7 +393,9 @@ def discover(provider,**kwargs):
     # Cache a candidate pool, then prefer unseen jobs before applying the display
     # limit. Otherwise a cached first page can permanently hide new candidates.
     options={**kwargs,'limit':1000}
-    key=hashlib.sha256(json.dumps(['metadata-v3',provider,options],sort_keys=True).encode()).hexdigest()
+    # Retire LinkedIn errors and Jobbatical results that missed later titles.
+    version={'linkedin':'metadata-v5','jobbatical':'metadata-v4'}.get(provider,'metadata-v3')
+    key=hashlib.sha256(json.dumps([version,provider,options],sort_keys=True).encode()).hexdigest()
     rows=db.query('SELECT * FROM source_cache WHERE cache_key=:key',{'key':key})
     ttl=21600 if provider=='remotive' else 900
     if rows and time.time()-rows[0]['fetched_at']<ttl:

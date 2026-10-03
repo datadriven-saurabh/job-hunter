@@ -149,7 +149,9 @@ def get_config(): return db.config() or demo.CONFIG
 def save_config(config: SystemVariables):
     require_profile()
     user_id=db.current_user()
-    db.execute('INSERT INTO system_config (config_id,user_id,search_criteria_json,execution_preferences_json,llm_config_json) VALUES (:id,:id,:criteria,:prefs,:llm) ON CONFLICT(config_id) DO UPDATE SET search_criteria_json=excluded.search_criteria_json,execution_preferences_json=excluded.execution_preferences_json,llm_config_json=excluded.llm_config_json,updated_at=CURRENT_TIMESTAMP',{'id':user_id,'criteria':config.job_search_criteria.model_dump_json(),'prefs':config.execution_preferences.model_dump_json(),'llm':config.llm_provider_config.model_dump_json()})
+    # Hosted Postgres uses text for config_id and UUID for user_id. Separate
+    # parameters let the driver infer each column's type independently.
+    db.execute('INSERT INTO system_config (config_id,user_id,search_criteria_json,execution_preferences_json,llm_config_json) VALUES (:config_id,:user_id,:criteria,:prefs,:llm) ON CONFLICT(config_id) DO UPDATE SET search_criteria_json=excluded.search_criteria_json,execution_preferences_json=excluded.execution_preferences_json,llm_config_json=excluded.llm_config_json,updated_at=CURRENT_TIMESTAMP',{'config_id':str(user_id),'user_id':user_id,'criteria':config.job_search_criteria.model_dump_json(),'prefs':config.execution_preferences.model_dump_json(),'llm':config.llm_provider_config.model_dump_json()})
     return {'status':'success'}
 
 class ImportJob(BaseModel):
@@ -220,24 +222,29 @@ def execute_search(body:SearchRequest):
     providers=list(dict.fromkeys(body.sources or [body.provider]))
     if any(x not in {r['id'] for r in SOURCE_INFO} for x in providers): raise HTTPException(400,'Unknown discovery source.')
     criteria=dict(c['job_search_criteria'])
-    if body.location.strip():criteria['target_locations']=[body.location.strip()]
+    criteria['target_locations']=[body.location.strip()] if body.location.strip() else []
     if body.override_posting_age:criteria['max_posting_age_days']=body.max_posting_age_days
     from collections import Counter
     from backend.services.job_matching import exclusions
     reports=[];total=0
     from backend.services.discovery_fetch import fetch_sources
     def fetch_source(provider):
+        import time
+        started=time.monotonic()
         try:
-            return discover_source(provider,board=body.boards.get(provider,body.board),keywords=body.keywords.strip(),location=body.location.strip(),limit=body.limit,page_url=body.page_url)
+            result=discover_source(provider,board=body.boards.get(provider,body.board),keywords=body.keywords.strip(),location=body.location.strip(),limit=body.limit,page_url=body.page_url)
+            return result,time.monotonic()-started
         except Exception as exc:return exc
     fetched=fetch_sources(providers,fetch_source)
     for provider,source_result in zip(providers,fetched):
         try:
             if isinstance(source_result,Exception):raise source_result
-            incoming,cached=source_result
-            result=discovery_graph.invoke({'jobs':incoming,'profile':p,'criteria':criteria,'skip_seen':True})
+            (incoming,cached),fetch_seconds=source_result
+            coverage=incoming[0].get('_search_coverage') if incoming else None
+            jobs=[{key:value for key,value in job.items() if key!='_search_coverage'} for job in incoming]
+            result=discovery_graph.invoke({'jobs':jobs,'profile':p,'criteria':criteria,'skip_seen':True})
             total+=result['count']
-            reports.append({'source':provider,'status':'success','fetched':len(incoming),'matched':result['count'],'already_seen':result.get('skipped',0),'cached':cached,'excluded_reasons':dict(Counter(reason for j in incoming for reason in exclusions(j,criteria))),'incomplete_descriptions':sum(bool(j.get('description_incomplete')) for j in incoming)})
+            reports.append({'source':provider,'status':'success','fetched':len(incoming),'matched':result['count'],'already_seen':result.get('skipped',0),'cached':cached,'fetch_seconds':round(fetch_seconds,2),'coverage':coverage,'excluded_reasons':dict(Counter(reason for j in jobs for reason in exclusions(j,criteria))),'incomplete_descriptions':sum(bool(j.get('description_incomplete')) for j in jobs)})
         except Exception as exc:
             reports.append({'source':provider,'status':'unavailable','message':str(exc)[:500],'fetched':0,'matched':0})
     return {'message':f'Discovery finished: {total} new opportunities; {sum(r.get("already_seen",0) for r in reports)} previously seen or duplicate postings skipped across {sum(r["status"]=="success" for r in reports)} available sources.','count':total,'sources':reports}
@@ -259,6 +266,19 @@ def deleted_opportunities():
 
 class OpportunityIDs(BaseModel):
     job_ids:List[str]=Field(min_length=1,max_length=100)
+
+@app.post('/api/v1/applications/export.csv')
+def export_opportunities(body:OpportunityIDs):
+    from backend.services.opportunity_csv import render
+    ids=list(dict.fromkeys(body.job_ids))
+    available={job['job_id']:job for job in db.applications()}
+    if any(job_id not in available for job_id in ids):
+        raise HTTPException(404,'One or more selected opportunities are unavailable.')
+    content=render([available[job_id] for job_id in ids])
+    return Response(content,media_type='text/csv; charset=utf-8',headers={
+        'Content-Disposition':'attachment; filename="job-opportunities.csv"',
+        'Cache-Control':'no-store',
+    })
 
 @app.post('/api/v1/applications/review')
 def review_opportunities(body:OpportunityIDs,tasks:BackgroundTasks):
@@ -369,16 +389,28 @@ def document(job_id:str,kind:str):
     if not path or not Path(path).is_file(): raise HTTPException(404,'Prepare this application to generate documents.')
     return FileResponse(path,filename=f"{job['company_name']}-{kind}."+('pdf' if kind=='resume' else 'txt'))
 
+@app.get('/api/v1/interview/catalog')
+def interview_catalog():
+    from backend.services.interview_bank import catalog
+    return catalog()
+
+@app.get('/api/v1/interview/questions', response_model=List[InterviewQuestion])
+def interview_questions(job_id: Optional[str] = None, role_family: str = '', category: str = '', stage: str = '', query: str = ''):
+    from backend.services.interview_bank import select_questions
+    return select_questions(require_job(job_id) if job_id else None, role_family, category, stage, query)
+
 @app.post('/api/v1/interview/generate-questions',response_model=List[InterviewQuestion])
 def generate(job_id:str): return questions(require_job(job_id))
 
 class Answer(BaseModel):
-    job_id:str
+    job_id:Optional[str]=None
     question_id:str
     answer:str=Field(min_length=10,max_length=20000)
 
 @app.post('/api/v1/interview/evaluate',response_model=UserAnswerFeedback)
 def evaluate(body:Answer):
-    question=next((q for q in questions(require_job(body.job_id)) if q['id']==body.question_id),None)
+    from backend.services.interview_bank import select_questions
+    candidates = questions(require_job(body.job_id)) if body.job_id else select_questions()
+    question=next((q for q in candidates if q['id']==body.question_id),None)
     if not question: raise HTTPException(404,'Question not found')
     return feedback(question,body.answer)

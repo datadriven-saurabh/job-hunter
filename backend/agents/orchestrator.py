@@ -22,7 +22,7 @@ class DiscoveryState(TypedDict):
 
 def scout(state):
     matched=[];seen=[];skipped=0
-    criteria_hash=hashlib.sha256(json.dumps(state['criteria'],sort_keys=True).encode()).hexdigest()
+    criteria_hash=hashlib.sha256(json.dumps({'matching_version':2,'criteria':state['criteria']},sort_keys=True).encode()).hexdigest()
     history={r['job_key']:r for r in query('SELECT * FROM discovery_seen')}
     known={job_id(r['job_url']) for r in query('SELECT job_url FROM application_records')}
     known.update(r['job_id'] for r in query('SELECT job_id FROM application_records'))
@@ -61,7 +61,9 @@ def _persist(state):
         if duplicate:
             alternatives=list({(a['source'],a['url']):a for a in duplicate.get('alternative_sources',[])+[{'source':duplicate.get('source','Manual import'),'url':duplicate['job_url']},{'source':j.get('source','Manual import'),'url':j['job_url']} ]}.values())
             preferred=j if quality(j)>quality(duplicate) else duplicate
-            j=dict(preferred,job_id=duplicate['job_id'],alternative_sources=alternatives,first_seen_at=duplicate.get('first_seen_at') or j['first_seen_at'],last_seen_at=j['last_seen_at'])
+            # A saved duplicate is built from job_details, which omits these
+            # application-record fields. Keep the newly computed match data.
+            j=dict(preferred,job_id=duplicate['job_id'],match_score=j['match_score'],classification=j['classification'],alternative_sources=alternatives,first_seen_at=duplicate.get('first_seen_at') or j['first_seen_at'],last_seen_at=j['last_seen_at'])
             if j['job_id'] in protected:continue
             execute('UPDATE application_records SET job_url=:url WHERE job_id=:id',{'url':j['job_url'],'id':j['job_id']})
         if j['job_id'] in protected:continue

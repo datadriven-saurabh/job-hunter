@@ -137,6 +137,61 @@ def test_model_cache_and_evidence_validator(monkeypatch):
     assert 'USER_PROFILE' not in logs and 'Example Company' not in logs
 
 
+def test_openrouter_is_free_only_and_redacts_identity(monkeypatch):
+    import backend.ai.router as module
+    monkeypatch.setenv('ENABLE_OPENROUTER','true')
+    monkeypatch.setenv('ENABLE_LOCAL_LLM','false')
+    monkeypatch.setenv('OPENROUTER_API_KEY','sk-or-v1-'+'x'*48)
+    monkeypatch.setenv('OPENROUTER_CATALOG_TTL_SECONDS','1')
+    module._catalog.update(checked_at=0,models=set());module._local_budget.clear();module._cost_guard_triggered=False
+    calls=[]
+    class Response:
+        def __init__(self,payload):self.payload=payload
+        def raise_for_status(self):pass
+        def json(self):return self.payload
+    monkeypatch.setattr(module.httpx,'get',lambda *a,**kw:Response({'data':[{'id':m,'pricing':{'prompt':'0','completion':'0'}} for m in module.SAFE_FREE_MODELS]}))
+    def post(url,**kwargs):
+        calls.append((url,kwargs))
+        return Response({'model':module.SAFE_FREE_MODELS[0],'choices':[{'message':{'content':json.dumps({'source_ids':['verified'],'priority_keywords':[],'do_not_claim':[]})}}],'usage':{'prompt_tokens':10,'completion_tokens':5,'cost':0}})
+    monkeypatch.setattr(module.httpx,'post',post)
+    private=copy.deepcopy(PROFILE)
+    private['base_resume']['raw_text']+=' Contact taylor@example.com, +49 170 1234567 and https://linkedin.example/private.'
+    prompt=build_prompt('resume_strategy',private,JOB)
+    router=ModelRouter();router.cache_enabled=False
+    result=router.run('resume_strategy',prompt,Strategy)
+    assert result.source_ids==['verified'] and len(calls)==1
+    request=calls[0][1]
+    assert request['trust_env'] is False and request['follow_redirects'] is False
+    assert request['json']['models']==list(module.SAFE_FREE_MODELS)
+    assert all(model.endswith(':free') for model in request['json']['models'])
+    sent=json.dumps(request['json'])
+    for value in [private['personal_details']['full_name'],private['personal_details']['email'],private['personal_details']['phone'],private['personal_details']['linkedin_url'],'taylor@example.com','+49 170 1234567','https://linkedin.example/private']:
+        assert value not in sent
+    assert request['headers']['Authorization'].startswith('Bearer sk-or-v1-')
+    assert 'Authorization' not in json.dumps(router.events)
+
+
+def test_openrouter_paid_or_unverified_model_stops_before_generation(monkeypatch):
+    import backend.ai.router as module
+    monkeypatch.setenv('ENABLE_OPENROUTER','true');monkeypatch.setenv('ENABLE_LOCAL_LLM','false')
+    monkeypatch.setenv('OPENROUTER_API_KEY','sk-or-v1-'+'x'*48)
+    monkeypatch.setenv('OPENROUTER_FREE_MODELS','deepseek/deepseek-v4-pro-0813')
+    monkeypatch.setattr(module.httpx,'post',lambda *a,**kw:pytest.fail('Paid model reached the generation endpoint'))
+    with pytest.raises(ModelUnavailable):ModelRouter().run('resume_strategy',build_prompt('resume_strategy',{},JOB),Strategy)
+
+
+def test_cloud_profile_parsing_and_embeddings_are_private(monkeypatch):
+    import backend.ai.router as module
+    monkeypatch.setenv('ENABLE_OPENROUTER','true');monkeypatch.setenv('ENABLE_LOCAL_LLM','false')
+    monkeypatch.setenv('OPENROUTER_API_KEY','sk-or-v1-'+'x'*48);monkeypatch.delenv('OPENROUTER_FREE_MODELS',raising=False)
+    monkeypatch.setattr(module,'_verify_free_catalog',lambda models:None)
+    monkeypatch.setattr(module,'_consume_openrouter_budget',lambda:None)
+    monkeypatch.setattr(module.httpx,'post',lambda *a,**kw:pytest.fail('Private workflow reached OpenRouter'))
+    router=ModelRouter();router.cache_enabled=False
+    with pytest.raises(ModelUnavailable):router.run('profile_extraction',build_prompt('resume_writing',{'raw_background':'private resume'},{}),Strategy)
+    with pytest.raises(ModelUnavailable):router.embed('private resume')
+
+
 def test_answer_limits_and_batch_avoid_reusing_available_story():
     p=copy.deepcopy(PROFILE);story=p['base_resume']['story_bank'][0]
     second=copy.deepcopy(story);second['story_id']='second';p['base_resume']['story_bank'].append(second)
