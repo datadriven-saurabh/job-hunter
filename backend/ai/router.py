@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from threading import Lock
+from zoneinfo import ZoneInfo
 
 import httpx
 from sqlalchemy import text
@@ -19,6 +20,9 @@ OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
 GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions"
 SAFE_GROQ_MODELS = ("openai/gpt-oss-20b", "openai/gpt-oss-120b")
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/"
+SAFE_GEMINI_MODELS = ("gemini-3.5-flash-lite",)
+GEMINI_PUBLIC_TASKS = {"job_extraction", "sponsorship_review"}
 SAFE_FREE_MODELS = (
     "deepseek/deepseek-v4-flash-0731:free",
     "qwen/qwen3.8-27b:free",
@@ -51,6 +55,8 @@ class ModelUnavailable(ValueError):
 
 
 def provider_name():
+    if _gemini_enabled():
+        return "gemini"
     if _groq_enabled():
         return "groq"
     if os.getenv("ENABLE_OPENROUTER") == "true" and os.getenv("OPENROUTER_API_KEY", "").strip():
@@ -65,6 +71,28 @@ def _groq_enabled():
     return (os.getenv("ENABLE_GROQ") == "true"
             and os.getenv("GROQ_FREE_TIER_CONFIRMED") == "true"
             and bool(os.getenv("GROQ_API_KEY", "").strip()))
+
+
+def _gemini_enabled():
+    # There is no free-only API parameter: the key's project must have billing
+    # disabled. Revoke this administrator assertion if its billing tier changes.
+    return (os.getenv("ENABLE_GEMINI") == "true"
+            and os.getenv("GEMINI_FREE_TIER_CONFIRMED") == "true"
+            and bool(os.getenv("GEMINI_API_KEY", "").strip()))
+
+
+def _gemini_public_prompt(prompt, task):
+    if task not in GEMINI_PUBLIC_TASKS or not _gemini_enabled():
+        raise ModelUnavailable("Gemini is restricted to confirmed free-tier public job tasks.")
+    context = json.loads(_redact_external_prompt(prompt, task)["context"])
+    job = context.get("TARGET_JOB_DESCRIPTION") if isinstance(context, dict) else None
+    if not isinstance(job, dict) or not isinstance(job.get("description"), str) or not job["description"].strip():
+        raise ModelUnavailable("Gemini requires public job-description text.")
+    # Never send a candidate's profile, resume or task-specific private context
+    # to Google's unpaid service, even if the caller included it in this prompt.
+    public_job = {k: job[k] for k in ("job_title", "company_name", "description", "location")
+                  if isinstance(job.get(k), str)}
+    return {"system": prompt["system"], "context": json.dumps({"TARGET_JOB_DESCRIPTION": public_job}, ensure_ascii=False, sort_keys=True)}
 
 
 def _strict_schema(schema):
@@ -139,14 +167,15 @@ def _consume_openrouter_budget():
 
 
 def _consume_cloud_budget(provider, user_default, user_max, global_default, global_max, *, tokens=0):
-    """Reserve one request before transmission; limits stay below the free allowance."""
+    """Reserve before transmission; app caps do not determine provider billing."""
     user = db.current_user(required=False) or "local"
     prefix = provider.upper()
     per_user = _bounded_env(f"MAX_{prefix}_REQUESTS_PER_USER_PER_DAY", user_default, user_max)
     global_limit = _bounded_env(f"MAX_{prefix}_REQUESTS_PER_DAY", global_default, global_max)
-    token_limit = _bounded_env("MAX_GROQ_TOKENS_PER_DAY", 180000, 190000)
+    token_limit = (_bounded_env("MAX_GEMINI_TOKENS_PER_DAY", 100000, 100000) if provider == "gemini"
+                   else _bounded_env("MAX_GROQ_TOKENS_PER_DAY", 180000, 190000))
     event_type = prefix + "_REQUEST"
-    day = datetime.now(timezone.utc).date().isoformat()
+    day = datetime.now(ZoneInfo("America/Los_Angeles") if provider == "gemini" else timezone.utc).date().isoformat()
     with _budget_lock:
         if not db.HOSTED:
             user_key = (provider, day, user)
@@ -241,7 +270,9 @@ class ModelRouter:
         result = []
         for route in routes:
             provider, model = route["provider"], route["model"]
-            if provider == "groq" and _groq_enabled() and model in SAFE_GROQ_MODELS:
+            if provider == "gemini" and _gemini_enabled() and task in GEMINI_PUBLIC_TASKS and model in SAFE_GEMINI_MODELS:
+                result.append(dict(route))
+            elif provider == "groq" and _groq_enabled() and model in SAFE_GROQ_MODELS:
                 result.append(dict(route))
             elif provider == "openrouter" and model in allowed_openrouter:
                 result.append(dict(route))
@@ -260,7 +291,9 @@ class ModelRouter:
             stream.write(json.dumps(dict(event, created_at=datetime.now(timezone.utc).isoformat())) + "\n")
 
     def _identity(self, model):
-        if provider_name() == "groq":
+        if provider_name() in {"groq", "gemini"}:
+            if model in SAFE_GEMINI_MODELS and _gemini_enabled():
+                return "gemini:" + model
             if model in SAFE_GROQ_MODELS:
                 return "groq:" + model
             if model in SAFE_FREE_MODELS:
@@ -377,6 +410,48 @@ class ModelRouter:
             raise ValueError("Incomplete cloud response.")
         return schema.model_validate_json(content), raw
 
+    def _gemini_run(self, task, prompt, schema, model, timeout):
+        if model not in SAFE_GEMINI_MODELS:
+            raise ModelUnavailable("Gemini model is outside the reviewed free-tier allowlist.")
+        safe_prompt = _gemini_public_prompt(prompt, task)
+        key = os.environ["GEMINI_API_KEY"].strip()
+        schema_value = _strict_schema(schema)
+        output_tokens = self._output_tokens(task)
+        reserved_tokens = len(json.dumps([safe_prompt, schema_value], ensure_ascii=False).encode("utf-8")) + output_tokens + 512
+        if reserved_tokens > 20000:
+            raise ModelUnavailable("Public job exceeds the conservative Gemini request budget.")
+        _consume_cloud_budget("gemini", 5, 5, 15, 15, tokens=reserved_tokens)
+        # Standard text generation only: no grounding, tools, files, caching,
+        # batch or priority features. The credential never appears in the URL.
+        body = {
+            "systemInstruction": {"parts": [{"text": safe_prompt["system"]}]},
+            "contents": [{"role": "user", "parts": [{"text": safe_prompt["context"]}]}],
+            "generationConfig": {"temperature": 0, "maxOutputTokens": output_tokens,
+                                 "responseMimeType": "application/json", "responseJsonSchema": schema_value},
+        }
+        response = httpx.post(GEMINI_API_URL + model + ":generateContent",
+                              headers={"x-goog-api-key": key, "Content-Type": "application/json"},
+                              json=body, timeout=timeout, follow_redirects=False, trust_env=False)
+        response.raise_for_status()
+        raw = response.json()
+        # A served-model identity is required; dated versions of this exact
+        # reviewed model are acceptable, unrelated aliases or models are not.
+        version = raw.get("modelVersion", "")
+        if version != model and not re.fullmatch(re.escape(model) + r"-(?:\d{3}|\d{2}-\d{2})", version):
+            raise ModelUnavailable("Gemini served an unrequested model.")
+        candidates = raw.get("candidates") or []
+        if raw.get("promptFeedback", {}).get("blockReason") or len(candidates) != 1 or candidates[0].get("finishReason") != "STOP":
+            raise ModelUnavailable("Gemini returned blocked or incomplete output.")
+        parts = candidates[0].get("content", {}).get("parts", [])
+        content = "".join(part["text"] for part in parts if isinstance(part.get("text"), str) and not part.get("thought"))
+        if not content or len(content) > 200000:
+            raise ModelUnavailable("Gemini returned an invalid response.")
+        usage = raw.get("usageMetadata") or {}
+        return schema.model_validate_json(content), {"usage": {
+            "prompt_tokens": usage.get("promptTokenCount", 0),
+            "completion_tokens": usage.get("candidatesTokenCount", 0) + usage.get("thoughtsTokenCount", 0),
+        }}
+
     def _run_cloud(self, task, prompt, schema, validator):
         safe_prompt = _redact_external_prompt(prompt, task)
         candidates = self._cloud_candidates(task)
@@ -391,7 +466,10 @@ class ModelRouter:
                      "retry_count": failures, "fallback_used": failures > 0, "cache_hit": False,
                      "input_tokens": 0, "output_tokens": 0}
             try:
-                key = digest([self.config["version"], task, safe_prompt, identity, schema.model_json_schema()])
+                route_prompt = _gemini_public_prompt(prompt, task) if provider == "gemini" else safe_prompt
+                if provider == "gemini" and model not in SAFE_GEMINI_MODELS:
+                    raise ModelUnavailable("Gemini model is outside the reviewed free-tier allowlist.")
+                key = digest([self.config["version"], task, route_prompt, identity, schema.model_json_schema()])
                 path = db.user_data_path("ai-cache", f"{key}.json")
                 if getattr(self, "cache_enabled", True) and path.exists():
                     result = schema.model_validate(json.loads(path.read_text()))
@@ -412,8 +490,12 @@ class ModelRouter:
                 timeout = min(remaining, self.config.get("cloud_attempt_timeout_seconds", 12))
                 if provider == "groq":
                     result, raw = self._groq_run(task, safe_prompt, schema, model, timeout)
-                else:
+                elif provider == "gemini":
+                    result, raw = self._gemini_run(task, prompt, schema, model, timeout)
+                elif provider == "openrouter":
                     result, raw = self._openrouter_run(task, prompt, schema, models=[model], timeout=timeout)
+                else:
+                    raise ModelUnavailable("Unreviewed cloud provider.")
                 if validator:
                     validator(result)
                 usage = raw.get("usage") or {}
@@ -433,7 +515,7 @@ class ModelRouter:
                 if isinstance(exc, httpx.HTTPStatusError):
                     event['http_status'] = exc.response.status_code
                 self._log(event)
-                if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in {401, 403, 429}:
+                if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in {401, 402, 403, 429}:
                     try:
                         cooldown = min(300, max(30, int(exc.response.headers.get("retry-after", "60"))))
                     except ValueError:
@@ -453,7 +535,7 @@ class ModelRouter:
         provider = provider_name()
         if provider == "none":
             raise ModelUnavailable("AI is disabled; evidence-only generation is available.")
-        if provider in {"openrouter", "groq"}:
+        if provider in {"openrouter", "groq", "gemini"}:
             return self._run_cloud(task, prompt, schema, validator)
         return self._run_local(task, prompt, schema, validator=validator)
 
@@ -514,7 +596,7 @@ class ModelRouter:
         raise ModelUnavailable("No validated model output was available. Use verified evidence or review missing fields.")
 
     def embed(self, text):
-        if provider_name() in {"openrouter", "groq"}:
+        if provider_name() in {"openrouter", "groq", "gemini"}:
             raise ModelUnavailable("Cloud embeddings are disabled; deterministic private matching is used.")
         if os.getenv("ENABLE_LOCAL_LLM") != "true":
             raise ModelUnavailable("Local AI disabled.")

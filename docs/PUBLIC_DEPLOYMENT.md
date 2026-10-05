@@ -71,10 +71,12 @@ The model allowlist rejects paid IDs, pricing is checked before an uncached requ
 
 `config/ai.json` now defines ordered cloud routes for each task:
 
-| Tasks | Direct Groq primary | OpenRouter fallback order |
+| Tasks | Primary → direct Groq fallback | OpenRouter fallback order |
 | --- | --- | --- |
-| Job extraction, question classification, outreach | GPT-OSS 20B | Qwen3.8 27B free → DeepSeek V4 Flash free |
-| Scoring, deep analysis, sponsorship review, resume strategy, application answers | GPT-OSS 120B | DeepSeek V4 Flash free → Qwen3.8 27B free |
+| Public job extraction | Gemini 3.5 Flash-Lite → GPT-OSS 20B | Qwen3.8 27B free → DeepSeek V4 Flash free |
+| Public sponsorship text review | Gemini 3.5 Flash-Lite → GPT-OSS 120B | DeepSeek V4 Flash free → Qwen3.8 27B free |
+| Question classification, outreach | GPT-OSS 20B | Qwen3.8 27B free → DeepSeek V4 Flash free |
+| Scoring, deep analysis, resume strategy, application answers | GPT-OSS 120B | DeepSeek V4 Flash free → Qwen3.8 27B free |
 | Resume writing | GPT-OSS 120B | Qwen3.8 27B free → DeepSeek V4 Flash free |
 
 These are task-oriented starting choices, not a completed comparative model benchmark. Disabled or missing providers are skipped. With only OpenRouter enabled, the same per-task fallback order applies. With no cloud providers enabled, generation remains evidence-based.
@@ -92,7 +94,22 @@ MAX_GROQ_TOKENS_PER_DAY=180000
 
 Groq does not expose OpenRouter-style live zero-price verification. `GROQ_FREE_TIER_CONFIRMED` is an administrator assertion; it must be disabled if the account moves to a paid plan. The key or model name alone cannot guarantee free billing. The router only permits GPT-OSS 20B/120B, caps requests and reserved tokens, and conservatively skips prompts whose UTF-8 byte bound plus output/schema allowance exceeds 7,500 tokens. It never trims candidate evidence to fit. This deliberately prioritizes free-tier safety over fully consuming the available quota.
 
-Every cloud call redacts identity fields, requires strict structured output, then runs the existing evidence validators. Malformed JSON, unsupported evidence, truncated output, network errors and provider quota failures move to the next route. A nonzero OpenRouter cost stops cloud calls. Each task has at most three cloud routes, a 40-second shared retry admission budget and a 12-second per-attempt network timeout; HTTP phase timeouts and pricing checks are not a hard end-to-end SLA. Authentication/rate-limit failures place the provider on a short process-local cooldown. Concurrent hosted daily reservations are enforced atomically in the database. Failed transmissions retain their reserved quota.
+Gemini is optional and disabled by default. The reviewed stable `gemini-3.5-flash-lite` model has free input/output on a Free project ([pricing](https://ai.google.dev/gemini-api/docs/pricing), reviewed 2026-10-06). Confirm that the key’s project shows **Free** in AI Studio and has **Cloud Billing disabled**, then set these backend-only variables:
+
+```text
+GEMINI_API_KEY=<secret set in Render only>
+GEMINI_FREE_TIER_CONFIRMED=true
+ENABLE_GEMINI=true
+MAX_GEMINI_REQUESTS_PER_DAY=15
+MAX_GEMINI_REQUESTS_PER_USER_PER_DAY=5
+MAX_GEMINI_TOKENS_PER_DAY=100000
+```
+
+There is no free-only request flag. These two switches are an administrator assertion, not a live billing lookup. Disable either switch before enabling billing or replacing the key with a paid-project key. A model allowlist and request limits cannot prevent billing on an already paid project. The router never upgrades billing, rotates keys to evade quota, or enables search grounding, tools, files, batch, priority or provider context caching. App caps can be lowered but not raised above 15 total / 5 per-user requests and 100,000 reserved tokens daily; each prompt is capped at 20,000 reserved tokens. These are conservative application limits, not a claim about the project’s current provider allowance. Google’s project-specific limits in AI Studio may be lower; 429 responses trigger fallback. Gemini’s shared daily counters use Pacific time, matching the provider’s reset.
+
+Google’s unpaid service may use submitted content to improve its products ([terms](https://ai.google.dev/gemini-api/terms)). Gemini receives only the allowlisted public job title/company/description/location fields; the entire candidate profile, resume and arbitrary task context are removed. Private career tasks remain on existing routes. The terms require Paid Services for API clients available to users in the EEA, Switzerland or UK: keep Gemini disabled for those deployments rather than upgrading this free-only integration.
+
+Every cloud call redacts identity fields, requires strict structured output, then runs the existing evidence validators. Malformed JSON, unsupported evidence, truncated output, network errors and provider quota failures move to the next route. A nonzero OpenRouter cost stops cloud calls. Each task has at most four cloud routes, a 40-second shared retry admission budget and a 12-second per-attempt network timeout; HTTP phase timeouts and pricing checks are not a hard end-to-end SLA. Authentication/rate-limit failures place the provider on a short process-local cooldown. Concurrent hosted daily reservations are enforced atomically in the database. Failed transmissions retain their reserved quota.
 
 Validated results are cached by tenant, task, redacted prompt, schema, provider/model and routing version. Small extraction/scoring prompts omit the implementation planning document; full resume and writing instructions remain intact. Profile intake and embeddings stay private. Explicitly enabled desktop Ollama may be used after cloud failures; hosted requests use the existing evidence-based fallback instead.
 
@@ -134,4 +151,4 @@ Backend (Render): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`
 
 Frontend (Vercel): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
-Optional server-only AI variables: `OPENROUTER_API_KEY`, `GROQ_API_KEY`. These are never required for deterministic matching and grounded templates.
+Optional server-only AI variables: `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`. These are never required for deterministic matching and grounded templates.

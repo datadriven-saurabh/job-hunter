@@ -1,5 +1,5 @@
 {
-  "version": "career-pipeline-v5-task-routing",
+  "version": "career-pipeline-v6-public-gemini",
   "tiers": {
     "small": "qwen2.5:1.5b",
     "medium": null,
@@ -48,6 +48,10 @@
   "output_tokens": 1800,
   "cloud_routes": {
     "job_extraction": [
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite"
+      },
       {
         "provider": "groq",
         "model": "openai/gpt-oss-20b"
@@ -104,6 +108,10 @@
       }
     ],
     "sponsorship_review": [
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite"
+      },
       {
         "provider": "groq",
         "model": "openai/gpt-oss-120b"

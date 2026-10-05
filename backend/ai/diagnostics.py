@@ -25,7 +25,10 @@ def check_connections():
     prompt = {'version': 'connection-check-v1',
               'system': 'Extract exact supported skills from evidence. Return matched and missing arrays. Never invent skills.',
               'context': json.dumps({'evidence': 'I built SQL dashboards and Python pipelines.',
-                                     'required_skills': ['SQL', 'Python', 'dbt']})}
+                                     'required_skills': ['SQL', 'Python', 'dbt'],
+                                     'TARGET_JOB_DESCRIPTION': {'job_title': 'Synthetic connection check',
+                                         'company_name': 'Example',
+                                         'description': 'Evidence: I built SQL dashboards and Python pipelines. Required skills to check: SQL, Python, dbt.'}})}
 
     def validate(result):
         if sorted(result.matched) != ['Python', 'SQL'] or result.missing != ['dbt']:
@@ -45,7 +48,7 @@ def check_connections():
 
     routes = active_routes()
     results = [{**route, **probe([route], 'scoring' if route['model'].endswith('120b') else 'job_extraction')}
-               for route in routes[:4]]
+               for route in routes[:5]]
     # Bypass the primary provider for this request only. Global routing is unchanged.
     backup = [route for route in routes if route['provider'] != routes[0]['provider']] if routes else []
     fallback = probe(backup, 'job_extraction')
