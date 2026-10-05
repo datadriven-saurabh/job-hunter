@@ -73,7 +73,7 @@ def _rate_event(path: str, method: str):
         return "JOB_SEARCH", int(os.getenv("MAX_SEARCHES_PER_USER_PER_DAY", "10"))
     if method == "POST" and path == "/api/v1/resumes/upload":
         return "RESUME_PARSE", int(os.getenv("MAX_RESUME_PARSES_PER_USER_PER_DAY", "5"))
-    if method == "POST" and (path.endswith("/answers") or path == "/api/v1/career/generate"):
+    if method == "POST" and (path.endswith("/answers") or path in {"/api/v1/career/generate", "/api/v1/career/connection-check"}):
         return "AI_GENERATION", int(os.getenv("MAX_AI_CALLS_PER_USER_PER_DAY", "30"))
     return None
 

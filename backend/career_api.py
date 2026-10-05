@@ -66,6 +66,16 @@ def answers(body:AnswersRequest):
 @router.get('/model-routing')
 def routing():return settings()
 
+@router.get('/connection-check')
+def connection_status():
+    from backend.ai.diagnostics import connection_status
+    return connection_status()
+
+@router.post('/connection-check')
+def check_connections():
+    from backend.ai.diagnostics import check_connections
+    return check_connections()
+
 class AnalyzeRequest(BaseModel):job_ids:list[str]=Field(min_length=1,max_length=10)
 
 def analysis_path(id):

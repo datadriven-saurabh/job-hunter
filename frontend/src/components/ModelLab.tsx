@@ -1,7 +1,15 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {api} from '@/lib/api';
-export default function ModelLab(){
+import {hosted} from '@/lib/supabase';
+function CloudModelCheck(){
+ const [status,setStatus]=useState<any>(null),[result,setResult]=useState<any>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ useEffect(()=>{api('/career/connection-check').then(setStatus).catch(e=>setError(e.message))},[]);
+ async function check(){setBusy(true);setError('');setResult(null);try{setResult(await api('/career/connection-check','POST'))}catch(e){setError(e instanceof Error?e.message:'Connection check failed')}finally{setBusy(false)}}
+ return <section className="studio-card"><h2>AI connection check</h2><p>Check the configured models and backup route using a synthetic example. Your profile and documents stay out of this test.</p>{error&&<p className="error-banner" role="alert">{error}</p>}{status&&<><p>{status.routes.length?status.routes.map((r:any)=>`${r.provider}: ${r.model}`).join(' · '):'No cloud provider is enabled.'}</p><p>Grounded fallback is available when cloud AI cannot respond.</p><button className="primary" disabled={busy} onClick={check}>{busy?'Checking models and fallback…':'Test AI connections'}</button></>}{result&&<div role="status">{result.results.map((r:any)=><div className="source-report" key={`${r.provider}:${r.model}`}><strong>{r.provider} · {r.model}: {r.status==='passed'?'Passed':'Failed'}</strong><p>{r.status==='passed'?'Returned a valid response with the correct evidence.':`No validated response. ${r.events.filter((e:any)=>e.status==='failed').map((e:any)=>`${e.error_type}${e.http_status?` (HTTP ${e.http_status})`:''}`).join(', ')}`}</p></div>)}<p>Primary provider bypassed: {result.fallback_check.status==='passed'?'backup model responded':result.fallback_check.status==='rules_ready'?'grounded fallback reached safely':'backup model failed; grounded fallback remains available'}.</p><details><summary>Connection details</summary><pre>{JSON.stringify(result,null,2)}</pre></details></div>}</section>
+}
+export default function ModelLab(){return hosted?<CloudModelCheck/>:<LocalModelLab/>}
+function LocalModelLab(){
  const [routing,setRouting]=useState<any>(null);
  useEffect(()=>{api('/career/model-routing').then(setRouting).catch(()=>{})},[]);
  const [data,setData]=useState<any>(null),[chosen,setChosen]=useState<string[]>([]),[result,setResult]=useState<any>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);

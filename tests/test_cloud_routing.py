@@ -51,6 +51,53 @@ def prompt():
     return build_prompt('job_extraction', {}, JOB)
 
 
+def test_connection_check_uses_synthetic_evidence_and_bypasses_primary(monkeypatch):
+    from backend.ai.diagnostics import check_connections
+    enable(monkeypatch)
+    calls = []
+    def post(url, **kwargs):
+        body = kwargs['json']
+        calls.append((url, body))
+        assert 'SQL dashboards' in body['messages'][1]['content']
+        assert 'personal_details' not in json.dumps(body)
+        return response(url, body, output={'matched': ['SQL', 'Python'], 'missing': ['dbt']})
+    monkeypatch.setattr(module.httpx, 'post', post)
+    monkeypatch.setattr(db, 'profile', lambda *a: pytest.fail('Diagnostics must not load a profile'))
+    result = check_connections()
+    assert len(result['results']) == 4
+    assert all(r['status'] == 'passed' for r in result['results'])
+    assert result['fallback_check']['status'] == 'passed'
+    assert result['fallback_check']['events'][0]['provider'] == 'openrouter'
+    assert len(calls) == 5
+    check_connections()
+    assert len(calls) == 10  # Checks must call providers rather than serving cache.
+
+
+def test_connection_check_rejects_bad_evidence_and_preserves_rules(monkeypatch):
+    from backend.ai.diagnostics import check_connections
+    enable(monkeypatch, openrouter=False)
+    monkeypatch.setattr(module.httpx, 'post', lambda url, **kw: response(url, kw['json'],
+        output={'matched': ['SQL', 'Python', 'Java'], 'missing': ['dbt']}))
+    result = check_connections()
+    assert all(r['status'] == 'failed' for r in result['results'])
+    assert result['fallback_check']['status'] == 'rules_ready'
+    assert result['fallback_check']['events'][-1]['provider'] == 'rules'
+
+
+def test_connection_check_reports_http_status_without_credentials(monkeypatch):
+    from backend.ai.diagnostics import check_connections
+    enable(monkeypatch, openrouter=False)
+    monkeypatch.setattr(module.httpx, 'post', lambda url, **kw: response(url, kw['json'], status=401))
+    result = check_connections()
+    assert result['results'][0]['events'][0]['http_status'] == 401
+    assert 'gsk_' not in json.dumps(result)
+
+
+def test_connection_check_is_rate_limited():
+    from backend.security import _rate_event
+    assert _rate_event('/api/v1/career/connection-check', 'POST')[0] == 'AI_GENERATION'
+
+
 @pytest.mark.parametrize('task,model', [
     ('job_extraction', 'openai/gpt-oss-20b'), ('question_classification', 'openai/gpt-oss-20b'),
     ('outreach', 'openai/gpt-oss-20b'), ('scoring', 'openai/gpt-oss-120b'),

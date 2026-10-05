@@ -430,6 +430,8 @@ class ModelRouter:
             except Exception as exc:
                 failures += 1
                 event.update(status="failed", error_type=type(exc).__name__, latency_ms=round((time.monotonic() - started) * 1000))
+                if isinstance(exc, httpx.HTTPStatusError):
+                    event['http_status'] = exc.response.status_code
                 self._log(event)
                 if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in {401, 403, 429}:
                     try:
