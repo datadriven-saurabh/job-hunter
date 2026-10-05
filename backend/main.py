@@ -95,10 +95,12 @@ def require_profile(id='local'):
 @app.get('/health')
 def health():
     from backend.ai.router import CONFIG_PATH,provider_name
+    from backend.services.career_render import RESUME_LAYOUT_VERSION
     provider=provider_name()
     return {'status':'healthy','engine':'LangGraph','mode':'hosted' if db.HOSTED else 'local',
             'generation':'Task-routed cloud AI with grounded fallback' if provider in {'groq','openrouter','gemini'} else 'Local Ollama model' if provider=='ollama' else 'Grounded templates and rubric-based coaching',
-            'ai_routing':{'version':json.loads(CONFIG_PATH.read_text())['version'],'configured_provider':provider,'deterministic_fallback':True}}
+            'ai_routing':{'version':json.loads(CONFIG_PATH.read_text())['version'],'configured_provider':provider,'deterministic_fallback':True},
+            'resume_layout':{'version':RESUME_LAYOUT_VERSION,'paper':'letter'}}
 
 @app.get('/auth-config')
 def auth_config():

@@ -32,6 +32,8 @@ ATS Resume format.txt
 
 # Sanitized, source-controlled visual reference only
 !assets/Resume template.pdf
+# User-selected layout reference; its example content is never candidate evidence.
+!assets/Resume_Haas_Reference.pdf
 assets/job_hunter_ai_optimization_plan (1).md
 .vercel
 .env*

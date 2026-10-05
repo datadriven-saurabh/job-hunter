@@ -2,6 +2,8 @@ import json
 import re
 import uuid
 import shutil
+from tempfile import TemporaryDirectory
+from pathlib import Path
 from urllib.parse import urlparse
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, PlainTextResponse, Response
@@ -12,7 +14,7 @@ from backend.state import queue_reservation
 from backend.services import studio_store as store
 from backend.agents.job_sources import public_get, jsonld_jobs, ALLOWED, SourceUnavailable
 from backend.services.career_generator import generateATSResume, generateCoverLetter, generateLinkedInReferralMessage
-from backend.services.career_render import render_resume,render_cover
+from backend.services.career_render import render_resume,render_cover,resume_markdown
 from backend.ai.router import ModelRouter
 from backend.prompts import RESUME_FORMAT
 from backend.services.career_validation import words,validate_referral
@@ -220,14 +222,20 @@ def _edit(id,body):
 @router.get('/kits/{id}/resume')
 def download_resume(id:str):
     path=directory(id);kit=json.loads((path/'kit.json').read_text())
-    if kit.get('assets',{}).get('resume',{}).get('status') not in {None,'valid'} or not (path/'resume.pdf').exists():raise HTTPException(409,'Complete the resume validation requirements before export.')
-    return FileResponse(path/'resume.pdf',filename='resume-one-page.pdf')
+    asset=kit.get('assets',{}).get('resume',{})
+    if asset.get('status')!='valid' or not asset.get('data'):raise HTTPException(409,'Complete the resume validation requirements before export.')
+    # Re-render saved, validated facts in the current layout. Do not call AI or
+    # replace the candidate's reviewed kit when its presentation changes.
+    with TemporaryDirectory(prefix='resume-download-') as staged:
+        try:content=Path(render_resume(asset,staged)).read_bytes()
+        except ValueError as exc:raise HTTPException(409,str(exc))
+    return Response(content,media_type='application/pdf',headers={'Content-Disposition':'attachment; filename="resume-one-page.pdf"'})
 
 @router.get('/kits/{id}/resume-markdown')
 def download_markdown(id:str):
     kit=json.loads((directory(id)/'kit.json').read_text())
     if kit.get('assets',{}).get('resume',{}).get('status')!='valid':raise HTTPException(409,'Complete resume validation first.')
-    return PlainTextResponse(kit['resume_markdown'],headers={'Content-Disposition':'attachment; filename="resume.md"'})
+    return PlainTextResponse(resume_markdown(kit['assets']['resume']['data']),headers={'Content-Disposition':'attachment; filename="resume.md"'})
 
 @router.get('/kits/{id}/cover-pdf')
 def download_cover_pdf(id:str):

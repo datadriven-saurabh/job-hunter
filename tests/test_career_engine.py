@@ -42,7 +42,7 @@ def test_valid_resume_cover_render_one_page(tmp_path):
     assert len(cover['data']['paragraphs'])==4
     for path in [render_resume(resume,tmp_path),render_cover(cover,tmp_path)]:
         reader=PdfReader(path);assert len(reader.pages)==1
-        assert PROFILE['personal_details']['full_name'] in reader.pages[0].extract_text()
+        assert PROFILE['personal_details']['full_name'].casefold() in reader.pages[0].extract_text().casefold()
 
 
 def test_sparse_profile_never_padded_or_exported(tmp_path):

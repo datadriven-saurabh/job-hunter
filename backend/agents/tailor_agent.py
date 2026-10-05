@@ -1,5 +1,6 @@
 """Application preparation uses the same validated assets as Application Studio."""
 from backend.database import DATA
+from pathlib import Path
 from backend import database as db
 from backend.services import resumes
 from backend.services.career_generator import generateATSResume, generateCoverLetter
@@ -23,7 +24,7 @@ def tailor(job, profile):
     if db.HOSTED:
         from backend import storage
         prefix=f"documents/{job['job_id']}"
-        resume_uri=storage.put_user_file('artifacts',f'{prefix}/resume.pdf',path.read_bytes(),'application/pdf')
+        resume_uri=storage.put_user_file('artifacts',f'{prefix}/resume.pdf',Path(path).read_bytes(),'application/pdf')
         cover_uri=storage.put_user_file('artifacts',f'{prefix}/cover-letter.txt',(directory/'cover-letter.txt').read_bytes(),'text/plain')
         return resume_uri,cover_uri
     return path, str(directory / 'cover-letter.txt')
