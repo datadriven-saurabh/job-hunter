@@ -28,3 +28,15 @@ services:
         value: "40"
       - key: MAX_OPENROUTER_REQUESTS_PER_USER_PER_DAY
         value: "8"
+      - key: ENABLE_GROQ
+        value: "false"
+      - key: GROQ_FREE_TIER_CONFIRMED
+        value: "false"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MAX_GROQ_REQUESTS_PER_DAY
+        value: "120"
+      - key: MAX_GROQ_REQUESTS_PER_USER_PER_DAY
+        value: "30"
+      - key: MAX_GROQ_TOKENS_PER_DAY
+        value: "180000"

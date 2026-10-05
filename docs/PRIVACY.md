@@ -32,3 +32,7 @@ Keep the default localhost bindings. This app is not ready for public hosting or
 To erase local information, stop the app and delete the `data` folder and your `.env`; this is permanent unless you have a backup. Delete Ollama models separately if desired. Copies you exported or sent elsewhere are not removed.
 
 Requests that identify an untrusted Chrome extension origin are denied by default. To enable the optional helper, explicitly trust its ID as described in the user guide. Browser-origin checks are not authentication against other programs running on your computer or privileged extensions with access to localhost. Use a trusted browser profile and OS account.
+
+## Task-routed cloud AI
+
+Optional direct Groq calls use the same identity redaction and evidence validation as OpenRouter. Groq credentials remain in the backend environment. Cloud profile intake and embeddings remain disabled. Enabled providers still process the redacted career evidence under their own terms; encryption or local caching does not make cloud inference local. API routing never sends prompts to an unreviewed gateway or to Gemini. Provider/model routes and bounded fallback behavior are defined in `config/ai.json`; only validated outputs can be reused or exported. Logs contain task/provider/model, token counts and error types, never prompts, raw provider errors or credentials.

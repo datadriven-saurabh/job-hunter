@@ -66,6 +66,38 @@ MAX_OPENROUTER_REQUESTS_PER_USER_PER_DAY=8
 
 The model allowlist rejects paid IDs, pricing is checked before an uncached request, and the account-wide cap remains below the published free allowance. If verification, quota, or inference fails, the product uses deterministic evidence-based generation. Direct identifiers and demographics are removed before an OpenRouter prompt is sent. Cloud profile parsing and embeddings remain disabled; local Ollama can provide those without third-party processing.
 
+
+### Task routing and fallback
+
+`config/ai.json` now defines ordered cloud routes for each task:
+
+| Tasks | Direct Groq primary | OpenRouter fallback order |
+| --- | --- | --- |
+| Job extraction, question classification, outreach | GPT-OSS 20B | Qwen3.8 27B free → DeepSeek V4 Flash free |
+| Scoring, deep analysis, sponsorship review, resume strategy, application answers | GPT-OSS 120B | DeepSeek V4 Flash free → Qwen3.8 27B free |
+| Resume writing | GPT-OSS 120B | Qwen3.8 27B free → DeepSeek V4 Flash free |
+
+These are task-oriented starting choices, not a completed comparative model benchmark. Disabled or missing providers are skipped. With only OpenRouter enabled, the same per-task fallback order applies. With no cloud providers enabled, generation remains evidence-based.
+
+For Groq, use a free-plan account with no paid upgrade, and set these **only in the backend host environment**:
+
+```text
+ENABLE_GROQ=true
+GROQ_FREE_TIER_CONFIRMED=true
+GROQ_API_KEY=<secret set in Render only>
+MAX_GROQ_REQUESTS_PER_DAY=120
+MAX_GROQ_REQUESTS_PER_USER_PER_DAY=30
+MAX_GROQ_TOKENS_PER_DAY=180000
+```
+
+Groq does not expose OpenRouter-style live zero-price verification. `GROQ_FREE_TIER_CONFIRMED` is an administrator assertion; it must be disabled if the account moves to a paid plan. The key or model name alone cannot guarantee free billing. The router only permits GPT-OSS 20B/120B, caps requests and reserved tokens, and conservatively skips prompts whose UTF-8 byte bound plus output/schema allowance exceeds 7,500 tokens. It never trims candidate evidence to fit. This deliberately prioritizes free-tier safety over fully consuming the available quota.
+
+Every cloud call redacts identity fields, requires strict structured output, then runs the existing evidence validators. Malformed JSON, unsupported evidence, truncated output, network errors and provider quota failures move to the next route. A nonzero OpenRouter cost stops cloud calls. Each task has at most three cloud routes, a 40-second shared retry admission budget and a 12-second per-attempt network timeout; HTTP phase timeouts and pricing checks are not a hard end-to-end SLA. Authentication/rate-limit failures place the provider on a short process-local cooldown. Concurrent hosted daily reservations are enforced atomically in the database. Failed transmissions retain their reserved quota.
+
+Validated results are cached by tenant, task, redacted prompt, schema, provider/model and routing version. Small extraction/scoring prompts omit the implementation planning document; full resume and writing instructions remain intact. Profile intake and embeddings stay private. Explicitly enabled desktop Ollama may be used after cloud failures; hosted requests use the existing evidence-based fallback instead.
+
+After deployment, `/health` includes `ai_routing.version` and `configured_provider` so the deployed code and configuration can be checked without exposing keys. A configured provider is not proof of successful live inference. Keep `ENABLE_GROQ=false` until the secret and free-plan confirmation are ready, and keep OpenRouter enabled as a fallback when its backend key is configured.
+
 ## 4. Configure the six-hour refresh
 
 In GitHub, open **Settings → Secrets and variables → Actions** and add:
@@ -102,4 +134,4 @@ Backend (Render): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`
 
 Frontend (Vercel): `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
-Optional server-only AI variables: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`. These are never required for deterministic matching and grounded templates.
+Optional server-only AI variables: `OPENROUTER_API_KEY`, `GROQ_API_KEY`. These are never required for deterministic matching and grounded templates.

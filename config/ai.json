@@ -1,5 +1,5 @@
 {
-  "version": "career-pipeline-v4-openrouter-privacy",
+  "version": "career-pipeline-v5-task-routing",
   "tiers": {
     "small": "qwen2.5:1.5b",
     "medium": null,
@@ -45,5 +45,146 @@
   "maximum_jobs_per_analysis": 10,
   "timeout_seconds": 45,
   "context_tokens": 16384,
-  "output_tokens": 1800
+  "output_tokens": 1800,
+  "cloud_routes": {
+    "job_extraction": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      }
+    ],
+    "question_classification": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      }
+    ],
+    "scoring": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      }
+    ],
+    "deep_analysis": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      }
+    ],
+    "sponsorship_review": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      }
+    ],
+    "resume_strategy": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      }
+    ],
+    "resume_writing": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      }
+    ],
+    "outreach": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      }
+    ],
+    "application_answer": [
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash-0731:free"
+      },
+      {
+        "provider": "openrouter",
+        "model": "qwen/qwen3.8-27b:free"
+      }
+    ]
+  },
+  "cloud_output_tokens": {
+    "job_extraction": 900,
+    "question_classification": 500,
+    "scoring": 1200,
+    "deep_analysis": 1800,
+    "sponsorship_review": 1200,
+    "resume_strategy": 1400,
+    "resume_writing": 1800,
+    "outreach": 900,
+    "application_answer": 1400
+  },
+  "cloud_timeout_seconds": 40,
+  "cloud_attempt_timeout_seconds": 12
 }

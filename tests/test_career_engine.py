@@ -162,7 +162,7 @@ def test_openrouter_is_free_only_and_redacts_identity(monkeypatch):
     assert result.source_ids==['verified'] and len(calls)==1
     request=calls[0][1]
     assert request['trust_env'] is False and request['follow_redirects'] is False
-    assert request['json']['models']==list(module.SAFE_FREE_MODELS)
+    assert request['json']['models']==[module.SAFE_FREE_MODELS[0]]
     assert all(model.endswith(':free') for model in request['json']['models'])
     sent=json.dumps(request['json'])
     for value in [private['personal_details']['full_name'],private['personal_details']['email'],private['personal_details']['phone'],private['personal_details']['linkedin_url'],'taylor@example.com','+49 170 1234567','https://linkedin.example/private']:

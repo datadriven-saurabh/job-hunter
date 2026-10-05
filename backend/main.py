@@ -93,7 +93,12 @@ def require_profile(id='local'):
     return value
 
 @app.get('/health')
-def health(): return {'status':'healthy','engine':'LangGraph','mode':'hosted' if db.HOSTED else 'local','generation':'Local Ollama model' if os.getenv('ENABLE_LOCAL_LLM')=='true' else 'Grounded templates and rubric-based coaching'}
+def health():
+    from backend.ai.router import CONFIG_PATH,provider_name
+    provider=provider_name()
+    return {'status':'healthy','engine':'LangGraph','mode':'hosted' if db.HOSTED else 'local',
+            'generation':'Task-routed cloud AI with grounded fallback' if provider in {'groq','openrouter'} else 'Local Ollama model' if provider=='ollama' else 'Grounded templates and rubric-based coaching',
+            'ai_routing':{'version':json.loads(CONFIG_PATH.read_text())['version'],'configured_provider':provider,'deterministic_fallback':True}}
 
 @app.get('/auth-config')
 def auth_config():

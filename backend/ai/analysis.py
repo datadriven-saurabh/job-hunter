@@ -46,7 +46,8 @@ def analysis_key(job,profile,router):
     for tier,model in router.config['tiers'].items():
         try:identities[tier]=router._identity(model)
         except ModelUnavailable:identities[tier]=None
-    return digest([facts,profile,router.config,identities,dict(PROMPT_VERSIONS),'job-analysis-v1'])
+    routes = {task:ModelRouter._cloud_candidates(router,task) for task in ['job_extraction','scoring','deep_analysis']}
+    return digest([facts,profile,router.config,identities,routes,dict(PROMPT_VERSIONS),'job-analysis-v2'])
 
 
 def analyze_jobs(jobs,profile,criteria,router=None):
