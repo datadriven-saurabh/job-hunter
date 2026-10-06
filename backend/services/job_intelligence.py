@@ -47,8 +47,11 @@ def visa_signal(text,source_url=''):
 
 def language_requirements(text):
     result=[]
-    for sentence in re.split(r'(?<=[.!?])\s+|\n+|;|\bbut\b|\band\s+(?=(?:English|German|French|Dutch|Spanish|Italian|Hindi)\b)',text,flags=re.I):
-        for language in ['English','German','French','Dutch','Spanish','Italian','Hindi']:
+    languages=['English','German','French','Dutch','Spanish','Italian','Hindi']
+    language_start='(?:'+'|'.join(languages)+r')\b'
+    separators=r'(?<=[.!?])\s+|\n+|;|\bbut\b|,\s*(?:and\s+)?(?='+language_start+r')|\band\s+(?='+language_start+r')'
+    for sentence in re.split(separators,text,flags=re.I):
+        for language in languages:
             if not re.search(r'\b'+language+r'\b',sentence,re.I):continue
             if re.search(r'not (?:required|necessary|needed)|no .{0,25}(?:required|necessary)|without .{0,25}knowledge',sentence,re.I):continue
             if re.search(r'preferred|nice.to.have|bonus|advantage|optional',sentence,re.I):importance='preferred'

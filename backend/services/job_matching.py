@@ -115,8 +115,9 @@ def exclusions(job, criteria):
     if any(contains(content,x) for x in criteria.get('dealbreaker_keywords',[])):reasons.append('Excluded keyword')
     if criteria.get('min_salary_threshold') and job.get('salary_max') and job['salary_max']<criteria['min_salary_threshold']:reasons.append('Salary preference')
     if not all(contains(content,x) for x in criteria.get('required_stack_keywords',[])):reasons.append('Required search keyword')
-    kind=job.get('employment_type','')
-    if kind.lower() not in {'','not specified','unknown','unspecified'} and criteria.get('employment_types') and kind not in criteria['employment_types']:reasons.append('Employment type')
+    kind=(job.get('employment_type') or '').strip().casefold()
+    accepted={value.strip().casefold() for value in criteria.get('employment_types',[]) if value}
+    if kind not in {'','not specified','unknown','unspecified'} and accepted and kind not in accepted:reasons.append('Employment type')
     max_age=criteria.get('max_posting_age_days')
     if max_age:
         from backend.services.job_intelligence import posting_time

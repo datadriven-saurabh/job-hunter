@@ -109,6 +109,26 @@ def test_missing_employment_type_is_not_assumed_full_time():
     assert job_sources.employment('  ')=='Not specified'
     assert job_sources.employment('FULL_TIME')=='Full-time'
 
+def test_company_feeds_preserve_unknown_and_explicit_employment_types(monkeypatch):
+    from backend.agents.scout_agent import fetch_feed
+
+    class Response:
+        def __init__(self, jobs):self.jobs=jobs
+        def raise_for_status(self):pass
+        def json(self):return {'jobs':self.jobs} if isinstance(self.jobs, list) and self.jobs and 'title' in self.jobs[0] else self.jobs
+
+    greenhouse=[
+        {'id':1,'title':'Analyst','absolute_url':'https://example.com/1'},
+        {'id':2,'title':'Analyst','absolute_url':'https://example.com/2','employment_type':'PART_TIME'},
+    ]
+    lever=[
+        {'id':'1','text':'Analyst','hostedUrl':'https://example.com/1'},
+        {'id':'2','text':'Analyst','hostedUrl':'https://example.com/2','categories':{'commitment':'Contract'}},
+    ]
+    monkeypatch.setattr(job_sources,'public_get',lambda url:Response(greenhouse if 'greenhouse' in url else lever))
+    assert [job['employment_type'] for job in fetch_feed('greenhouse','example')]==['Not specified','Part-time']
+    assert [job['employment_type'] for job in fetch_feed('lever','example')]==['Not specified','Contract']
+
 def test_multisource_partial_failure_and_cache(monkeypatch):
     def retrieve(provider,**kwargs):
         if provider=='hiringcafe':raise job_sources.SourceUnavailable('Public access unavailable (HTTP 403).')

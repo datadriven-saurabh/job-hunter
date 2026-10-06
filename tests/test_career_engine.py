@@ -113,6 +113,28 @@ def test_language_required_vs_preferred():
     assert language_eligibility(required,p)['eligible'] is False
 
 
+@pytest.mark.parametrize('posting', [
+    'German preferred, English required.',
+    'English required, German preferred.',
+    'German preferred, and English required.',
+])
+def test_comma_separated_language_requirements_keep_their_own_importance(posting):
+    rules=language_requirements(posting)
+    expected=[('German','preferred'),('English','required')]
+    if posting.startswith('English'):
+        expected.reverse()
+    assert [(r['language'],r['importance']) for r in rules]==expected
+    profile={'base_resume':{'languages':[{'language':'German','level':'C1'}]}}
+    assert language_eligibility(rules,profile)['unknown']==['English']
+
+
+def test_negated_language_does_not_hide_required_language_after_comma():
+    rules=language_requirements('German is not required, English C1 is required.')
+    assert [(r['language'],r['importance'],r['level']) for r in rules]==[
+        ('English','required','C1')
+    ]
+
+
 def test_disabled_models_make_no_network_calls(monkeypatch):
     import backend.ai.router as module
     monkeypatch.setattr(module.httpx,'get',lambda *a,**kw:pytest.fail('Disabled AI accessed network'))

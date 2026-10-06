@@ -32,6 +32,12 @@ def test_priority_uses_job_coverage_and_evidence():
     assert exclusions(dict(job(),employment_type='Contract'),criteria())==['Employment type']
 
 
+def test_employment_type_filter_ignores_capitalization_and_padding():
+    rules=dict(criteria(),employment_types=['Full-time'])
+    assert not exclusions(dict(job(),employment_type=' full-TIME '),rules)
+    assert exclusions(dict(job(),employment_type='Contract'),rules)==['Employment type']
+
+
 def test_posting_age_filter_uses_source_date_and_rejects_unknown_dates():
     rules=dict(criteria(),max_posting_age_days=7)
     recent=(datetime.now(timezone.utc)-timedelta(days=2)).isoformat()

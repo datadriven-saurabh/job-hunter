@@ -1,6 +1,6 @@
 # Free local model trial — September 15, 2026
 
-The following models were tested on the development computer (16 GB unified memory). Model downloads and prompts stayed local; no hosted-model API fee was incurred. The downloads live in the ignored local model directory, not in this repository.
+The following models were tested on the development computer (16 GB unified memory). Model downloads and prompts stayed local; no hosted-model API fee was incurred. The downloads were stored in the ignored local model directory, not in this repository.
 
 | Model | Exact cases passed | Total elapsed time |
 | --- | --- | --- |
@@ -10,7 +10,7 @@ The following models were tested on the development computer (16 GB unified memo
 
 These are three synthetic skill-extraction cases in `backend/model_api.py`: overlapping skills, completely disjoint profile/job skills, and negated experience combined with an instruction-like job sentence. Exact matched/missing sets must agree with the fixture. Times include model loading and three requests; temperature is 0.2, so results can vary. This is a small application compatibility check, not an overall model-quality or resume-writing benchmark.
 
-DeepSeek included irrelevant profile skills in the disjoint case and treated an injected Java instruction as a job requirement. Nemotron returned valid JSON after its thinking-mode compatibility fix, but still misclassified the evidence in all three cases. Qwen also failed the disjoint case. The existing model remains selected; the new models are installed and available for further tests in Model lab. Evidence validators remain necessary for every model.
+DeepSeek included irrelevant profile skills in the disjoint case and treated an injected Java instruction as a job requirement. Nemotron returned valid JSON after its thinking-mode compatibility fix, but still misclassified the evidence in all three cases. Qwen also failed the disjoint case. The existing model remains selected; the DeepSeek and Nemotron trial downloads were removed on October 5, 2026 and can be reinstalled using the commands below. Evidence validators remain necessary for every model.
 
 Nemotron's default thinking mode produced an empty final response with the schema-constrained `/api/generate` request. Job Hunter now uses `think: false` for `nemotron-3-nano` structured generation, as it already does for Qwen3. Reasoning text is not substituted for a validated final response.
 

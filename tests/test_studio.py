@@ -17,8 +17,9 @@ def test_kit_pdf_messages_and_edits():
         pdf=c.get(f'/api/v1/studio/kits/{id}/resume')
         reader=PdfReader(io.BytesIO(pdf.content));assert len(reader.pages)==1
         text=reader.pages[0].extract_text()
-        assert PROFILE['personal_details']['full_name'] in text
-        assert 'CHLOE' not in text and 'PROFILE' in text and 'EDUCATION' in text
+        assert PROFILE['personal_details']['full_name'].upper() in text
+        assert 'CHLOE' not in text and 'PROFILE' not in text
+        assert text.index('EDUCATION') < text.index('EXPERIENCE') < text.index('ADDITIONAL')
         assert len(kit['connection_note'])<300 and 'REQ-123' in kit['referral_message']
         assert kit['named_contacts'][0]['name']=='Jane Smith'
         assert 'not necessarily' in kit['contact_note']
