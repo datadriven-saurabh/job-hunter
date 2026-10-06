@@ -4,7 +4,7 @@ import {planCategory, searchCategories, sourceTiming} from '../src/lib/searchCat
 const source=(id, extra={})=>({id,name:id,kind:'public-search',available:true,...extra});
 
 test('one category excludes sources from every other category',()=>{
- const catalog=['linkedin','remoteok','arbeitnow','yc','vanhack','jobbatical'].map(id=>source(id));
+ const catalog=['linkedin','remoteok','arbeitnow','yc','vanhack','jobbatical','contextdev'].map(id=>source(id));
  for(const c of searchCategories){
   assert.equal(planCategory(c.id,catalog).selected.length,1);
   assert.ok(planCategory(c.id,catalog).selected.every(s=>c.sources.includes(s.id)));

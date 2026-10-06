@@ -6,6 +6,7 @@ export const searchCategories = [
  {id:'europe',name:'Europe & UK',description:'Regional boards covering European and UK opportunities.',sources:['arbeitnow','arbeitnow_uk','stepstone','germantechjobs','hyrise','landingjobs']},
  {id:'international',name:'International & relocation',description:'International hiring boards. Relocation support depends on the employer.',sources:['vanhack','relocate','eures','workinfinland','makeitingermany']},
  {id:'employers',name:'Employer career pages',description:'Direct employer openings and links to company career platforms.',sources:['jobbatical','ja_solar','greenhouse','lever','ashby','smartrecruiters']},
+ {id:'context',name:'Context.dev ATS search',description:'Search up to 10 direct ATS postings with page text. Uses up to 2 credits per search. Select Any age when posting dates are unknown.',sources:['contextdev']},
 ];
 
 export function planCategory<T extends SearchSource>(categoryId:string,catalog:T[],sourceId='auto') {

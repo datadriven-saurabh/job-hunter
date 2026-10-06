@@ -98,6 +98,10 @@ The **profile-fit score** helps prioritize jobs; **resume text similarity** help
 - [Chrome autofill and LinkedIn post capture](docs/USER_GUIDE.md#optional-chrome-autofill) — manual installation, visible-post capture, no automatic sending.
 - [Developer guide](docs/DEVELOPMENT.md) — tests, architecture, source adapters and contribution checks.
 
+### Optional Context.dev job search
+
+Add your Context.dev key as `CONTEXT_DEV_API_KEY` in the ignored `.env` file (or a server-side secret for hosted deployments). Restart the API, open **Find opportunities**, and choose **Context.dev ATS search**. Enter a role and optional location. The app searches up to 10 direct employer ATS postings, then applies your saved profile and preference checks locally. Your resume and profile text are not sent to Context.dev. One search with page text costs up to 2 credits; repeated identical searches use the app's 15-minute cache. Results have no verified posting date or location, so choose **Any age** if your date filter would otherwise exclude them, and confirm details on the original posting.
+
 The base Docker setup has live submission and AI generation **disabled**. Preparing documents never sends an application or LinkedIn message.
 
 ## Your data and other users

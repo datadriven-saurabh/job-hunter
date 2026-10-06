@@ -2,12 +2,13 @@
 import hashlib
 import html
 import json
+import os
 import re
 import time
 from xml.etree import ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import copy_context
-from urllib.parse import urlencode, urljoin, urlparse, quote
+from urllib.parse import urlencode, urljoin, urlparse, urlunparse, quote
 import httpx
 from bs4 import BeautifulSoup
 from backend import database as db
@@ -36,6 +37,8 @@ SOURCE_INFO.extend([{'id':key,'name':value[0],'kind':'public-search','url':value
                     'note':'Public pages; up to 10 new detail pages. Limited snapshots or access blocks are reported.'} for key,value in BOARDS.items()])
 SOURCE_INFO.append({'id':'hackernews','name':'Hacker News','kind':'public-search','url':'https://news.ycombinator.com/jobs','note':'Official public jobs API, latest 50 posts. Some posts contain only a title and employer link.'})
 SOURCE_INFO.append({'id':'workingnomads','name':'Working Nomads','kind':'public-search','url':'https://www.workingnomads.com/jobs','note':'Public jobs API; limited feed snapshot cached for six hours.'})
+SOURCE_INFO.append({'id':'contextdev','name':'Context.dev web search','kind':'public-search','url':'https://www.context.dev/',
+                    'note':'Explicit web search of up to 10 candidate postings; uses up to 2 Context.dev credits per uncached search. Verify every original posting.'})
 SOURCE_INFO.extend([
  {'id':'germantechjobs','name':'GermanTechJobs','kind':'public-page','url':'https://germantechjobs.de'},
  {'id':'otta','name':'Otta / Welcome to the Jungle','kind':'public-page','url':'https://uk.welcometothejungle.com/'},
@@ -92,7 +95,7 @@ def source_catalog(include_unavailable=False):
     suspended={r['cache_key'].removeprefix('source-block:'):json.loads(r['payload']) for r in db.query("SELECT * FROM source_cache WHERE cache_key LIKE 'source-block:%' AND fetched_at>:cutoff",{'cutoff':time.time()-3600})}
     result=[]
     for source in SOURCE_INFO:
-        reason=('Company-specific board; use the employer posting URL to import a job.' if source['kind']=='company-board' else '') or MANUAL_ONLY.get(source['id']) or suspended.get(source['id'],{}).get('error','')
+        reason=('Company-specific board; use the employer posting URL to import a job.' if source['kind']=='company-board' else '') or MANUAL_ONLY.get(source['id']) or ('Set CONTEXT_DEV_API_KEY on the server to enable this source.' if source['id']=='contextdev' and not os.getenv('CONTEXT_DEV_API_KEY') else '') or suspended.get(source['id'],{}).get('error','')
         entry={**source,'available':not bool(reason),'note':reason or source.get('note','Public job listings.')}
         if include_unavailable or entry['available']:result.append(entry)
     return result
@@ -218,7 +221,43 @@ def stepstone_jobs(keywords='',location='',limit=20):
     result=list({j['job_url']:j for j in result}.values())
     return [j for j in result if all(w in (j['job_title']+' '+j['description']).lower() for w in keywords.lower().split())][:min(limit,10)]
 
+def context_jobs(keywords='',location='',limit=20):
+    """Turn relevant direct posting pages into candidates for local profile matching."""
+    from backend.services.context_dev import search_web
+    terms=keywords.casefold().split()
+    if not terms:raise SourceUnavailable('Enter a job title or keywords for Context.dev web search.')
+    role_query=keywords.strip().replace('"','')
+    query=' '.join(filter(None,[f'"{role_query}"',location.strip(),'job opening apply']))
+    search=search_web(query)
+    jobs=[]
+    for item in search['results']:
+        parsed=urlparse(item.get('url') or '')
+        if parsed.scheme!='https' or not parsed.hostname or parsed.username or parsed.password:continue
+        # Search results can include articles and broad listing pages. Accept
+        # only direct postings from the same ATS hosts sent to the search API.
+        host=parsed.hostname.casefold();path=parsed.path.casefold()
+        segments=[part for part in path.split('/') if part]
+        direct=(host in {'jobs.ashbyhq.com','jobs.lever.co','jobs.smartrecruiters.com'} and len(segments)>=2
+                or host in {'job-boards.greenhouse.io','boards.greenhouse.io'} and len(segments)>=3 and segments[1]=='jobs'
+                or host=='apply.workable.com' and len(segments)>=3 and segments[1]=='j')
+        if not direct:continue
+        title=' '.join((item.get('title') or '').split())
+        if not title or not all(term in title.casefold() for term in terms):continue
+        title=re.split(r'\s+[|–-]\s+(?:LinkedIn|Indeed|Glassdoor|Jobs|Careers)$',title,flags=re.I)[0]
+        role,separator,company=title.partition(' at ')
+        if separator and role.strip() and company.strip():title=role.strip();company=company.strip()
+        else:company='Company not listed'
+        url=urlunparse(parsed._replace(fragment=''))
+        description=(item.get('markdown') or item.get('snippet') or '').strip()[:20000]
+        if not description:continue
+        jobs.append({'job_title':title,'company_name':company,'job_url':url,'source_url':url,
+                     'description':description,'description_incomplete':not bool(item.get('markdown')) or len(description.split())<35,
+                     'location':'','employment_type':'Not specified','posted_at':None,'source':'Context.dev web search'})
+        if len(jobs)>=min(limit,10):break
+    return jobs
+
 def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
+    if provider=='contextdev':return context_jobs(keywords,location,limit)
     if provider=='ja_solar':
         from backend.agents.personio_feed import parse_ja_solar
         return parse_ja_solar(public_get('https://ja-solar.jobs.personio.de/xml?language=en').text,keywords,limit)
