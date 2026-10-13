@@ -223,13 +223,16 @@ def stepstone_jobs(keywords='',location='',limit=20):
 
 def context_jobs(keywords='',location='',limit=20):
     """Turn relevant direct posting pages into candidates for local profile matching."""
+    from backend.agents.scout_agent import job_id
     from backend.services.context_dev import search_web
-    terms=keywords.casefold().split()
+    def role_words(value):
+        return re.sub(r'[-–—/,;:]+',' ',value.replace('"','')).split()
+    terms=[word.casefold() for word in role_words(keywords)]
     if not terms:raise SourceUnavailable('Enter a job title or keywords for Context.dev web search.')
-    role_query=keywords.strip().replace('"','')
+    role_query=' '.join(role_words(keywords))
     query=' '.join(filter(None,[f'"{role_query}"',location.strip(),'job opening apply']))
     search=search_web(query)
-    jobs=[]
+    jobs={}
     for item in search['results']:
         parsed=urlparse(item.get('url') or '')
         if parsed.scheme!='https' or not parsed.hostname or parsed.username or parsed.password:continue
@@ -242,19 +245,25 @@ def context_jobs(keywords='',location='',limit=20):
                 or host=='apply.workable.com' and len(segments)>=3 and segments[1]=='j')
         if not direct:continue
         title=' '.join((item.get('title') or '').split())
-        if not title or not all(term in title.casefold() for term in terms):continue
         title=re.split(r'\s+[|–-]\s+(?:LinkedIn|Indeed|Glassdoor|Jobs|Careers)$',title,flags=re.I)[0]
-        role,separator,company=title.partition(' at ')
-        if separator and role.strip() and company.strip():title=role.strip();company=company.strip()
+        parts=re.split(r'\s+at\s+',title,maxsplit=1,flags=re.I)
+        if len(parts)==2 and parts[0].strip() and parts[1].strip():title=parts[0].strip();company=parts[1].strip()
         else:company='Company not listed'
+        role_title=' '.join(role_words(title)).casefold()
+        if not all(re.search(r'(?<!\w)'+re.escape(term)+r'(?!\w)',role_title) for term in terms):continue
         url=urlunparse(parsed._replace(fragment=''))
         description=(item.get('markdown') or item.get('snippet') or '').strip()[:20000]
         if not description:continue
-        jobs.append({'job_title':title,'company_name':company,'job_url':url,'source_url':url,
-                     'description':description,'description_incomplete':not bool(item.get('markdown')) or len(description.split())<35,
-                     'location':'','employment_type':'Not specified','posted_at':None,'source':'Context.dev web search'})
-        if len(jobs)>=min(limit,10):break
-    return jobs
+        candidate={'job_title':title,'company_name':company,'job_url':url,'source_url':url,
+                   'description':description,'description_incomplete':not bool(item.get('markdown')) or len(description.split())<35,
+                   'location':'','employment_type':'Not specified','posted_at':None,'source':'Context.dev web search'}
+        # Tracking variants share an identity; keep the fuller result without
+        # spending another display slot on the same posting.
+        key=job_id(url)
+        previous=jobs.get(key)
+        if not previous or (not candidate['description_incomplete'],len(description))>(not previous['description_incomplete'],len(previous['description'])):
+            jobs[key]=candidate
+    return list(jobs.values())[:min(limit,10)]
 
 def retrieve(provider,board='',keywords='',location='',limit=20,page_url=''):
     if provider=='contextdev':return context_jobs(keywords,location,limit)

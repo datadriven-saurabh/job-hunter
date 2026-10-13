@@ -112,3 +112,31 @@ def test_rejected_worker_submission_releases_active_run(monkeypatch):
     assert result['state']=='queued'
     pool.task()
     assert runs.status(result['run_id'])['state']=='complete'
+
+
+def test_stale_run_releases_slot_and_late_worker_cannot_replace_retry(monkeypatch):
+    rows=[{'id':'stale-a','name':'Stale A','available':True,'kind':'public-search'},
+          {'id':'stale-b','name':'Stale B','available':True,'kind':'public-search'}]
+    class Queued:
+        def __init__(self):self.tasks=[]
+        def submit(self,fn,*args):self.tasks.append(lambda:fn(*args))
+    pool=Queued();monkeypatch.setattr(runs,'_pool',pool)
+    old_id=None
+    retry=None
+    def delayed_search(_):
+        nonlocal retry
+        key='search-run:'+runs.db.current_user()+':'+old_id
+        value=runs.read(key)
+        value['updated_at']=time.time()-runs.SOURCE_TIMEOUT_SECONDS-121
+        runs.write(key,value)
+        assert runs.status(old_id)['state']=='interrupted'
+        retry=runs.start(SearchRequest(sources=['stale-b']),lambda _: {'count':1,'sources':[{'source':'stale-b','status':'success'}]},rows)
+        return {'count':1,'sources':[{'source':'stale-a','status':'success'}]}
+
+    old=runs.start(SearchRequest(sources=['stale-a']),delayed_search,rows)
+    old_id=old['run_id']
+    pool.tasks[0]()
+    assert runs.status(old_id)['state']=='interrupted'
+    assert runs._active[runs.db.current_user()]==retry['run_id']
+    pool.tasks[1]()
+    assert runs.status(retry['run_id'])['state']=='complete'

@@ -39,10 +39,19 @@ def catalog(rows):
     return sorted(result,key=lambda row:(not row['available'],row['estimated_seconds']))
 
 def status(run_id):
-    value=read('search-run:'+db.current_user()+':'+run_id)
+    user=db.current_user();key='search-run:'+user+':'+run_id
+    value=read(key)
     if not value:raise HTTPException(404,'Search not found')
     if value['state'] in {'queued','running'} and time.time()-value['updated_at']>SOURCE_TIMEOUT_SECONDS+120:
-        value.update(state='interrupted',message='Search was interrupted. Saved results are retained; refresh opportunities before retrying.')
+        with _lock:
+            value=read(key)
+            if value['state'] not in {'queued','running'} or time.time()-value['updated_at']<=SOURCE_TIMEOUT_SECONDS+120:
+                return value
+            # A timed-out worker may still return later. Release its reservation
+            # and fence its progress writes so the user can start another run.
+            if _active.get(user)==run_id:_active.pop(user)
+            value.update(state='interrupted',updated_at=time.time(),message='Search was interrupted. Saved results are retained; refresh opportunities before retrying.')
+            write(key,value)
     return value
 
 def start(body,search,rows):
@@ -61,11 +70,19 @@ def start(body,search,rows):
         write(key,value);_active[user]=run_id
         context=copy_context()
         def work():
+            def write_if_current():
+                with _lock:
+                    if _active.get(user)!=run_id:return False
+                    write(key,value)
+                    return True
             try:
                 for source in providers:
-                    value.update(state='running',message='Fetching and matching '+choices[source]['name'],updated_at=time.time());write(key,value)
+                    value.update(state='running',message='Fetching and matching '+choices[source]['name'],updated_at=time.time())
+                    if not write_if_current():return
                     started=time.monotonic()
                     result=search(body.model_copy(update={'sources':[source]}))
+                    with _lock:
+                        if _active.get(user)!=run_id:return
                     elapsed=time.monotonic()-started
                     reports=result.get('sources',[])
                     metric=read(metric_key(source)) or {}
@@ -84,15 +101,19 @@ def start(body,search,rows):
                         metric['failure_streak']=metric.get('failure_streak',0)+1
                         metric['last_failure_at']=time.time()
                     if any(r['status']=='success' for r in reports):metric['last_success']=time.time()
-                    write(metric_key(source),metric)
-                    value['sources'].extend(reports);value['count']+=result.get('count',0);value['completed']+=1;value['updated_at']=time.time();write(key,value)
+                    with _lock:
+                        if _active.get(user)!=run_id:return
+                        write(metric_key(source),metric)
+                        value['sources'].extend(reports);value['count']+=result.get('count',0);value['completed']+=1;value['updated_at']=time.time()
+                        write(key,value)
                 value.update(state='complete',message=f"Search finished: {value['count']} new opportunities.")
             except Exception:
                 value.update(state='failed',message='Search could not finish. Completed results are saved; refresh opportunities before retrying.')
             finally:
-                try:value['updated_at']=time.time();write(key,value)
-                finally:
-                    with _lock:_active.pop(user,None)
+                with _lock:
+                    if _active.get(user)==run_id:
+                        try:value['updated_at']=time.time();write(key,value)
+                        finally:_active.pop(user,None)
         try:
             _pool.submit(context.run,work)
         except Exception:

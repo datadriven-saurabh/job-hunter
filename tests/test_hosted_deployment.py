@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+import subprocess
 
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -23,5 +24,9 @@ def test_hosted_secrets_are_server_only():
     assert 'NEXT_PUBLIC_SUPABASE_ANON_KEY' in frontend
     render=(ROOT/'render.yaml').read_text()
     assert 'OPENROUTER_API_KEY' in render and 'sync: false' in render
-    source='\n'.join(p.read_text(errors='ignore') for p in ROOT.rglob('*') if p.is_file() and '.git' not in p.parts and 'node_modules' not in p.parts and '.next' not in p.parts)
+    # Check versioned and new project files without reading ignored local data,
+    # model weights, dependencies, or secrets from the developer's machine.
+    listed=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z'],cwd=ROOT)
+    paths=[ROOT / name.decode() for name in listed.split(b'\0') if name]
+    source='\n'.join(p.read_text(errors='ignore') for p in paths if p.is_file())
     assert not re.search(r'sk-or-v1-[0-9a-f]{64}',source)

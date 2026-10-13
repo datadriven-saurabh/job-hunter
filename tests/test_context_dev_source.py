@@ -54,6 +54,12 @@ def test_context_source_requires_key_and_search_terms(monkeypatch):
         assert 'keywords' in str(exc)
     else:
         assert False, 'An empty query must not spend credits.'
+    try:
+        job_sources.context_jobs('" , - "')
+    except job_sources.SourceUnavailable as exc:
+        assert 'keywords' in str(exc)
+    else:
+        assert False, 'Punctuation-only keywords must not spend credits.'
 
 
 def test_context_results_keep_direct_postings_without_invented_facts(monkeypatch):
@@ -79,6 +85,47 @@ def test_context_results_keep_direct_postings_without_invented_facts(monkeypatch
     assert jobs[0]['source_url']==jobs[0]['job_url']
     assert not jobs[0]['description_incomplete']
     assert jobs[1]['description_incomplete']
+
+
+def test_context_title_match_accepts_common_keyword_separators(monkeypatch):
+    queries=[]
+    def search(query):
+        queries.append(query)
+        return {'results':[result('Full Stack Engineer at Example Co','https://jobs.ashbyhq.com/example/123')]}
+    monkeypatch.setattr(context_dev,'search_web',search)
+    jobs=job_sources.context_jobs('Full-Stack, Engineer')
+    assert queries==['"Full Stack Engineer" job opening apply']
+    assert len(jobs)==1
+    assert jobs[0]['job_title']=='Full Stack Engineer'
+
+
+def test_context_title_match_uses_complete_role_words(monkeypatch):
+    monkeypatch.setattr(context_dev,'search_web',lambda query:{'results':[
+        result('JavaScript Developer at Example Co','https://jobs.ashbyhq.com/example/123'),
+        result('Developer at Java Labs','https://jobs.lever.co/java-labs/456'),
+        result('Java Developer at Other Co','https://jobs.lever.co/other/789'),
+    ]})
+
+    jobs=job_sources.context_jobs('Java Developer')
+
+    assert [job['job_title'] for job in jobs]==['Java Developer']
+
+
+def test_context_duplicate_postings_do_not_hide_distinct_results(monkeypatch):
+    full_description='Build reliable software with Python and TypeScript. ' * 8
+    monkeypatch.setattr(context_dev,'search_web',lambda query:{'results':[
+        result('Software Engineer at Example Co','https://jobs.ashbyhq.com/example/123?utm_source=search',None),
+        result('Software Engineer at Example Co','https://jobs.ashbyhq.com/example/123',full_description),
+        result('Software Engineer at Other Co','https://jobs.lever.co/other/456'),
+    ]})
+
+    jobs=job_sources.context_jobs('Software Engineer',limit=2)
+
+    assert len(jobs)==2
+    assert jobs[0]['company_name']=='Example Co'
+    assert jobs[0]['description']==full_description.strip()
+    assert not jobs[0]['description_incomplete']
+    assert jobs[1]['company_name']=='Other Co'
 
 
 def test_context_source_uses_existing_profile_matching_pipeline(monkeypatch):
