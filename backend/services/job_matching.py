@@ -43,10 +43,40 @@ def contains(text, term):
 def detected(text, extra=()):
     return {skill for skill,aliases in SKILLS.items() if any(contains(text,a) for a in aliases)} | {skill for skill in extra if skill.strip() and contains(text,skill)}
 
+def skill_requirement_negated(line, skill):
+    """Recognize a skill explicitly described as unnecessary in one clause."""
+    before_cue=r'(?:(?!\b(?:required|needed|necessary)\b)[^,;.!?])'
+    for alias in SKILLS.get(skill, [skill]):
+        term=r'(?<!\w)'+re.escape(alias)+r'(?!\w)'
+        if re.search(term+before_cue+r'{0,30}\bnot\s+(?:required|needed|necessary)\b',line,re.I):
+            return True
+        if re.search(r'\bno\b'+before_cue+r'{0,40}'+term+before_cue+r'{0,30}\b(?:required|needed|necessary)\b',line,re.I):
+            return True
+    return False
+
 def affirmed_skills(text, extra=()):
     """Conservatively omit negated/aspirational clauses from candidate evidence."""
     clauses=re.split(r'\n|(?<=[.!?])\s+|\bbut\b|;',text,flags=re.I)
-    return set().union(*(detected(c,extra) for c in clauses if not re.search(r"\b(?:not(?! only)|never|no experience|without experience|haven.t|have not|want to learn|plan to learn|interested in learning|currently learning|am learning|beginner in|no knowledge|lack of experience)\b",c,re.I)))
+    found=set()
+    for clause in clauses:
+        if re.search(r"\b(?:not(?! only)|never|haven.t|have not)\b",clause,re.I):
+            continue
+        qualifier=re.search(r"\b(?:no|without experience|want to learn|plan to learn|interested in learning|currently learning|am learning|beginner in|lack of experience)\b",clause,re.I)
+        found.update(detected(clause[:qualifier.start()] if qualifier else clause,extra))
+    return found
+
+
+def requirement_clauses(text):
+    """Keep comma lists together unless separate items state their own priority."""
+    cue=re.compile(r'\b(?:preferred|nice.to.have|bonus|a plus|desirable|must|required|strong (?:expertise|proficiency|knowledge)|essential|is core|proficien\w*)\b',re.I)
+    for sentence in re.split(r"\n|(?<=[.!?])\s+|;|\bbut\b",text):
+        parts=sentence.split(',')
+        labeled=[index for index,part in enumerate(parts) if cue.search(part)]
+        start=0
+        for index in labeled[:-1]:
+            yield ','.join(parts[start:index+1]).strip()
+            start=index+1
+        yield ','.join(parts[start:]).strip()
 
 
 def family(title):
@@ -131,8 +161,8 @@ def assess(job, profile, criteria):
     custom=[s for s in profile['base_resume'].get('structured_skills',[]) if s.strip() and not detected(s)]
     # Description drives requirements; title alone cannot establish skill coverage.
     def required_mentions(line):
-        return {skill for skill in detected(line,custom) if not any(re.search(r'(?<!\w)'+re.escape(alias)+r'(?!\w)\s+(?:is\s+)?not (?:required|needed|necessary)',line,re.I) for alias in SKILLS.get(skill,[skill]))}
-    lines_with_skills=[(line,required_mentions(line)) for line in re.split(r"\n|(?<=[.!?])\s+|;|\bbut\b",jd)]
+        return {skill for skill in detected(line,custom) if not skill_requirement_negated(line,skill)}
+    lines_with_skills=[(line,required_mentions(line)) for line in requirement_clauses(jd)]
     requirements=set().union(*(skills for _,skills in lines_with_skills));available=affirmed_skills('\n'.join(t for _,t in evidence),custom)
     evidence_with_skills=[(source,text,affirmed_skills(text,custom)) for source,text in evidence]
     rows=[]

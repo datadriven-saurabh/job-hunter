@@ -29,6 +29,6 @@ def job_id(url):
         match=re.search(r'(\d+)$',parsed.path.rstrip('/'))
         if match:url='https://www.linkedin.com/jobs/view/'+match.group(1)
     else:
-        query=[(k,v) for k,v in parse_qsl(parsed.query) if not k.lower().startswith('utm_') and k.lower() not in {'ref','refid','source','tracking','trk','trackingid'}]
+        query=[(k,v) for k,v in parse_qsl(parsed.query) if not k.lower().startswith('utm_') and k.lower() not in {'ref','refid','source','tracking','trk','trackingid','gh_src'}]
         url=urlunparse((parsed.scheme.lower(),host,parsed.path.rstrip('/'),'',urlencode(sorted(query)),''))
     return hashlib.sha256(url.encode()).hexdigest()[:20]

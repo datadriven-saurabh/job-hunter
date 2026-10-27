@@ -21,3 +21,10 @@ def test_filters_dates_demo_role_and_negation():
     assert result['sample_size']==1 and result['unknown_dates']==1
     assert [s['skill'] for s in result['skills']]==['Tableau']
     assert summarize([unknown],days=0,now=NOW)['sample_size']==1
+
+
+def test_negated_skill_before_alias_is_not_counted():
+    listing=job()
+    listing['description']='No Python experience is required. Tableau preferred.'
+    skills=summarize([listing],now=NOW)['skills']
+    assert [row['skill'] for row in skills]==['Tableau']

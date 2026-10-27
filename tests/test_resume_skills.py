@@ -19,6 +19,18 @@ Example University
     assert 'Python' not in result and 'Example University' not in result
 
 
+def test_skills_before_learning_qualifier_are_preserved():
+    result=extract_skills('Skills: SQL, Lifecycle strategy, currently learning Rust')
+    assert 'SQL' in result and 'Lifecycle strategy' in result
+    assert 'Rust' not in result
+
+
+def test_negation_at_start_of_skills_line_excludes_following_items():
+    result=extract_skills('Skills: no experience in Python, SQL, Rust')
+    assert not {'Python', 'SQL', 'Rust'} & set(result)
+    assert extract_skills('Skills: I have no experience in Python') == []
+
+
 def test_uploaded_resume_preserves_additions_and_deduplicates():
     existing=copy.deepcopy(PROFILE)
     existing['base_resume']['structured_skills']=['Custom research','SEO']

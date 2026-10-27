@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from backend.main import app
 from backend.demo import PROFILE, CONFIG
-from backend.services.job_matching import assess, exclusions, experience_years
+from backend.services.job_matching import affirmed_skills, assess, exclusions, experience_years, skill_requirement_negated
 
 
 def analytics_profile():
@@ -93,3 +93,31 @@ def test_missing_emphasized_requirement_caps_priority():
     fit=assess(posting,analytics_profile(),criteria())
     assert fit['priority']!='Apply first' and fit['score']<=69
     assert next(r for r in fit['requirements'] if r['skill']=='Databricks')['importance']=='required'
+
+
+def test_comma_separated_skill_requirements_keep_their_own_importance():
+    description=job()['description'].replace('dbt is preferred.','')
+    for clause in ('Python preferred, Databricks required.', 'Databricks required, Python preferred.'):
+        fit=assess(dict(job(),description=description+clause),analytics_profile(),criteria())
+        importance={row['skill']:row['importance'] for row in fit['requirements']}
+        assert importance['Databricks']=='required'
+        assert fit['score']<=69
+    grouped=assess(dict(job(),description=description+' Databricks, Snowflake and dbt required.'),analytics_profile(),criteria())
+    importance={row['skill']:row['importance'] for row in grouped['requirements']}
+    assert all(importance[skill]=='required' for skill in ('Databricks','Snowflake','dbt'))
+
+
+def test_negated_requirement_before_skill_does_not_count_as_demand():
+    posting=dict(job(),description=job()['description']+' No Databricks experience is required.')
+    fit=assess(posting,analytics_profile(),criteria())
+    assert 'Databricks' not in {row['skill'] for row in fit['requirements']}
+    assert skill_requirement_negated('No Python experience required and SQL required', 'Python')
+    assert not skill_requirement_negated('No Python experience required and SQL required', 'SQL')
+    assert not skill_requirement_negated('Python required and SQL is not required', 'Python')
+    assert skill_requirement_negated('Python required and SQL is not required', 'SQL')
+
+
+def test_profile_skill_qualifiers_preserve_prior_evidence_without_crediting_negated_skills():
+    assert affirmed_skills('Built Python dashboards, currently learning Rust.') == {'Python', 'Dashboards'}
+    assert affirmed_skills('Experienced in Python and no SQL.') == {'Python'}
+    assert affirmed_skills('No Python, SQL, or Rust experience.') == set()

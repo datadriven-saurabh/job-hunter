@@ -140,3 +140,23 @@ def test_stale_run_releases_slot_and_late_worker_cannot_replace_retry(monkeypatc
     assert runs._active[runs.db.current_user()]==retry['run_id']
     pool.tasks[1]()
     assert runs.status(retry['run_id'])['state']=='complete'
+
+
+def test_start_replaces_stale_run_without_status_poll(monkeypatch):
+    rows=[{'id':'stale-retry','name':'Stale retry','available':True,'kind':'public-search'}]
+    class Queued:
+        def submit(self,fn,*args):self.task=lambda:fn(*args)
+    pool=Queued();monkeypatch.setattr(runs,'_pool',pool)
+    body=SearchRequest(sources=['stale-retry'])
+    old=runs.start(body,lambda _:None,rows)
+    user=runs.db.current_user()
+    key='search-run:'+user+':'+old['run_id']
+    saved=runs.read(key)
+    saved['updated_at']=time.time()-runs.SOURCE_TIMEOUT_SECONDS-121
+    runs.write(key,saved)
+
+    retry=runs.start(body,lambda _: {'count':1,'sources':[{'source':'stale-retry','status':'success'}]},rows)
+    assert retry['run_id']!=old['run_id']
+    assert runs.status(old['run_id'])['state']=='interrupted'
+    pool.task()
+    assert runs.status(retry['run_id'])['state']=='complete'

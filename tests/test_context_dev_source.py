@@ -99,6 +99,27 @@ def test_context_title_match_accepts_common_keyword_separators(monkeypatch):
     assert jobs[0]['job_title']=='Full Stack Engineer'
 
 
+def test_context_ignores_outer_punctuation_without_spending_for_empty_terms(monkeypatch):
+    queries=[]
+    def search(query):
+        queries.append(query)
+        return {'results':[result('Senior C++ Engineer at Example Co','https://jobs.ashbyhq.com/example/123')]}
+    monkeypatch.setattr(context_dev,'search_web',search)
+
+    jobs=job_sources.context_jobs('Senior (C++) Engineer!!!')
+    assert queries==['"Senior C++ Engineer" job opening apply']
+    assert [job['job_title'] for job in jobs]==['Senior C++ Engineer']
+
+    for keywords in ('!!!', '() +++'):
+        try:
+            job_sources.context_jobs(keywords)
+        except job_sources.SourceUnavailable as exc:
+            assert 'keywords' in str(exc)
+        else:
+            assert False, 'Punctuation-only keywords must not spend credits.'
+    assert len(queries)==1
+
+
 def test_context_title_match_uses_complete_role_words(monkeypatch):
     monkeypatch.setattr(context_dev,'search_web',lambda query:{'results':[
         result('JavaScript Developer at Example Co','https://jobs.ashbyhq.com/example/123'),

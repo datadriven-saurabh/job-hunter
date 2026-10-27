@@ -124,6 +124,8 @@ def test_location_conflict_is_saved_for_review():
 def test_job_identity_preserves_requisition_query():
     assert job_id('https://example.com/job?reference=1')!=job_id('https://example.com/job?reference=2')
     assert job_id('https://example.com/job?id=1&utm_source=x')==job_id('https://example.com/job?id=1')
+    assert job_id('https://boards.greenhouse.io/example/jobs/42?gh_src=referral')==job_id('https://boards.greenhouse.io/example/jobs/42')
+    assert job_id('https://example.com/job?gh_jid=1')!=job_id('https://example.com/job?gh_jid=2')
     assert job_id('https://notlinkedin.com/123')!=job_id('https://linkedin.com/123')
 
 

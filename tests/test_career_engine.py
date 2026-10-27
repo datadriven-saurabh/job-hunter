@@ -135,6 +135,18 @@ def test_negated_language_does_not_hide_required_language_after_comma():
     ]
 
 
+@pytest.mark.parametrize('posting,expected', [
+    ('English and German required.', [('English','required'),('German','required')]),
+    ('English, German, and French preferred.', [('English','preferred'),('German','preferred'),('French','preferred')]),
+    ('English and German required, French preferred.', [('English','required'),('German','required'),('French','preferred')]),
+])
+def test_shared_language_qualifier_applies_to_each_language(posting,expected):
+    rules=language_requirements(posting)
+    assert [(r['language'],r['importance']) for r in rules]==expected
+    if posting.startswith('English and German required'):
+        assert language_eligibility(rules,{'base_resume':{'languages':[{'language':'German','level':'C1'}]}})['unknown']==['English']
+
+
 def test_disabled_models_make_no_network_calls(monkeypatch):
     import backend.ai.router as module
     monkeypatch.setattr(module.httpx,'get',lambda *a,**kw:pytest.fail('Disabled AI accessed network'))
@@ -224,6 +236,27 @@ def test_answer_limits_and_batch_avoid_reusing_available_story():
     assert [r['data']['story_id'] for r in results]==[r['data']['story_id'] for r in repeated]
     short=answer_questions(p,JOB,[dict(q[0],max_characters=20)])[0]
     assert short['status']=='needs_user_input' and not short['answer']
+
+
+@pytest.mark.parametrize('corrupt_cache', ['{incomplete', '[]', '{"status":"valid"}'])
+def test_corrupt_answer_cache_is_regenerated(monkeypatch, tmp_path, corrupt_cache):
+    import backend.services.application_answers as answers
+    monkeypatch.setattr(answers.db, 'user_data_path', lambda *parts: tmp_path / parts[-1])
+    generated = {'status': 'valid', 'data': {'story_id': None}, 'answer': 'Supported answer'}
+    calls = []
+    monkeypatch.setattr(answers, 'generate_answer', lambda *args, **kwargs: (calls.append(1), generated.copy())[1])
+    question = {'question': 'Why this role?'}
+    first = answers.answer_questions(PROFILE, JOB, [question])[0]
+    assert first['cache_hit'] is False
+    cache_file = next(tmp_path.glob('*.json'))
+    cache_file.write_text(corrupt_cache)
+
+    recovered = answers.answer_questions(PROFILE, JOB, [question])[0]
+    assert recovered['answer'] == 'Supported answer'
+    assert recovered['cache_hit'] is False
+    assert len(calls) == 2
+    assert json.loads(cache_file.read_text())['status'] == 'valid'
+    assert answers.answer_questions(PROFILE, JOB, [question])[0]['cache_hit'] is True
 
 
 def test_api_input_validation_and_rules():

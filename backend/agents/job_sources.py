@@ -226,7 +226,9 @@ def context_jobs(keywords='',location='',limit=20):
     from backend.agents.scout_agent import job_id
     from backend.services.context_dev import search_web
     def role_words(value):
-        return re.sub(r'[-–—/,;:]+',' ',value.replace('"','')).split()
+        parts=re.sub(r'[-–—/,;:]+',' ',value.replace('"','')).split()
+        words=[re.sub(r'^[^\w]+|[^\w+#]+$','',part) for part in parts]
+        return [word for word in words if any(char.isalnum() for char in word)]
     terms=[word.casefold() for word in role_words(keywords)]
     if not terms:raise SourceUnavailable('Enter a job title or keywords for Context.dev web search.')
     role_query=' '.join(role_words(keywords))

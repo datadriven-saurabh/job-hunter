@@ -27,7 +27,17 @@ def extract_skills(raw):
             in_skills=True;line=rest.strip() if sep else ''
         elif key in BOUNDARIES:
             in_skills=False;continue
-        if not in_skills or not line or NEGATED.search(line):continue
+        if not in_skills or not line:continue
+        # A learning or negation qualifier applies to following list items,
+        # but does not erase skills explicitly listed before it.
+        qualifier=NEGATED.search(line)
+        if qualifier:
+            # Only retain complete list items before the qualifier. A phrase
+            # such as "I have no experience" has no skill before it.
+            prefix=line[:qualifier.start()]
+            separator=list(re.finditer(r'[,;|•●▪]|\s+[–—]\s+',prefix))
+            line=prefix[:separator[-1].start()] if separator else ''
+        if not line:continue
         for phrase in re.split(r'[,;|•●▪]|\s+[–—]\s+',line):
             phrase=phrase.strip(' .\t')
             if 1<len(phrase)<=80 and len(phrase.split())<=6 and not re.search(r'https?://|@|\d{4}\s*[-–]',phrase):

@@ -2,7 +2,7 @@
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
-from backend.services.job_matching import SKILLS, detected, family
+from backend.services.job_matching import detected, family, skill_requirement_negated
 from backend.services.job_dedup import fingerprint
 
 
@@ -29,7 +29,7 @@ def summarize(jobs, role='', days=30, now=None):
         found={}
         for line in re.split(r'\n|(?<=[.!?])\s+|;',job.get('description') or ''):
             for skill in detected(line):
-                if any(re.search(r'(?<!\w)'+re.escape(alias)+r'(?!\w)\s+(?:is\s+)?not (?:required|needed|necessary)',line,re.I) for alias in SKILLS[skill]): continue
+                if skill_requirement_negated(line,skill): continue
                 found.setdefault(skill,line.strip())
         for skill,line in found.items():
             evidence[skill].append({'job_id':job['job_id'],'title':job['job_title'],'company':job['company_name'],'source':job.get('source','Manual import'),'posted_at':job.get('posted_at'),'quote':line[:500]})

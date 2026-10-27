@@ -9,6 +9,8 @@ test('extension refuses another job on the same path',()=>{
 });
 test('extension tolerates tracking changes while preserving HTTPS',()=>{
  assert.equal(jobHunterSamePosting('https://example.com/job/?id=1&utm_source=x','https://example.com/job?id=1'),true);
+ assert.equal(jobHunterSamePosting('https://boards.greenhouse.io/example/jobs/42?gh_src=referral','https://boards.greenhouse.io/example/jobs/42'),true);
+ assert.equal(jobHunterSamePosting('https://example.com/job?gh_jid=1','https://example.com/job?gh_jid=2'),false);
  assert.equal(jobHunterSamePosting('http://example.com/job','https://example.com/job'),false);
  assert.equal(jobHunterSamePosting('not a URL','https://example.com/job'),false);
 });

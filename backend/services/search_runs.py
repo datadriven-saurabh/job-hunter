@@ -38,26 +38,32 @@ def catalog(rows):
                        'timing_samples':m.get('samples',0),'average_fetch_seconds':round(m['fetch_total']/m['fetch_samples'],1) if m.get('fetch_samples') else None})
     return sorted(result,key=lambda row:(not row['available'],row['estimated_seconds']))
 
+def _interrupt_stale(user,run_id):
+    """Inspect and release a timed-out run while the caller holds _lock."""
+    key='search-run:'+user+':'+run_id
+    value=read(key)
+    if value and value['state'] in {'queued','running'} and time.time()-value['updated_at']>SOURCE_TIMEOUT_SECONDS+120:
+        # A timed-out worker may still return later. Releasing its reservation
+        # fences its progress writes so the user can start another run.
+        if _active.get(user)==run_id:_active.pop(user)
+        value.update(state='interrupted',updated_at=time.time(),message='Search was interrupted. Saved results are retained; refresh opportunities before retrying.')
+        write(key,value)
+    return value
+
 def status(run_id):
     user=db.current_user();key='search-run:'+user+':'+run_id
     value=read(key)
     if not value:raise HTTPException(404,'Search not found')
     if value['state'] in {'queued','running'} and time.time()-value['updated_at']>SOURCE_TIMEOUT_SECONDS+120:
         with _lock:
-            value=read(key)
-            if value['state'] not in {'queued','running'} or time.time()-value['updated_at']<=SOURCE_TIMEOUT_SECONDS+120:
-                return value
-            # A timed-out worker may still return later. Release its reservation
-            # and fence its progress writes so the user can start another run.
-            if _active.get(user)==run_id:_active.pop(user)
-            value.update(state='interrupted',updated_at=time.time(),message='Search was interrupted. Saved results are retained; refresh opportunities before retrying.')
-            write(key,value)
+            value=_interrupt_stale(user,run_id)
     return value
 
 def start(body,search,rows):
     user=db.current_user();providers=list(dict.fromkeys(body.sources or [body.provider]))
     if not 1<=len(providers)<=MAX_SOURCES:raise HTTPException(400,'Select between 1 and 3 job boards.')
     with _lock:
+        if user in _active:_interrupt_stale(user,_active[user])
         if user in _active:return {'run_id':_active[user],'state':'running'}
         choices={r['id']:r for r in catalog(rows)}
         for source in providers:

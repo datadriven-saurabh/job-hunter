@@ -38,7 +38,7 @@ def render(jobs):
     columns += sorted({key for job in jobs for key in job if key not in columns and key not in INTERNAL_COLUMNS and not key.startswith('_')})
     output = io.StringIO(newline='')
     writer = csv.writer(output)
-    writer.writerow([HEADERS.get(key, key.replace('_', ' ').title()) for key in columns])
+    writer.writerow([cell(HEADERS.get(key, key.replace('_', ' ').title())) for key in columns])
     for job in jobs:
         writer.writerow([cell(round(job.get(key, 0) * 100, 1) if key == 'match_score' and job.get(key) is not None else job.get(key)) for key in columns])
     return '\ufeff' + output.getvalue()

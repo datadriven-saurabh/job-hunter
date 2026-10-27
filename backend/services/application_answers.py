@@ -1,6 +1,8 @@
 """Reusable verified stories and source-bound application answers."""
 import json
 import re
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from backend import database as db
 from backend.ai.router import digest,ModelRouter
 from backend.prompts import PROMPT_VERSIONS
@@ -67,11 +69,24 @@ def answer_questions(profile,job,questions,router=None,use_cache=True):
     for q in questions:
         key=digest([profile,job,q,dict(PROMPT_VERSIONS),sorted(used),'answers-v2'])
         path=db.user_data_path('answer-cache',f'{key}.json')
-        if use_cache and path.exists():result=json.loads(path.read_text());result['cache_hit']=True
-        else:
+        result=None
+        if use_cache and path.exists():
+            try:cached=json.loads(path.read_text())
+            except (json.JSONDecodeError,UnicodeDecodeError):cached=None
+            if isinstance(cached,dict) and cached.get('status')=='valid' and isinstance(cached.get('data'),dict):
+                result=cached;result['cache_hit']=True
+        if result is None:
             result=generate_answer(profile,job,used=used,router=router,**q);result['cache_hit']=False
             if use_cache and result['status']=='valid':
-                path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(result))
+                path.parent.mkdir(parents=True,exist_ok=True)
+                temporary_path=None
+                try:
+                    with NamedTemporaryFile(mode='w',encoding='utf-8',dir=path.parent,prefix=path.name+'.',suffix='.tmp',delete=False) as temporary:
+                        temporary_path=Path(temporary.name)
+                        json.dump(result,temporary)
+                    temporary_path.replace(path)
+                finally:
+                    if temporary_path:temporary_path.unlink(missing_ok=True)
         if result['data'].get('story_id'):used.add(result['data']['story_id'])
         results.append(result)
     return results

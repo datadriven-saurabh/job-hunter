@@ -69,6 +69,26 @@ def test_profile_validation_and_manual_import():
         assert client.post('/api/v1/applications/batch-apply',json=[j['job_id'] for j in jobs[:2]]).status_code==400
 
 
+def test_manual_import_does_not_invent_employment_type():
+    from backend.agents.scout_agent import job_id
+    from backend import database as db
+
+    with TestClient(app) as client:
+        client.post('/api/v1/demo')
+        body={'company_name':'Test Corp','job_title':'Software Engineer',
+              'job_url':'https://careers.example.com/unknown-employment',
+              'location':'Remote',
+              'description':'Build applications with Python, React, SQL and TypeScript.'}
+        assert client.post('/api/v1/jobs/import',json=body).json()['count']==1
+        assert db.get_job(job_id(body['job_url']))['employment_type']=='Not specified'
+
+        body['job_url']='https://careers.example.com/explicit-employment'
+        body['company_name']='Other Corp'
+        body['employment_type']='Full-time'
+        assert client.post('/api/v1/jobs/import',json=body).json()['count']==1
+        assert db.get_job(job_id(body['job_url']))['employment_type']=='Full-time'
+
+
 def test_optional_model_uses_only_source_bullets(monkeypatch):
     from backend.agents import tailor_agent
     from backend.demo import jobs

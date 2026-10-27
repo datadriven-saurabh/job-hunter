@@ -4,7 +4,7 @@ globalThis.jobHunterSamePosting = (actualUrl, expectedUrl) => {
     const url = new URL(value);
     if (url.protocol !== 'https:' || url.username || url.password) return null;
     for (const key of [...url.searchParams.keys()]) {
-      if (key.toLowerCase().startsWith('utm_') || ['ref','refid','source','tracking','trk','trackingid'].includes(key.toLowerCase())) url.searchParams.delete(key);
+      if (key.toLowerCase().startsWith('utm_') || ['ref','refid','source','tracking','trk','trackingid','gh_src'].includes(key.toLowerCase())) url.searchParams.delete(key);
     }
     url.searchParams.sort();
     return url.origin + url.pathname.replace(/\/$/,'') + url.search;

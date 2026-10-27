@@ -49,8 +49,19 @@ def language_requirements(text):
     result=[]
     languages=['English','German','French','Dutch','Spanish','Italian','Hindi']
     language_start='(?:'+'|'.join(languages)+r')\b'
-    separators=r'(?<=[.!?])\s+|\n+|;|\bbut\b|,\s*(?:and\s+)?(?='+language_start+r')|\band\s+(?='+language_start+r')'
-    for sentence in re.split(separators,text,flags=re.I):
+    hard_separators=r'(?<=[.!?])\s+|\n+|;|\bbut\b'
+    language_separator=re.compile(r',\s*(?:and\s+)?(?='+language_start+r')|\band\s+(?='+language_start+r')',re.I)
+    modifier=re.compile(r'preferred|nice.to.have|bonus|advantage|optional|required|mandatory|must|fluent|fluency|native|\b[ABC][12]\b|necessary|needed|without',re.I)
+    clauses=[]
+    for sentence in re.split(hard_separators,text,flags=re.I):
+        start=0
+        for separator in language_separator.finditer(sentence):
+            # A trailing qualifier applies to a list of languages without one of its own.
+            if modifier.search(sentence[start:separator.start()]):
+                clauses.append(sentence[start:separator.start()])
+                start=separator.end()
+        clauses.append(sentence[start:])
+    for sentence in clauses:
         for language in languages:
             if not re.search(r'\b'+language+r'\b',sentence,re.I):continue
             if re.search(r'not (?:required|necessary|needed)|no .{0,25}(?:required|necessary)|without .{0,25}knowledge',sentence,re.I):continue

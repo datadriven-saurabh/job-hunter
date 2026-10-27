@@ -31,3 +31,12 @@ def test_csv_quotes_multiline_text_and_neutralizes_spreadsheet_formulas():
     assert row['Job Title'].startswith("'=")
     assert row['Job Description'] == 'First line\nSecond, quoted "line"'
     assert cell(' +SUM(1,2)').startswith("' +")
+
+
+def test_csv_neutralizes_formula_in_dynamic_column_header():
+    formula_header = '=HYPERLINK("https://bad.example")'
+    body = render([{'job_title': 'Analyst', formula_header: 'untrusted metadata'}])
+    reader = csv.DictReader(io.StringIO(body.lstrip('\ufeff')))
+    row = next(reader)
+    assert reader.fieldnames[-1].startswith("'=")
+    assert row[reader.fieldnames[-1]] == 'untrusted metadata'

@@ -167,7 +167,7 @@ class ImportJob(BaseModel):
     job_url: str
     description: str = Field(min_length=20, max_length=50000)
     location: str
-    employment_type: str = 'Full-time'
+    employment_type: str = 'Not specified'
     requisition_id: str | None = Field(default=None,max_length=100)
     posted_at: str | None = None
     source: str = Field(default='',max_length=100)
