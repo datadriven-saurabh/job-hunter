@@ -151,9 +151,14 @@ def exclusions(job, criteria):
     max_age=criteria.get('max_posting_age_days')
     if max_age:
         from backend.services.job_intelligence import posting_time
-        posted,_=posting_time(job.get('posted_at'))
+        posted,precision=posting_time(job.get('posted_at'))
         if not posted:reasons.append('Posting date unknown (age filter active)')
-        elif (datetime.now(timezone.utc)-datetime.fromisoformat(posted)).total_seconds()>max_age*86400:reasons.append(f'Posted more than {max_age} days ago')
+        else:
+            now=datetime.now(timezone.utc);posted_at=datetime.fromisoformat(posted)
+            # A date-only source does not establish a midnight posting time.
+            # Keep it eligible for the full final calendar day.
+            age=(now.date()-posted_at.date()).days if (job.get('posted_at_precision') or precision)=='date' else (now-posted_at).total_seconds()/86400
+            if age>max_age:reasons.append(f'Posted more than {max_age} days ago')
     return reasons
 
 def assess(job, profile, criteria):

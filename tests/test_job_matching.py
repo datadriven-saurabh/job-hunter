@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from backend.demo import PROFILE, CONFIG
 from backend.services.job_matching import affirmed_skills, assess, exclusions, experience_years, skill_requirement_negated
+from backend.services.job_intelligence import posting_time
 
 
 def analytics_profile():
@@ -46,6 +47,19 @@ def test_posting_age_filter_uses_source_date_and_rejects_unknown_dates():
     assert exclusions(dict(job(),posted_at=old),rules)==['Posted more than 7 days ago']
     assert exclusions(job(),rules)==['Posting date unknown (age filter active)']
     assert not exclusions(job(),dict(rules,max_posting_age_days=None))
+
+
+def test_posting_age_filter_keeps_date_only_listing_through_its_last_day():
+    rules=dict(criteria(),max_posting_age_days=7)
+    seven_days_ago=datetime.now(timezone.utc)-timedelta(days=7)
+    date_only=seven_days_ago.date().isoformat()
+    assert not exclusions(dict(job(),posted_at=date_only),rules)
+    normalized,_=posting_time(date_only)
+    assert not exclusions(dict(job(),posted_at=normalized,posted_at_precision='date'),rules)
+    eight_days_ago=(seven_days_ago-timedelta(days=1)).date().isoformat()
+    assert exclusions(dict(job(),posted_at=eight_days_ago),rules)==['Posted more than 7 days ago']
+    exact=(datetime.now(timezone.utc)-timedelta(days=7,hours=1)).isoformat()
+    assert exclusions(dict(job(),posted_at=exact),rules)==['Posted more than 7 days ago']
 
 
 def test_missing_evidence_cannot_be_top_priority():

@@ -12,6 +12,7 @@ from backend.services.discovery_fetch import SOURCE_TIMEOUT_SECONDS
 _lock=Lock()
 _pool=ThreadPoolExecutor(max_workers=2, thread_name_prefix='search-run')
 _active={}
+_active_updated={}
 MAX_SOURCES=3
 NO_OUTPUT_PAUSE_SECONDS=3600
 
@@ -45,10 +46,24 @@ def _interrupt_stale(user,run_id):
     if value and value['state'] in {'queued','running'} and time.time()-value['updated_at']>SOURCE_TIMEOUT_SECONDS+120:
         # A timed-out worker may still return later. Releasing its reservation
         # fences its progress writes so the user can start another run.
-        if _active.get(user)==run_id:_active.pop(user)
+        if _active.get(user)==run_id:
+            _active.pop(user)
+            _active_updated.pop(user,None)
         value.update(state='interrupted',updated_at=time.time(),message='Search was interrupted. Saved results are retained; refresh opportunities before retrying.')
         write(key,value)
     return value
+
+def _release_stale_slots():
+    """Free abandoned capacity without reading another user's persisted data."""
+    now=time.monotonic()
+    for user,updated in list(_active_updated.items()):
+        if user not in _active:
+            _active_updated.pop(user,None)
+        elif now-updated>SOURCE_TIMEOUT_SECONDS+120:
+            # The worker checks _active before writing again. Its owner can
+            # still inspect the saved run, which status() marks interrupted.
+            _active.pop(user)
+            _active_updated.pop(user,None)
 
 def status(run_id):
     user=db.current_user();key='search-run:'+user+':'+run_id
@@ -70,16 +85,18 @@ def start(body,search,rows):
             r=choices.get(source)
             if not r or not r['available'] or r['kind']=='company-board':raise HTTPException(400,'This source is unavailable for automatic discovery.')
             if r['cooldown_seconds']:raise HTTPException(429,f"{r['name']} is cooling down. Retry in {r['cooldown_seconds']} seconds.")
+        _release_stale_slots()
         if len(_active)>=2:raise HTTPException(429,'Search capacity is busy. Please try again shortly.')
         run_id=uuid.uuid4().hex;key='search-run:'+user+':'+run_id
         value={'run_id':run_id,'state':'queued','sources':[],'count':0,'completed':0,'total':len(providers),'updated_at':time.time(),'message':'Search queued'}
-        write(key,value);_active[user]=run_id
+        write(key,value);_active[user]=run_id;_active_updated[user]=time.monotonic()
         context=copy_context()
         def work():
             def write_if_current():
                 with _lock:
                     if _active.get(user)!=run_id:return False
                     write(key,value)
+                    _active_updated[user]=time.monotonic()
                     return True
             try:
                 for source in providers:
@@ -112,6 +129,7 @@ def start(body,search,rows):
                         write(metric_key(source),metric)
                         value['sources'].extend(reports);value['count']+=result.get('count',0);value['completed']+=1;value['updated_at']=time.time()
                         write(key,value)
+                        _active_updated[user]=time.monotonic()
                 value.update(state='complete',message=f"Search finished: {value['count']} new opportunities.")
             except Exception:
                 value.update(state='failed',message='Search could not finish. Completed results are saved; refresh opportunities before retrying.')
@@ -119,13 +137,16 @@ def start(body,search,rows):
                 with _lock:
                     if _active.get(user)==run_id:
                         try:value['updated_at']=time.time();write(key,value)
-                        finally:_active.pop(user,None)
+                        finally:
+                            _active.pop(user,None)
+                            _active_updated.pop(user,None)
         try:
             _pool.submit(context.run,work)
         except Exception:
             # A shutting-down executor can reject the task after the run was
             # reserved. Release it so the user can retry on a healthy worker.
             _active.pop(user,None)
+            _active_updated.pop(user,None)
             value.update(state='failed',updated_at=time.time(),message='Search could not start. Please retry.')
             try:
                 write(key,value)

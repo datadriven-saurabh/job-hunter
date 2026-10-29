@@ -160,3 +160,41 @@ def test_start_replaces_stale_run_without_status_poll(monkeypatch):
     assert runs.status(old['run_id'])['state']=='interrupted'
     pool.task()
     assert runs.status(retry['run_id'])['state']=='complete'
+
+
+def test_new_user_can_start_when_other_users_abandon_stale_runs(monkeypatch):
+    rows=[{'id':'capacity-stale','name':'Capacity stale','available':True,'kind':'public-search'}]
+    class Queued:
+        def __init__(self):self.tasks=[]
+        def submit(self,fn,*args):self.tasks.append(lambda:fn(*args))
+
+    pool=Queued();monkeypatch.setattr(runs,'_pool',pool)
+    monkeypatch.setattr(runs,'_active',{})
+    monkeypatch.setattr(runs,'_active_updated',{},raising=False)
+    saved={}
+    monkeypatch.setattr(runs,'read',lambda key:saved.get(key))
+    monkeypatch.setattr(runs,'write',lambda key,value:saved.__setitem__(key,dict(value)))
+    monkeypatch.setattr(runs.db,'query',lambda *args,**kwargs:[])
+    current=['first']
+    monkeypatch.setattr(runs.db,'current_user',lambda:current[0])
+    body=SearchRequest(sources=['capacity-stale'])
+    first=runs.start(body,lambda _:None,rows)
+    current[0]='second'
+    second=runs.start(body,lambda _:None,rows)
+    current[0]='third'
+    with pytest.raises(HTTPException) as exc:
+        runs.start(body,lambda _:None,rows)
+    assert exc.value.status_code==429
+    for user,run in [('first',first),('second',second)]:
+        key='search-run:'+user+':'+run['run_id']
+        saved[key]['updated_at']=time.time()-runs.SOURCE_TIMEOUT_SECONDS-121
+        runs._active_updated[user]=time.monotonic()-runs.SOURCE_TIMEOUT_SECONDS-121
+
+    third=runs.start(body,lambda _:{'count':1,'sources':[{'source':'capacity-stale','status':'success'}]},rows)
+    assert third['run_id'] not in {first['run_id'],second['run_id']}
+    pool.tasks[0]()  # The old worker cannot publish progress after losing its slot.
+    current[0]='first'
+    assert runs.status(first['run_id'])['state']=='interrupted'
+    current[0]='third'
+    pool.tasks[2]()
+    assert runs.status(third['run_id'])['state']=='complete'
