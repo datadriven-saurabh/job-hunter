@@ -1,0 +1,1400 @@
+{
+  "ok": true,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "filesScanned": 9
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 24,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .heading not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .fill not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .fill not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .fill not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .fill not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .fill not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .heading not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target .fill not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 0,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 3.333,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 3.333,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 10,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 16.667,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 30,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 50,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 56.667,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      },
+      {
+        "code": "console_warning",
+        "severity": "warning",
+        "message": "GSAP target  not found. https://gsap.com",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {
+          "data-composition-id": "main",
+          "data-start": "0",
+          "data-duration": "60",
+          "data-width": "1920",
+          "data-height": "1080"
+        },
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 1080
+        },
+        "time": 56.667,
+        "url": "http://127.0.0.1:59949/",
+        "line": 65
+      }
+    ]
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "duration": 60,
+    "samples": [
+      3.333,
+      10,
+      16.667,
+      23.333,
+      30,
+      36.667,
+      43.333,
+      50,
+      56.667
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 0,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      3.333,
+      16.667,
+      30,
+      43.333,
+      56.667
+    ],
+    "checked": 61,
+    "passed": 61
+  },
+  "craft": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 14,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 4 text elements stay under it for 0.5 s or more, the smallest \"DISCOVER → PREPARE → PRACTICE\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "DISCOVER → PREPARE → PRACTICE",
+        "selector": "#intro-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/intro.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 401.34,
+          "height": 28
+        },
+        "time": 0,
+        "times": [
+          0,
+          0,
+          0,
+          0.625
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 5,
+        "elements": [
+          {
+            "selector": "#intro-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "DISCOVER → PREPARE → PRACTICE",
+            "fontPx": 23,
+            "time": 0,
+            "seconds": 5
+          },
+          {
+            "selector": "#intro-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 0,
+            "seconds": 5
+          },
+          {
+            "selector": "#intro-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "PRODUCT INTRODUCTION",
+            "fontPx": 25,
+            "time": 0,
+            "seconds": 5
+          },
+          {
+            "selector": "#intro-stage > div:nth-of-type(2) > div:nth-of-type(1)",
+            "text": "Your job search, in one workspace",
+            "fontPx": 25,
+            "time": 0.625,
+            "seconds": 4.375
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 8 text elements stay under it for 0.5 s or more, the smallest \"Product walkthrough · fictional sampl...\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "Product walkthrough · fictional sample data",
+        "selector": "#discover-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/discover.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 470.52,
+          "height": 28
+        },
+        "time": 5,
+        "times": [
+          5,
+          5,
+          5,
+          5,
+          6.25,
+          6.875,
+          6.875,
+          7.5
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 8,
+        "elements": [
+          {
+            "selector": "#discover-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "Product walkthrough · fictional sample data",
+            "fontPx": 23,
+            "time": 5,
+            "seconds": 8
+          },
+          {
+            "selector": "#discover-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 5,
+            "seconds": 8
+          },
+          {
+            "selector": "#discover-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "01 / 06",
+            "fontPx": 25,
+            "time": 5,
+            "seconds": 8
+          },
+          {
+            "selector": "#discover-stage > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Discover jobs",
+            "fontPx": 25,
+            "time": 5,
+            "seconds": 8
+          },
+          {
+            "selector": "#discover-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(4) > span:nth-of-type(1)",
+            "text": "Company job board",
+            "fontPx": 25,
+            "time": 6.875,
+            "seconds": 6.125
+          },
+          {
+            "selector": "#discover-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(5)",
+            "text": "Keep promising roles in your shortlist.",
+            "fontPx": 25,
+            "time": 7.5,
+            "seconds": 5.5
+          },
+          {
+            "selector": "#discover-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(4) > p:nth-of-type(1)",
+            "text": "Juniper Works · Remote · Full-time",
+            "fontPx": 26,
+            "time": 6.875,
+            "seconds": 6.125
+          },
+          {
+            "selector": "#discover-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(3)",
+            "text": "Find opportunities",
+            "fontPx": 27,
+            "time": 6.25,
+            "seconds": 6.75
+          }
+        ]
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 4.88 s (8.00–12.88 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 8,
+        "seconds": 4.875,
+        "floorSeconds": 3,
+        "until": 12.875
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 10 text elements stay under it for 0.5 s or more, the smallest \"Product walkthrough · fictional sampl...\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "Product walkthrough · fictional sample data",
+        "selector": "#evidence-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/evidence.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 470.52,
+          "height": 28
+        },
+        "time": 13,
+        "times": [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13.625,
+          14.25,
+          14.25,
+          14.875,
+          14.875
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 8,
+        "elements": [
+          {
+            "selector": "#evidence-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "Product walkthrough · fictional sample data",
+            "fontPx": 23,
+            "time": 13,
+            "seconds": 8
+          },
+          {
+            "selector": "#evidence-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 13,
+            "seconds": 8
+          },
+          {
+            "selector": "#evidence-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "02 / 06",
+            "fontPx": 25,
+            "time": 13,
+            "seconds": 8
+          },
+          {
+            "selector": "#evidence-stage > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Match evidence",
+            "fontPx": 25,
+            "time": 13,
+            "seconds": 8
+          },
+          {
+            "selector": "#evidence-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(5)",
+            "text": "A prioritization guide, not a hiring probability.",
+            "fontPx": 25,
+            "time": 13,
+            "seconds": 8
+          },
+          {
+            "selector": "div.score.item > small:nth-of-type(1)",
+            "text": "/ 100 · sample fit score",
+            "fontPx": 25,
+            "time": 13.625,
+            "seconds": 7.375
+          },
+          {
+            "selector": "#evidence-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "SQL",
+            "fontPx": 25,
+            "time": 14.25,
+            "seconds": 6.75
+          },
+          {
+            "selector": "#evidence-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "Python",
+            "fontPx": 25,
+            "time": 14.25,
+            "seconds": 6.75
+          },
+          {
+            "selector": "span.tag.warn",
+            "text": "Tableau",
+            "fontPx": 25,
+            "time": 14.875,
+            "seconds": 6.125
+          },
+          {
+            "selector": "#evidence-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(4) > p:nth-of-type(1)",
+            "text": "Listed in the role; missing from this profile.",
+            "fontPx": 26,
+            "time": 14.875,
+            "seconds": 6.125
+          }
+        ]
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 5.50 s (15.38–20.88 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 15.375,
+        "seconds": 5.5,
+        "floorSeconds": 3,
+        "until": 20.875
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 8 text elements stay under it for 0.5 s or more, the smallest \"Product walkthrough · fictional sampl...\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "Product walkthrough · fictional sample data",
+        "selector": "#resumes-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/resumes.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 470.52,
+          "height": 28
+        },
+        "time": 21,
+        "times": [
+          21,
+          21,
+          21,
+          21,
+          21.625,
+          21.625,
+          22.25,
+          22.875
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 7,
+        "elements": [
+          {
+            "selector": "#resumes-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "Product walkthrough · fictional sample data",
+            "fontPx": 23,
+            "time": 21,
+            "seconds": 7
+          },
+          {
+            "selector": "#resumes-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 21,
+            "seconds": 7
+          },
+          {
+            "selector": "#resumes-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "03 / 06",
+            "fontPx": 25,
+            "time": 21,
+            "seconds": 7
+          },
+          {
+            "selector": "#resumes-stage > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Resume comparison",
+            "fontPx": 25,
+            "time": 21,
+            "seconds": 7
+          },
+          {
+            "selector": "#resumes-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1)",
+            "text": "Recommended",
+            "fontPx": 25,
+            "time": 21.625,
+            "seconds": 6.375
+          },
+          {
+            "selector": "#resumes-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(4)",
+            "text": "Shared keywords: SQL · Python · reporting",
+            "fontPx": 25,
+            "time": 22.875,
+            "seconds": 5.125
+          },
+          {
+            "selector": "#resumes-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2) > p:nth-of-type(1)",
+            "text": "68% text similarity · sample",
+            "fontPx": 26,
+            "time": 21.625,
+            "seconds": 6.375
+          },
+          {
+            "selector": "#resumes-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)",
+            "text": "42% text similarity · sample",
+            "fontPx": 26,
+            "time": 22.25,
+            "seconds": 5.75
+          }
+        ]
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 4.38 s (23.50–27.88 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 23.5,
+        "seconds": 4.375,
+        "floorSeconds": 3,
+        "until": 27.875
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 8 text elements stay under it for 0.5 s or more, the smallest \"Product walkthrough · fictional sampl...\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "Product walkthrough · fictional sample data",
+        "selector": "#studio-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/studio.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 470.52,
+          "height": 28
+        },
+        "time": 28,
+        "times": [
+          28,
+          28,
+          28,
+          28,
+          28.625,
+          29.25,
+          29.875,
+          30.5
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 10,
+        "elements": [
+          {
+            "selector": "#studio-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "Product walkthrough · fictional sample data",
+            "fontPx": 23,
+            "time": 28,
+            "seconds": 10
+          },
+          {
+            "selector": "#studio-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 28,
+            "seconds": 10
+          },
+          {
+            "selector": "#studio-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "04 / 06",
+            "fontPx": 25,
+            "time": 28,
+            "seconds": 10
+          },
+          {
+            "selector": "div.wide-layout > div:nth-of-type(1)",
+            "text": "Application studio",
+            "fontPx": 25,
+            "time": 28,
+            "seconds": 10
+          },
+          {
+            "selector": "div.grid4 > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "One-page template",
+            "fontPx": 25,
+            "time": 28.625,
+            "seconds": 9.375
+          },
+          {
+            "selector": "div.grid4 > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "A tailored introduction",
+            "fontPx": 25,
+            "time": 29.25,
+            "seconds": 8.75
+          },
+          {
+            "selector": "div.grid4 > div:nth-of-type(3) > div:nth-of-type(2)",
+            "text": "Connection and referral drafts",
+            "fontPx": 25,
+            "time": 29.875,
+            "seconds": 8.125
+          },
+          {
+            "selector": "div.grid4 > div:nth-of-type(4) > div:nth-of-type(2)",
+            "text": "Keep missing facts visible",
+            "fontPx": 25,
+            "time": 30.5,
+            "seconds": 7.5
+          }
+        ]
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 6.25 s (31.63–37.88 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 31.625,
+        "seconds": 6.25,
+        "floorSeconds": 3,
+        "until": 37.875
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 6 text elements stay under it for 0.5 s or more, the smallest \"Product walkthrough · fictional sampl...\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "Product walkthrough · fictional sample data",
+        "selector": "#trends-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/trends.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 470.52,
+          "height": 28
+        },
+        "time": 38,
+        "times": [
+          38,
+          38,
+          38,
+          38,
+          38,
+          40.5
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 7,
+        "elements": [
+          {
+            "selector": "#trends-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "Product walkthrough · fictional sample data",
+            "fontPx": 23,
+            "time": 38,
+            "seconds": 7
+          },
+          {
+            "selector": "#trends-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 38,
+            "seconds": 7
+          },
+          {
+            "selector": "#trends-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "05 / 06",
+            "fontPx": 25,
+            "time": 38,
+            "seconds": 7
+          },
+          {
+            "selector": "#trends-stage > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Skill trends",
+            "fontPx": 25,
+            "time": 38,
+            "seconds": 7
+          },
+          {
+            "selector": "#trends-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "Illustrative counts across 12 saved jobs",
+            "fontPx": 25,
+            "time": 38,
+            "seconds": 7
+          },
+          {
+            "selector": "#trends-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(6)",
+            "text": "Explore listing evidence and filter by role or date.",
+            "fontPx": 25,
+            "time": 40.5,
+            "seconds": 4.5
+          }
+        ]
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 3.88 s (41.00–44.88 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 41,
+        "seconds": 3.875,
+        "floorSeconds": 3,
+        "until": 44.875
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 9 text elements stay under it for 0.5 s or more, the smallest \"Product walkthrough · fictional sampl...\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "Product walkthrough · fictional sample data",
+        "selector": "#interview-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/interview.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 470.52,
+          "height": 28
+        },
+        "time": 45,
+        "times": [
+          45,
+          45,
+          45,
+          45,
+          45,
+          45.625,
+          46.25,
+          46.875,
+          47.5
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 7,
+        "elements": [
+          {
+            "selector": "#interview-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "Product walkthrough · fictional sample data",
+            "fontPx": 23,
+            "time": 45,
+            "seconds": 7
+          },
+          {
+            "selector": "#interview-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 45,
+            "seconds": 7
+          },
+          {
+            "selector": "#interview-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "06 / 06",
+            "fontPx": 25,
+            "time": 45,
+            "seconds": 7
+          },
+          {
+            "selector": "#interview-stage > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Interview coach",
+            "fontPx": 25,
+            "time": 45,
+            "seconds": 7
+          },
+          {
+            "selector": "div.tag",
+            "text": "Data analysis",
+            "fontPx": 25,
+            "time": 45,
+            "seconds": 7
+          },
+          {
+            "selector": "#interview-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(6)",
+            "text": "Review strengths and areas to strengthen.",
+            "fontPx": 25,
+            "time": 47.5,
+            "seconds": 4.5
+          },
+          {
+            "selector": "#interview-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(3) > p:nth-of-type(1)",
+            "text": "Example practice prompt",
+            "fontPx": 26,
+            "time": 45.625,
+            "seconds": 6.375
+          },
+          {
+            "selector": "#interview-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(4) > p:nth-of-type(1)",
+            "text": "Check data quality. Segment the change.Test explanations against the evidence.",
+            "fontPx": 26,
+            "time": 46.25,
+            "seconds": 5.75
+          },
+          {
+            "selector": "#interview-stage > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(5)",
+            "text": "Get feedback",
+            "fontPx": 27,
+            "time": 46.875,
+            "seconds": 5.125
+          }
+        ]
+      },
+      {
+        "code": "dead_stretch",
+        "severity": "warning",
+        "message": "Nothing on screen changes for 3.88 s (48.00–51.88 s): start the next move within 3 s, or put data-hold on the element whose stillness is deliberate; see references/motion.md.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 48,
+        "seconds": 3.875,
+        "floorSeconds": 3,
+        "until": 51.875
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 5 text elements stay under it for 0.5 s or more, the smallest \"DISCOVER → PREPARE → PRACTICE\" at 23 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "DISCOVER → PREPARE → PRACTICE",
+        "selector": "#outro-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/outro.html",
+        "bbox": {
+          "x": 100,
+          "y": 1008,
+          "width": 401.34,
+          "height": 28
+        },
+        "time": 52,
+        "times": [
+          52,
+          52,
+          52,
+          52.625,
+          54.5
+        ],
+        "fontPx": 23,
+        "floorPx": 28,
+        "seconds": 8,
+        "elements": [
+          {
+            "selector": "#outro-stage > div:nth-of-type(3) > span:nth-of-type(1)",
+            "text": "DISCOVER → PREPARE → PRACTICE",
+            "fontPx": 23,
+            "time": 52,
+            "seconds": 8
+          },
+          {
+            "selector": "#outro-stage > div:nth-of-type(3) > span:nth-of-type(2)",
+            "text": "JOB HUNTER",
+            "fontPx": 23,
+            "time": 52,
+            "seconds": 8
+          },
+          {
+            "selector": "#outro-stage > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "PRODUCT INTRODUCTION",
+            "fontPx": 25,
+            "time": 52,
+            "seconds": 8
+          },
+          {
+            "selector": "#outro-stage > div:nth-of-type(2) > div:nth-of-type(1)",
+            "text": "Job Hunter",
+            "fontPx": 25,
+            "time": 52.625,
+            "seconds": 7.375
+          },
+          {
+            "selector": "div.small.item",
+            "text": "Core discovery and preparation work without a paid AI model.",
+            "fontPx": 25,
+            "time": 54.5,
+            "seconds": 5.5
+          }
+        ]
+      }
+    ],
+    "enabled": true,
+    "step": 0.125,
+    "samples": 480
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  }
+}

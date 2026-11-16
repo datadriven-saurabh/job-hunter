@@ -1,0 +1,83 @@
+[
+  {
+    "scene": "intro",
+    "start": 0,
+    "duration": 3.75,
+    "text": "Meet Job Hunter. Your job search, organized.",
+    "raw_seconds": 2.86,
+    "speech_seconds": 2.86,
+    "rate": 1
+  },
+  {
+    "scene": "discover",
+    "start": 3.75,
+    "duration": 6,
+    "text": "Discover openings across public feeds and company job boards. Shortlist promising roles.",
+    "raw_seconds": 5.56,
+    "speech_seconds": 5.56,
+    "rate": 1
+  },
+  {
+    "scene": "evidence",
+    "start": 9.75,
+    "duration": 6,
+    "text": "Understand each match with clear evidence. See your strongest skills and gaps to review.",
+    "raw_seconds": 4.98,
+    "speech_seconds": 4.98,
+    "rate": 1
+  },
+  {
+    "scene": "resumes",
+    "start": 15.75,
+    "duration": 5.25,
+    "text": "Compare your resumes using shared keywords and job similarity.",
+    "raw_seconds": 3.8,
+    "speech_seconds": 3.8,
+    "rate": 1
+  },
+  {
+    "scene": "studio",
+    "start": 21,
+    "duration": 7.5,
+    "text": "Prepare resumes, letters, outreach, and application answers together. Review every draft before applying.",
+    "raw_seconds": 6.6,
+    "speech_seconds": 6.6,
+    "rate": 1
+  },
+  {
+    "scene": "trends",
+    "start": 28.5,
+    "duration": 5.25,
+    "text": "Find recurring skills across your saved jobs, and decide what to learn next.",
+    "raw_seconds": 4.32,
+    "speech_seconds": 4.32,
+    "rate": 1
+  },
+  {
+    "scene": "interview",
+    "start": 33.75,
+    "duration": 5.25,
+    "text": "Practice role-based interview questions, then get feedback to strengthen your answers.",
+    "raw_seconds": 4.72,
+    "speech_seconds": 4.72,
+    "rate": 1
+  },
+  {
+    "scene": "outro",
+    "start": 39,
+    "duration": 6,
+    "text": "Your career. Your data. Keep documents local. Focus your search. Make your move.",
+    "raw_seconds": 4.58,
+    "speech_seconds": 4.58,
+    "rate": 1
+  },
+  {
+    "scene": "visit",
+    "start": 45,
+    "duration": 10,
+    "text": "Visit job hunter live six dot vercel dot app today, and start finding jobs of your dreams.",
+    "raw_seconds": 5.72,
+    "speech_seconds": 5.72,
+    "rate": 1
+  }
+]
